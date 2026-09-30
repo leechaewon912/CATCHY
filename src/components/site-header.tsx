@@ -7,7 +7,6 @@ import { BookmarkIcon } from "@/components/icons";
 
 const NAV_ITEMS = [
   { label: "트렌드 피드", href: "/" },
-  { label: "표현 학습", href: null },
   { label: "퀴즈", href: "/quiz" },
 ];
 
@@ -26,25 +25,15 @@ export function SiteHeader() {
             CATCHY<span className="text-lime-300">.</span>
           </Link>
           <nav className="hidden items-center gap-6 md:flex">
-            {NAV_ITEMS.map((item) =>
-              item.href ? (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className="rounded text-sm font-medium text-white/45 transition-colors hover:text-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300"
-                >
-                  {item.label}
-                </Link>
-              ) : (
-                <span
-                  key={item.label}
-                  aria-disabled="true"
-                  className="cursor-default text-sm font-medium text-white/25"
-                >
-                  {item.label}
-                </span>
-              ),
-            )}
+            {NAV_ITEMS.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="rounded text-sm font-medium text-white/45 transition-colors hover:text-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300"
+              >
+                {item.label}
+              </Link>
+            ))}
           </nav>
         </div>
 
