@@ -1,9 +1,11 @@
+import Link from "next/link";
+
 import { BookmarkIcon } from "@/components/icons";
 
 const NAV_ITEMS = [
-  { label: "트렌드 피드", active: true },
-  { label: "표현 학습", active: false },
-  { label: "퀴즈", active: false },
+  { label: "트렌드 피드", href: "/" },
+  { label: "표현 학습", href: null },
+  { label: "퀴즈", href: "/quiz" },
 ];
 
 export function SiteHeader() {
@@ -11,23 +13,32 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0a0a0b]/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
         <div className="flex items-center gap-8">
-          <span className="text-2xl font-black tracking-tight text-white">
+          <Link
+            href="/"
+            className="rounded text-2xl font-black tracking-tight text-white transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300"
+          >
             CATCHY<span className="text-lime-300">.</span>
-          </span>
+          </Link>
           <nav className="hidden items-center gap-6 md:flex">
-            {NAV_ITEMS.map((item) => (
-              <a
-                key={item.label}
-                href="#"
-                className={
-                  item.active
-                    ? "text-sm font-semibold text-white"
-                    : "text-sm font-medium text-white/45 transition-colors hover:text-white/80"
-                }
-              >
-                {item.label}
-              </a>
-            ))}
+            {NAV_ITEMS.map((item) =>
+              item.href ? (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className="rounded text-sm font-medium text-white/45 transition-colors hover:text-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300"
+                >
+                  {item.label}
+                </Link>
+              ) : (
+                <span
+                  key={item.label}
+                  aria-disabled="true"
+                  className="cursor-default text-sm font-medium text-white/25"
+                >
+                  {item.label}
+                </span>
+              ),
+            )}
           </nav>
         </div>
 
@@ -38,7 +49,7 @@ export function SiteHeader() {
           <button
             type="button"
             aria-label="저장한 트렌드"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 text-white/70 transition-colors hover:border-white/40 hover:text-white"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/15 text-white/70 transition-colors hover:border-white/40 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300"
           >
             <BookmarkIcon className="h-4 w-4" />
           </button>

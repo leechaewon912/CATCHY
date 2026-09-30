@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { ArrowUpRightIcon, SparkleIcon } from "@/components/icons";
 import { categoryStyles, type Trend } from "@/lib/mock-data";
 
@@ -43,13 +45,13 @@ export function TrendHero({ trend }: { trend: Trend }) {
             </div>
           </div>
 
-          <button
-            type="button"
-            className="group inline-flex w-fit items-center gap-2 rounded-full bg-black px-6 py-3 text-sm font-bold text-white transition-transform hover:-translate-y-0.5"
+          <Link
+            href={`/trend/${trend.id}`}
+            className="group inline-flex w-fit cursor-pointer items-center gap-2 rounded-full bg-black px-6 py-3 text-sm font-bold text-white transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-fuchsia-500 focus-visible:ring-black"
           >
             읽고 표현 배우기
             <ArrowUpRightIcon className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-          </button>
+          </Link>
         </div>
       </div>
     </section>

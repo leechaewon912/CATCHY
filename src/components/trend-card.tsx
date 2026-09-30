@@ -1,11 +1,16 @@
-import { BookmarkIcon } from "@/components/icons";
+import Link from "next/link";
+
+import { BookmarkButton } from "@/components/bookmark-button";
 import { categoryStyles, type Trend } from "@/lib/mock-data";
 
 export function TrendCard({ trend }: { trend: Trend }) {
   const style = categoryStyles[trend.category];
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] transition-colors hover:border-white/25">
+    <Link
+      href={`/trend/${trend.id}`}
+      className="group flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] transition-colors hover:border-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300"
+    >
       <div
         className={`relative flex h-36 items-start justify-between bg-gradient-to-br ${style.gradient} p-4`}
       >
@@ -14,17 +19,14 @@ export function TrendCard({ trend }: { trend: Trend }) {
         >
           {trend.category}
         </span>
-        <button
-          type="button"
-          aria-label="트렌드 저장"
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-black/20 text-black/80 transition-colors hover:bg-black/30"
-        >
-          <BookmarkIcon className="h-4 w-4" />
-        </button>
+        <BookmarkButton
+          label="트렌드 저장"
+          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-black/20 text-black/80 transition-colors hover:bg-black/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black"
+        />
       </div>
 
       <div className="flex flex-1 flex-col gap-3 p-5">
-        <h3 className="text-lg font-bold leading-snug text-white">
+        <h3 className="text-lg font-bold leading-snug text-white transition-colors group-hover:text-lime-200">
           {trend.title}
         </h3>
         <p className="line-clamp-2 text-sm leading-relaxed text-white/55">
@@ -38,6 +40,6 @@ export function TrendCard({ trend }: { trend: Trend }) {
           </span>
         </div>
       </div>
-    </article>
+    </Link>
   );
 }

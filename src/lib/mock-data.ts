@@ -18,10 +18,13 @@ export type Trend = {
 
 export type Expression = {
   id: string;
+  trendId: string;
   phrase: string;
   meaning: string;
   situation: string;
   context: string;
+  example: string;
+  exampleTranslation: string;
   sourceCategory: Category;
 };
 
@@ -129,51 +132,104 @@ export const trends: Trend[] = [
   },
 ];
 
+export const allTrends: Trend[] = [heroTrend, ...trends];
+
 export const expressions: Expression[] = [
   {
     id: "expr-isthisreal",
+    trendId: "hero-taylor",
     phrase: "is this real?",
     meaning: "설마 이게 진짜야?",
     situation: "SNS 댓글 · 놀라움 반응",
     context:
       "진위를 진지하게 묻는다기보다, 믿기 힘든 소식에 반사적으로 튀어나오는 감탄사에 가까워요.",
+    example: "Wait... is this real? I can't believe it.",
+    exampleTranslation: "잠깐... 이거 실화야? 못 믿겠어.",
     sourceCategory: "GLOBAL TREND",
   },
   {
     id: "expr-itsgiving",
+    trendId: "trend-meme",
     phrase: "it's giving [x]",
     meaning: "…느낌이야, …분위기야",
     situation: "SNS · 캐주얼 대화",
     context:
       "어떤 분위기나 이미지를 한 문장으로 요약할 때 쓰는 Z세대 표현. 뒤에 원하는 명사구를 자유롭게 붙여요.",
+    example: "This outfit is giving main character energy.",
+    exampleTranslation: "이 옷 완전 주인공st 느낌이야.",
     sourceCategory: "MEME",
   },
   {
     id: "expr-nocap",
+    trendId: "trend-meme",
     phrase: "no cap",
     meaning: "진짜야, 거짓말 아니야",
     situation: "캐주얼 대화 · SNS",
     context:
       "'cap'이 거짓말을 뜻하는 슬랭에서 유래한 표현으로, 문장 끝에 붙여 진심을 강조해요.",
+    example: "That show was actually amazing, no cap.",
+    exampleTranslation: "그 공연 진짜 대박이었어, 거짓말 안 보태고.",
     sourceCategory: "MEME",
   },
   {
     id: "expr-deadlinedrama",
+    trendId: "trend-nba",
     phrase: "deadline drama",
     meaning: "마감 앞두고 벌어지는 소동",
     situation: "스포츠 뉴스 헤드라인",
     context:
       "마감 기한 직전 급박하게 터지는 이슈를 가리킬 때 스포츠 저널리즘에서 자주 쓰는 표현이에요.",
+    example: "Every trade deadline brings a whole new level of deadline drama.",
+    exampleTranslation: "트레이드 마감 때마다 늘 한바탕 소동이 벌어져.",
     sourceCategory: "SPORTS",
   },
   {
     id: "expr-notready",
+    trendId: "trend-llm",
     phrase: "the internet is not ready",
     meaning: "사람들이 감당 못 할 정도의 반응",
     situation: "SNS 캡션 · 헤드라인",
     context:
       "예상 밖의 화제성 있는 소식이 터졌을 때 과장을 섞어 쓰는 표현이에요.",
+    example: "This new model just dropped and the internet is not ready.",
+    exampleTranslation: "이 신제품 방금 나왔는데 사람들이 감당을 못 하고 있어.",
     sourceCategory: "TECH",
+  },
+  {
+    id: "expr-mainchar",
+    trendId: "trend-rose",
+    phrase: "main character energy",
+    meaning: "주인공 같은 존재감",
+    situation: "SNS 캡션 · 칭찬",
+    context:
+      "누군가 압도적인 존재감이나 자신감을 보일 때 쓰는 표현으로, 스포트라이트를 받는 순간을 묘사해요.",
+    example: "She walked in with pure main character energy.",
+    exampleTranslation: "그녀는 완전 주인공 같은 존재감으로 등장했어.",
+    sourceCategory: "K-POP",
+  },
+  {
+    id: "expr-plottwist",
+    trendId: "trend-dune",
+    phrase: "plot twist",
+    meaning: "반전, 예상 밖의 전개",
+    situation: "캐주얼 대화 · 리뷰",
+    context:
+      "원래 영화·드라마 용어지만, 일상 대화에서 예상 밖 상황을 가리킬 때도 자주 쓰여요.",
+    example: "Nobody saw that casting news coming — total plot twist.",
+    exampleTranslation: "그 캐스팅 소식은 아무도 예상 못했어, 완전 반전이야.",
+    sourceCategory: "MOVIE",
+  },
+  {
+    id: "expr-redcarpetready",
+    trendId: "trend-award",
+    phrase: "red carpet ready",
+    meaning: "완벽하게 꾸민, 준비된",
+    situation: "SNS 캡션 · 패션 코멘트",
+    context:
+      "레드카펫에 설 준비가 된 것처럼 완벽하게 꾸민 모습을 표현할 때 쓰는 문구예요.",
+    example: "Give me ten minutes and I'll be red carpet ready.",
+    exampleTranslation: "10분만 줘, 바로 레드카펫 나갈 준비 끝낼게.",
+    sourceCategory: "GLOBAL TREND",
   },
 ];
 
@@ -183,3 +239,46 @@ export const quizStats = {
   reviewDue: 4,
   streakDays: 5,
 };
+
+export function getTrendById(id: string): Trend | undefined {
+  return allTrends.find((trend) => trend.id === id);
+}
+
+export function getExpressionsByTrendId(trendId: string): Expression[] {
+  return expressions.filter((expression) => expression.trendId === trendId);
+}
+
+export type QuizQuestion = {
+  id: string;
+  phrase: string;
+  correctMeaning: string;
+  options: string[];
+};
+
+export function buildQuizQuestions(
+  count: number = quizStats.questionCount,
+): QuizQuestion[] {
+  const selected = expressions.slice(0, count);
+
+  return selected.map((expression, index) => {
+    const distractorPool = expressions
+      .filter((candidate) => candidate.id !== expression.id)
+      .map((candidate) => candidate.meaning);
+
+    const distractorA = distractorPool[index % distractorPool.length];
+    const distractorB = distractorPool[(index + 3) % distractorPool.length];
+    const options = [expression.meaning, distractorA, distractorB];
+    const rotation = index % options.length;
+    const rotatedOptions = [
+      ...options.slice(rotation),
+      ...options.slice(0, rotation),
+    ];
+
+    return {
+      id: expression.id,
+      phrase: expression.phrase,
+      correctMeaning: expression.meaning,
+      options: rotatedOptions,
+    };
+  });
+}

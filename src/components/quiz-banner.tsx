@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { ArrowUpRightIcon, CheckCircleIcon, FlameIcon } from "@/components/icons";
 import { quizStats } from "@/lib/mock-data";
 
@@ -24,13 +26,13 @@ export function QuizBanner() {
           </div>
         </div>
 
-        <button
-          type="button"
-          className="group flex shrink-0 items-center gap-2 rounded-full bg-lime-300 px-7 py-3.5 text-sm font-bold text-black transition-transform hover:-translate-y-0.5"
+        <Link
+          href="/quiz"
+          className="group flex shrink-0 cursor-pointer items-center gap-2 rounded-full bg-lime-300 px-7 py-3.5 text-sm font-bold text-black transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0b] focus-visible:ring-lime-300"
         >
           지금 풀기
           <ArrowUpRightIcon className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-        </button>
+        </Link>
       </div>
     </section>
   );
