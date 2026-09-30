@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 
+import { useBookmarks } from "@/components/bookmarks-provider";
 import { BookmarkIcon } from "@/components/icons";
 
 const NAV_ITEMS = [
@@ -9,6 +12,9 @@ const NAV_ITEMS = [
 ];
 
 export function SiteHeader() {
+  const { bookmarks } = useBookmarks();
+  const bookmarkCount = bookmarks.length;
+
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0a0a0b]/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
@@ -46,13 +52,18 @@ export function SiteHeader() {
           <span className="hidden rounded-full border border-white/15 px-3 py-1 font-mono text-xs uppercase tracking-widest text-white/60 sm:inline">
             Lv.2 · 캐주얼
           </span>
-          <button
-            type="button"
-            aria-label="저장한 트렌드"
-            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/15 text-white/70 transition-colors hover:border-white/40 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300"
+          <Link
+            href="/bookmarks"
+            aria-label="저장한 표현 보기"
+            className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/15 text-white/70 transition-colors hover:border-white/40 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300"
           >
             <BookmarkIcon className="h-4 w-4" />
-          </button>
+            {bookmarkCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-lime-300 px-1 font-mono text-[10px] font-bold text-black">
+                {bookmarkCount}
+              </span>
+            )}
+          </Link>
         </div>
       </div>
     </header>

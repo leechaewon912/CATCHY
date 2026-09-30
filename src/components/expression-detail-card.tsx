@@ -7,8 +7,10 @@ import type { Expression } from "@/lib/mock-data";
 
 export function ExpressionDetailCard({
   expression,
+  trendTitle,
 }: {
   expression: Expression;
+  trendTitle: string;
 }) {
   const [isTarget, setIsTarget] = useState(false);
 
@@ -40,7 +42,7 @@ export function ExpressionDetailCard({
             {expression.meaning}
           </p>
         </div>
-        <SaveExpressionButton phrase={expression.phrase} />
+        <SaveExpressionButton expression={expression} trendTitle={trendTitle} />
       </div>
 
       <div className="my-5 h-px bg-white/10" />

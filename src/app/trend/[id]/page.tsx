@@ -141,7 +141,11 @@ export default async function TrendDetailPage(
 
           <div className="flex flex-col gap-5">
             {trendExpressions.map((expression) => (
-              <ExpressionDetailCard key={expression.id} expression={expression} />
+              <ExpressionDetailCard
+                key={expression.id}
+                expression={expression}
+                trendTitle={trend.title}
+              />
             ))}
           </div>
 
