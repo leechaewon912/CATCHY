@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { SaveExpressionButton } from "@/components/save-expression-button";
 import type { Expression } from "@/lib/mock-data";
 
 export function ExpressionDetailCard({
@@ -30,27 +31,32 @@ export function ExpressionDetailCard({
           : "border-white/10",
       ].join(" ")}
     >
-      <p className="text-2xl font-black leading-tight text-white sm:text-3xl">
-        &ldquo;{expression.phrase}&rdquo;
-      </p>
-      <p className="mt-2 text-base font-semibold text-lime-300">
-        {expression.meaning}
-      </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-2xl font-black leading-tight text-white sm:text-3xl">
+            &ldquo;{expression.phrase}&rdquo;
+          </p>
+          <p className="mt-2 text-base font-semibold text-lime-300">
+            {expression.meaning}
+          </p>
+        </div>
+        <SaveExpressionButton phrase={expression.phrase} />
+      </div>
 
       <div className="my-5 h-px bg-white/10" />
 
       <div className="flex flex-col gap-4 text-sm leading-relaxed text-white/65">
         <p>
           <span className="mr-2 font-mono text-[11px] uppercase tracking-widest text-white/35">
-            사용 상황
+            뉘앙스
           </span>
-          {expression.situation}
+          {expression.nuance}
         </p>
         <p>
           <span className="mr-2 font-mono text-[11px] uppercase tracking-widest text-white/35">
-            문화적 맥락
+            사용 상황
           </span>
-          {expression.context}
+          {expression.situation}
         </p>
         <div className="rounded-xl bg-white/[0.04] p-4">
           <span className="mb-2 block font-mono text-[11px] uppercase tracking-widest text-white/35">

@@ -4,7 +4,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { TrendCard } from "@/components/trend-card";
 import { TrendHero } from "@/components/trend-hero";
-import { expressions, heroTrend, trends } from "@/lib/mock-data";
+import { featuredExpressions, heroTrend, trends } from "@/lib/mock-data";
 
 export default function Home() {
   return (
@@ -43,7 +43,7 @@ export default function Home() {
             </div>
           </div>
           <div className="-mx-5 flex snap-x gap-4 overflow-x-auto px-5 pb-4 sm:-mx-8 sm:px-8">
-            {expressions.map((expression) => (
+            {featuredExpressions.map((expression) => (
               <ExpressionCard key={expression.id} expression={expression} />
             ))}
           </div>

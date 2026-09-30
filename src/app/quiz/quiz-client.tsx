@@ -6,7 +6,13 @@ import { useState } from "react";
 import { ArrowUpRightIcon, CheckCircleIcon } from "@/components/icons";
 import type { QuizQuestion } from "@/lib/mock-data";
 
-export function QuizClient({ questions }: { questions: QuizQuestion[] }) {
+export function QuizClient({
+  questions,
+  returnHref = "/",
+}: {
+  questions: QuizQuestion[];
+  returnHref?: string;
+}) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [score, setScore] = useState(0);
@@ -60,10 +66,10 @@ export function QuizClient({ questions }: { questions: QuizQuestion[] }) {
             다시 풀기
           </button>
           <Link
-            href="/"
+            href={returnHref}
             className="cursor-pointer rounded-full bg-lime-300 px-6 py-3 text-sm font-bold text-black transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0b] focus-visible:ring-lime-300"
           >
-            홈으로 돌아가기
+            {returnHref === "/" ? "홈으로 돌아가기" : "트렌드로 돌아가기"}
           </Link>
         </div>
       </div>

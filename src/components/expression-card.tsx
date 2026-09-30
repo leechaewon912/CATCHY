@@ -37,9 +37,9 @@ export function ExpressionCard({ expression }: { expression: Expression }) {
         </p>
         <p>
           <span className="font-mono text-[11px] uppercase tracking-widest text-white/35">
-            문화적 맥락{" "}
+            뉘앙스{" "}
           </span>
-          {expression.context}
+          {expression.nuance}
         </p>
       </div>
     </Link>
