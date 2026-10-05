@@ -2,7 +2,7 @@ import { ExpressionCard } from "@/components/expression-card";
 import { QuizBanner } from "@/components/quiz-banner";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { TrendCard } from "@/components/trend-card";
+import { TrendFeed } from "@/components/trend-feed";
 import { TrendHero } from "@/components/trend-hero";
 import { featuredExpressions, heroTrend, trends } from "@/lib/mock-data";
 
@@ -14,21 +14,7 @@ export default function Home() {
       <main className="flex-1">
         <TrendHero trend={heroTrend} />
 
-        <section className="mx-auto max-w-6xl px-5 pt-16 sm:px-8">
-          <div className="mb-6 flex items-end justify-between">
-            <h2 className="text-xl font-black tracking-tight text-white sm:text-2xl">
-              오늘의 글로벌 트렌드
-            </h2>
-            <span className="font-mono text-xs uppercase tracking-widest text-white/40">
-              {trends.length}개 업데이트됨
-            </span>
-          </div>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {trends.map((trend) => (
-              <TrendCard key={trend.id} trend={trend} />
-            ))}
-          </div>
-        </section>
+        <TrendFeed trends={trends} />
 
         <section className="mx-auto max-w-6xl px-5 pt-16 sm:px-8">
           <div className="mb-6 flex items-end justify-between">

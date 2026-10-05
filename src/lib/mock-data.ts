@@ -1,10 +1,10 @@
 export type Category =
-  | "GLOBAL TREND"
-  | "K-POP"
-  | "MEME"
-  | "MOVIE"
-  | "SPORTS"
-  | "TECH";
+  | "라이프스타일"
+  | "음악"
+  | "밈·인터넷"
+  | "영화·시리즈"
+  | "스포츠"
+  | "테크·게임";
 
 export type Source = {
   outlet: string;
@@ -41,27 +41,27 @@ export const categoryStyles: Record<
   Category,
   { gradient: string; tag: string }
 > = {
-  "GLOBAL TREND": {
+  "라이프스타일": {
     gradient: "from-violet-500 via-fuchsia-500 to-rose-500",
     tag: "bg-fuchsia-300",
   },
-  "K-POP": {
+  "음악": {
     gradient: "from-pink-500 to-rose-400",
     tag: "bg-pink-300",
   },
-  MEME: {
+  "밈·인터넷": {
     gradient: "from-lime-400 to-emerald-400",
     tag: "bg-lime-300",
   },
-  MOVIE: {
+  "영화·시리즈": {
     gradient: "from-indigo-500 to-blue-500",
     tag: "bg-indigo-300",
   },
-  SPORTS: {
+  "스포츠": {
     gradient: "from-orange-500 to-amber-400",
     tag: "bg-amber-300",
   },
-  TECH: {
+  "테크·게임": {
     gradient: "from-cyan-500 to-sky-400",
     tag: "bg-cyan-300",
   },
@@ -69,7 +69,7 @@ export const categoryStyles: Record<
 
 export const heroTrend: Trend = {
   id: "hero-taylor",
-  category: "GLOBAL TREND",
+  category: "라이프스타일",
   title: '테일러 스위프트 "is this real?" 약혼설 게시물, 24시간만에 1억 뷰',
   summary:
     "테일러 스위프트가 남긴 짧은 게시물 하나에 전세계 팬덤이 들썩였어요. AI가 11개 매체 보도를 종합해 무슨 일이 있었는지, 그리고 사람들이 왜 이 표현을 쓰는지 정리했어요.",
@@ -100,7 +100,7 @@ export const heroTrend: Trend = {
 export const trends: Trend[] = [
   {
     id: "trend-rose",
-    category: "K-POP",
+    category: "음악",
     title: "블랙핑크 로제, 빌보드 핫100 또 한 번 강타",
     summary:
       "로제의 신곡이 3주 연속 빌보드 상위권을 지키며 SNS에서 밈으로 재생산되는 중이에요.",
@@ -129,7 +129,7 @@ export const trends: Trend[] = [
   },
   {
     id: "trend-meme",
-    category: "MEME",
+    category: "밈·인터넷",
     title: '"it\'s giving…" 밈, 다시 SNS를 점령하다',
     summary:
       "Z세대가 문장마다 붙이는 이 표현, 대체 어디서 왔고 어떻게 쓰이는 걸까요.",
@@ -158,7 +158,7 @@ export const trends: Trend[] = [
   },
   {
     id: "trend-dune",
-    category: "MOVIE",
+    category: "영화·시리즈",
     title: "'듄: 파트3' 캐스팅 루머에 팬덤 폭발",
     summary:
       "공식 발표 전부터 터진 루머 하나로 영화 커뮤니티가 밤새 들썩였어요.",
@@ -187,7 +187,7 @@ export const trends: Trend[] = [
   },
   {
     id: "trend-nba",
-    category: "SPORTS",
+    category: "스포츠",
     title: "NBA 트레이드 데드라인, 실시간 반응 폭주",
     summary:
       "마감 시간을 앞두고 벌어진 급박한 트레이드 소식에 팬들의 반응이 쏟아졌어요.",
@@ -216,7 +216,7 @@ export const trends: Trend[] = [
   },
   {
     id: "trend-llm",
-    category: "TECH",
+    category: "테크·게임",
     title: "오픈소스 LLM 경쟁, 개발자들의 반응은?",
     summary:
       "새 모델 하나가 공개될 때마다 개발자 커뮤니티의 온도가 달라지고 있어요.",
@@ -245,7 +245,7 @@ export const trends: Trend[] = [
   },
   {
     id: "trend-award",
-    category: "GLOBAL TREND",
+    category: "라이프스타일",
     title: "그래미 시상식 레드카펫, 올해의 화제 룩은",
     summary:
       "시상식 다음 날 아침, SNS 타임라인을 뒤덮은 룩과 그에 대한 반응을 모았어요.",
@@ -288,7 +288,7 @@ export const expressions: Expression[] = [
     situation: "SNS 댓글 · 놀라움 반응",
     example: "Wait... is this real? I can't believe it.",
     exampleTranslation: "잠깐... 이거 실화야? 못 믿겠어.",
-    sourceCategory: "GLOBAL TREND",
+    sourceCategory: "라이프스타일",
     featured: true,
   },
   {
@@ -301,7 +301,7 @@ export const expressions: Expression[] = [
     situation: "뉴스 헤드라인 · SNS 캡션",
     example: "The internet broke when the photos leaked.",
     exampleTranslation: "사진이 유출되자 인터넷이 난리가 났다.",
-    sourceCategory: "GLOBAL TREND",
+    sourceCategory: "라이프스타일",
   },
   {
     id: "expr-caughtoffguard",
@@ -313,7 +313,7 @@ export const expressions: Expression[] = [
     situation: "뉴스 기사 본문",
     example: "The announcement caught everyone off guard.",
     exampleTranslation: "그 발표는 모두의 허를 찔렀다.",
-    sourceCategory: "GLOBAL TREND",
+    sourceCategory: "라이프스타일",
   },
 
   // trend-rose
@@ -327,7 +327,7 @@ export const expressions: Expression[] = [
     situation: "SNS 캡션 · 칭찬",
     example: "She walked in with pure main character energy.",
     exampleTranslation: "그녀는 완전 주인공 같은 존재감으로 등장했어.",
-    sourceCategory: "K-POP",
+    sourceCategory: "음악",
     featured: true,
   },
   {
@@ -340,7 +340,7 @@ export const expressions: Expression[] = [
     situation: "음악 뉴스 헤드라인",
     example: "Her new single is running the charts this week.",
     exampleTranslation: "그녀의 신곡이 이번 주 차트를 휩쓸고 있어.",
-    sourceCategory: "K-POP",
+    sourceCategory: "음악",
   },
   {
     id: "expr-breakingtheinternet",
@@ -352,7 +352,7 @@ export const expressions: Expression[] = [
     situation: "SNS 캡션",
     example: "Rosé is breaking the internet with this comeback.",
     exampleTranslation: "로제가 이번 컴백으로 인터넷을 뒤집어놓고 있어.",
-    sourceCategory: "K-POP",
+    sourceCategory: "음악",
   },
 
   // trend-meme
@@ -366,7 +366,7 @@ export const expressions: Expression[] = [
     situation: "SNS · 캐주얼 대화",
     example: "This outfit is giving main character energy.",
     exampleTranslation: "이 옷 완전 주인공st 느낌이야.",
-    sourceCategory: "MEME",
+    sourceCategory: "밈·인터넷",
     featured: true,
   },
   {
@@ -379,7 +379,7 @@ export const expressions: Expression[] = [
     situation: "캐주얼 대화 · SNS",
     example: "That show was actually amazing, no cap.",
     exampleTranslation: "그 공연 진짜 대박이었어, 거짓말 안 보태고.",
-    sourceCategory: "MEME",
+    sourceCategory: "밈·인터넷",
   },
   {
     id: "expr-itsxforme",
@@ -391,7 +391,7 @@ export const expressions: Expression[] = [
     situation: "트윗 · 댓글",
     example: "It's the confidence for me.",
     exampleTranslation: "나는 그 자신감이 제일 좋더라.",
-    sourceCategory: "MEME",
+    sourceCategory: "밈·인터넷",
   },
 
   // trend-dune
@@ -405,7 +405,7 @@ export const expressions: Expression[] = [
     situation: "캐주얼 대화 · 리뷰",
     example: "Nobody saw that casting news coming — total plot twist.",
     exampleTranslation: "그 캐스팅 소식은 아무도 예상 못했어, 완전 반전이야.",
-    sourceCategory: "MOVIE",
+    sourceCategory: "영화·시리즈",
     featured: true,
   },
   {
@@ -418,7 +418,7 @@ export const expressions: Expression[] = [
     situation: "뉴스 헤드라인",
     example: "The studio finally confirmed the rumors.",
     exampleTranslation: "제작사가 마침내 그 소문을 공식 확인했다.",
-    sourceCategory: "MOVIE",
+    sourceCategory: "영화·시리즈",
   },
   {
     id: "expr-brokethenews",
@@ -430,7 +430,7 @@ export const expressions: Expression[] = [
     situation: "뉴스 바이라인 · 캐주얼 대화",
     example: "A fan account broke the news before any official outlet.",
     exampleTranslation: "한 팬 계정이 공식 매체보다 먼저 소식을 터뜨렸어.",
-    sourceCategory: "MOVIE",
+    sourceCategory: "영화·시리즈",
   },
 
   // trend-nba
@@ -444,7 +444,7 @@ export const expressions: Expression[] = [
     situation: "스포츠 뉴스 헤드라인",
     example: "Every trade deadline brings a whole new level of deadline drama.",
     exampleTranslation: "트레이드 마감 때마다 늘 한바탕 소동이 벌어져.",
-    sourceCategory: "SPORTS",
+    sourceCategory: "스포츠",
     featured: true,
   },
   {
@@ -457,7 +457,7 @@ export const expressions: Expression[] = [
     situation: "스포츠 헤드라인",
     example: "That trade shook up the entire league.",
     exampleTranslation: "그 트레이드 하나가 리그 전체를 뒤흔들었다.",
-    sourceCategory: "SPORTS",
+    sourceCategory: "스포츠",
   },
   {
     id: "expr-callingitearly",
@@ -469,7 +469,7 @@ export const expressions: Expression[] = [
     situation: "캐주얼 대화 · 댓글",
     example: "I'm calling it early — this trade wins them the title.",
     exampleTranslation: "미리 말해두는데, 이 트레이드로 우승 갈 거야.",
-    sourceCategory: "SPORTS",
+    sourceCategory: "스포츠",
   },
 
   // trend-llm
@@ -483,7 +483,7 @@ export const expressions: Expression[] = [
     situation: "SNS 캡션 · 헤드라인",
     example: "This new model just dropped and the internet is not ready.",
     exampleTranslation: "이 신제품 방금 나왔는데 사람들이 감당을 못 하고 있어.",
-    sourceCategory: "TECH",
+    sourceCategory: "테크·게임",
     featured: true,
   },
   {
@@ -496,7 +496,7 @@ export const expressions: Expression[] = [
     situation: "기술 리뷰 · 개발자 토론",
     example: "Under the hood, the model uses a completely new architecture.",
     exampleTranslation: "내부적으로 보면 이 모델은 완전히 새로운 구조를 쓰고 있어.",
-    sourceCategory: "TECH",
+    sourceCategory: "테크·게임",
   },
   {
     id: "expr-gamechanger",
@@ -508,7 +508,7 @@ export const expressions: Expression[] = [
     situation: "리뷰 · 트윗",
     example: "This release could be a real game changer for open-source AI.",
     exampleTranslation: "이번 출시는 오픈소스 AI 업계의 판도를 바꿀 수도 있어.",
-    sourceCategory: "TECH",
+    sourceCategory: "테크·게임",
   },
 
   // trend-award
@@ -522,7 +522,7 @@ export const expressions: Expression[] = [
     situation: "SNS 캡션 · 패션 코멘트",
     example: "Give me ten minutes and I'll be red carpet ready.",
     exampleTranslation: "10분만 줘, 바로 레드카펫 나갈 준비 끝낼게.",
-    sourceCategory: "GLOBAL TREND",
+    sourceCategory: "라이프스타일",
     featured: true,
   },
   {
@@ -535,7 +535,7 @@ export const expressions: Expression[] = [
     situation: "시상식 리뷰 기사",
     example: "Her entrance completely stole the show.",
     exampleTranslation: "그녀의 등장이 그날 시상식을 완전히 훔쳤다.",
-    sourceCategory: "GLOBAL TREND",
+    sourceCategory: "라이프스타일",
   },
   {
     id: "expr-servinglooks",
@@ -547,7 +547,7 @@ export const expressions: Expression[] = [
     situation: "패션 코멘트 · SNS 캡션",
     example: "Everyone on the carpet was serving looks tonight.",
     exampleTranslation: "오늘 레드카펫 다들 완전 비주얼 미쳤더라.",
-    sourceCategory: "GLOBAL TREND",
+    sourceCategory: "라이프스타일",
   },
 ];
 
