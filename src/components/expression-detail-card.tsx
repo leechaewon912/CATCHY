@@ -39,7 +39,7 @@ export function ExpressionDetailCard({
             &ldquo;{expression.phrase}&rdquo;
           </p>
           <p className="mt-2 text-base font-semibold text-lime-300">
-            {expression.meaning}
+            {expression.meaningKo}
           </p>
         </div>
         <SaveExpressionButton expression={expression} trendTitle={trendTitle} />
@@ -58,14 +58,14 @@ export function ExpressionDetailCard({
           <span className="mr-2 font-mono text-[11px] uppercase tracking-widest text-white/35">
             사용 상황
           </span>
-          {expression.situation}
+          {expression.usageSituation}
         </p>
         <div className="rounded-xl bg-white/[0.04] p-4">
           <span className="mb-2 block font-mono text-[11px] uppercase tracking-widest text-white/35">
             예문
           </span>
-          <p className="font-medium text-white">{expression.example}</p>
-          <p className="mt-1 text-white/50">{expression.exampleTranslation}</p>
+          <p className="font-medium text-white">{expression.exampleEn}</p>
+          <p className="mt-1 text-white/50">{expression.exampleKo}</p>
         </div>
       </div>
     </article>

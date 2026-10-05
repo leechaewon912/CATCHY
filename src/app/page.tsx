@@ -2,6 +2,7 @@ import { ExpressionCard } from "@/components/expression-card";
 import { QuizBanner } from "@/components/quiz-banner";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { TrendCard } from "@/components/trend-card";
 import { TrendFeed } from "@/components/trend-feed";
 import { TrendHero } from "@/components/trend-hero";
 import { featuredExpressions, heroTrend, trends } from "@/lib/mock-data";
@@ -14,7 +15,11 @@ export default function Home() {
       <main className="flex-1">
         <TrendHero trend={heroTrend} />
 
-        <TrendFeed trends={trends} />
+        <TrendFeed trends={trends.map((trend) => ({ id: trend.id, category: trend.category }))}>
+          {trends.map((trend) => (
+            <TrendCard key={trend.id} trend={trend} />
+          ))}
+        </TrendFeed>
 
         <section className="mx-auto max-w-6xl px-5 pt-16 sm:px-8">
           <div className="mb-6 flex items-end justify-between">

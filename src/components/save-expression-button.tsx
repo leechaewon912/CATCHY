@@ -18,9 +18,9 @@ export function SaveExpressionButton({
     toggleBookmark({
       id: expression.id,
       phrase: expression.phrase,
-      meaning: expression.meaning,
-      example: expression.example,
-      exampleTranslation: expression.exampleTranslation,
+      meaning: expression.meaningKo,
+      example: expression.exampleEn,
+      exampleTranslation: expression.exampleKo,
       trendId: expression.trendId,
       trendTitle,
       savedAt: new Date().toISOString(),

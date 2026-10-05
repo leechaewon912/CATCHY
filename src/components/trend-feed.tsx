@@ -1,22 +1,27 @@
 "use client";
 
-import { useState } from "react";
-import { TrendCard } from "@/components/trend-card";
-import type { Category, Trend } from "@/lib/mock-data";
+import { useState, type ReactNode } from "react";
+import type { Category } from "@/lib/mock-data";
 
-const filters: (Category | "전체")[] = [
-  "전체", "음악", "영화·시리즈", "밈·인터넷", "라이프스타일", "테크·게임", "스포츠",
-];
+const filters: (Category | "전체")[] = ["전체", "글로벌 이슈", "디지털 권리", "과학·우주"];
 
-export function TrendFeed({ trends }: { trends: Trend[] }) {
+export function TrendFeed({
+  trends,
+  children,
+}: {
+  trends: { id: string; category: Category }[];
+  children: ReactNode[];
+}) {
   const [selected, setSelected] = useState<Category | "전체">("전체");
-  const filtered = selected === "전체" ? trends : trends.filter((trend) => trend.category === selected);
+  const visibleIndexes = trends
+    .map((_, index) => index)
+    .filter((index) => selected === "전체" || trends[index].category === selected);
 
   return (
     <section className="mx-auto max-w-6xl px-5 pt-16 sm:px-8" aria-labelledby="trend-feed-heading">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <h2 id="trend-feed-heading" className="text-xl font-black tracking-tight text-white sm:text-2xl">오늘의 글로벌 트렌드</h2>
-        <span className="text-xs text-white/50" role="status" aria-live="polite">{selected} · {filtered.length}개 트렌드</span>
+        <span className="text-xs text-white/50" role="status" aria-live="polite">{selected} · {visibleIndexes.length}개 트렌드</span>
       </div>
       <div className="-mx-5 mb-6 flex gap-2 overflow-x-auto px-5 pb-2 sm:mx-0 sm:flex-wrap sm:px-0" role="group" aria-label="트렌드 카테고리">
         {filters.map((category) => (
@@ -27,8 +32,8 @@ export function TrendFeed({ trends }: { trends: Trend[] }) {
         ))}
       </div>
       <div id="trend-results" className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((trend) => <TrendCard key={trend.id} trend={trend} />)}
-        {filtered.length === 0 && <p className="col-span-full py-12 text-center text-white/50">아직 이 카테고리의 트렌드가 없어요.</p>}
+        {visibleIndexes.map((index) => children[index])}
+        {visibleIndexes.length === 0 && <p className="col-span-full py-12 text-center text-white/50">아직 이 카테고리의 트렌드가 없어요.</p>}
       </div>
     </section>
   );

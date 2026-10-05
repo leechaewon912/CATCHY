@@ -30,13 +30,13 @@ export function TrendCard({ trend }: { trend: Trend }) {
           {trend.title}
         </h3>
         <p className="line-clamp-2 text-sm leading-relaxed text-white/55">
-          {trend.summary}
+          {trend.koreanSummary}
         </p>
 
         <div className="mt-auto flex items-center justify-between pt-2 font-mono text-[11px] uppercase tracking-widest text-white/40">
-          <span>{trend.sourcesCount}개 매체 종합</span>
+          <span>출처 {trend.sources.length}개</span>
           <span className="rounded-full border border-lime-300/40 px-2 py-1 text-lime-300">
-            표현 {trend.expressionsCount}개
+            표현 {trend.expressions.length}개
           </span>
         </div>
       </div>

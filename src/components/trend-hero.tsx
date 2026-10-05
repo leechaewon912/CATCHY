@@ -32,16 +32,14 @@ export function TrendHero({ trend }: { trend: Trend }) {
           </h1>
 
           <p className="max-w-2xl text-base leading-relaxed text-black/80 sm:text-lg">
-            {trend.summary}
+            {trend.koreanSummary}
           </p>
 
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3 pt-2">
             <div className="flex items-center gap-4 font-mono text-xs uppercase tracking-widest text-black/70">
-              <span>{trend.sourcesCount}개 매체 종합</span>
+              <span>출처 {trend.sources.length}개</span>
               <span>·</span>
-              <span>{trend.readTime} 읽기</span>
-              <span>·</span>
-              <span>표현 {trend.expressionsCount}개</span>
+              <span>표현 {trend.expressions.length}개</span>
             </div>
           </div>
 

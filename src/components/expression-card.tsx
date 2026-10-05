@@ -3,7 +3,7 @@ import Link from "next/link";
 import { categoryStyles, type Expression } from "@/lib/mock-data";
 
 export function ExpressionCard({ expression }: { expression: Expression }) {
-  const style = categoryStyles[expression.sourceCategory];
+  const style = categoryStyles[expression.category];
 
   return (
     <Link
@@ -14,7 +14,7 @@ export function ExpressionCard({ expression }: { expression: Expression }) {
         <span
           className={`rounded-full px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-widest text-black ${style.tag}`}
         >
-          {expression.sourceCategory}
+          {expression.category}
         </span>
       </div>
 
@@ -23,7 +23,7 @@ export function ExpressionCard({ expression }: { expression: Expression }) {
       </p>
 
       <p className="text-sm font-semibold text-lime-300">
-        {expression.meaning}
+        {expression.meaningKo}
       </p>
 
       <div className="h-px bg-white/10" />
@@ -33,7 +33,7 @@ export function ExpressionCard({ expression }: { expression: Expression }) {
           <span className="font-mono text-[11px] uppercase tracking-widest text-white/35">
             사용 상황{" "}
           </span>
-          {expression.situation}
+          {expression.usageSituation}
         </p>
         <p>
           <span className="font-mono text-[11px] uppercase tracking-widest text-white/35">

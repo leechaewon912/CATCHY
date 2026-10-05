@@ -3,12 +3,14 @@ import { notFound } from "next/navigation";
 
 import { ExpressionDetailCard } from "@/components/expression-detail-card";
 import {
+  ArrowDownIcon,
   ArrowLeftIcon,
   ArrowUpRightIcon,
   SparkleIcon,
 } from "@/components/icons";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { highlightExpressionsInText } from "@/lib/highlight-expressions";
 import {
   categoryStyles,
   getExpressionsByTrendId,
@@ -66,18 +68,55 @@ export default async function TrendDetailPage(
               </h1>
 
               <p className="max-w-2xl text-base leading-relaxed text-black/80 sm:text-lg">
-                {trend.summary}
+                {trend.koreanSummary}
               </p>
 
               <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 font-mono text-xs uppercase tracking-widest text-black/70">
-                <span>{trend.sourcesCount}개 매체 종합</span>
+                <span>출처 {trend.sources.length}개</span>
                 <span>·</span>
-                <span>{trend.readTime} 읽기</span>
-                <span>·</span>
-                <span>표현 {trend.expressionsCount}개</span>
+                <span>표현 {trend.expressions.length}개</span>
               </div>
             </div>
           </div>
+        </section>
+
+        <section
+          className="mx-auto max-w-4xl px-5 pt-10 sm:px-8"
+          aria-labelledby="event-summary-heading"
+        >
+          <h2 id="event-summary-heading" className="text-xl font-black tracking-tight text-white sm:text-2xl">
+            무슨 일이 있었나요?
+          </h2>
+          <p className="mt-2 mb-5 text-sm text-white/45">
+            영어로 먼저 읽고, 한국어로 내용을 확인해 보세요. <span className="text-lime-300">라임색 밑줄</span>로
+            표시된 부분을 누르면 아래에서 배우는 표현으로 바로 이동해요.
+          </p>
+          <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
+            <div className="p-6 sm:p-8">
+              <h3 className="mb-3 text-xs font-bold tracking-widest text-lime-300">
+                EN · 영어 요약
+              </h3>
+              <p lang="en" className="text-base leading-8 text-white/90 sm:text-lg">
+                {highlightExpressionsInText(trend.englishSummary, trendExpressions)}
+              </p>
+            </div>
+            <div className="border-t border-white/10 bg-white/[0.02] p-6 sm:p-8">
+              <h3 className="mb-3 text-xs font-bold tracking-widest text-lime-300">
+                KO · 한국어 요약
+              </h3>
+              <p lang="ko" className="text-base leading-8 text-white/75">
+                {trend.koreanSummary}
+              </p>
+            </div>
+          </div>
+
+          <a
+            href="#sources"
+            className="mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded text-sm font-semibold text-lime-300 transition-colors hover:text-lime-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300"
+          >
+            출처 {trend.sources.length}개 보기
+            <ArrowDownIcon className="h-3.5 w-3.5" />
+          </a>
         </section>
 
         {/* 2. 왜 화제인지 */}
@@ -93,40 +132,60 @@ export default async function TrendDetailPage(
         </section>
 
         {/* 3. 참고 출처 */}
-        <section className="mx-auto max-w-4xl px-5 pt-8 sm:px-8">
+        <section
+          id="sources"
+          className="mx-auto max-w-4xl scroll-mt-24 px-5 pt-8 sm:px-8"
+        >
           <h2 className="mb-1 text-lg font-black tracking-tight text-white sm:text-xl">
-            참고한 뉴스 출처
+            참고한 공개 출처
           </h2>
           <p className="mb-5 text-sm text-white/45">
-            AI가 아래 매체의 보도를 종합해 이 트렌드를 재구성했어요. 전문은
-            원문에서 확인해 주세요.
+            이 콘텐츠는 공개 출처를 참고해 CATCHY가 영어 학습용으로 재구성한
+            요약입니다. 원문 전문은 각 출처 링크에서 확인해 주세요.
           </p>
           <ul className="flex flex-col gap-3">
             {trend.sources.map((source) => (
-              <li key={source.url}>
-                <a
-                  href={source.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4 transition-colors hover:border-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300"
-                >
+              <li
+                key={source.originalUrl}
+                className="rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4"
+              >
+                <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <p className="font-mono text-[11px] uppercase tracking-widest text-white/40">
-                      {source.outlet}
+                      {source.sourceName}
                     </p>
-                    <p className="mt-1 truncate text-sm font-semibold text-white/85">
-                      {source.title}
+                    <p className="mt-1 text-sm font-semibold text-white/85">
+                      {source.originalTitle}
                     </p>
                   </div>
-                  <ArrowUpRightIcon className="h-4 w-4 shrink-0 text-white/30 transition-colors group-hover:text-lime-300" />
-                </a>
+                  <a
+                    href={source.originalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-white/15 px-3.5 py-2 text-xs font-bold text-white/70 transition-colors hover:border-lime-300 hover:text-lime-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300"
+                  >
+                    원문 보기
+                    <ArrowUpRightIcon className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  </a>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-white/10 pt-3 text-xs text-white/40">
+                  <span>{source.publishedAt}</span>
+                  {source.licenseUrl ? (
+                    <a
+                      href={source.licenseUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="cursor-pointer text-white/50 underline decoration-white/20 underline-offset-2 transition-colors hover:text-lime-300"
+                    >
+                      {source.licenseName}
+                    </a>
+                  ) : (
+                    <span>{source.licenseName}</span>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-xs text-white/30">
-            원문 링크는 데모용 임시 주소이며, 실제 서비스에서는 각 매체의
-            원문 기사로 연결됩니다.
-          </p>
         </section>
 
         {/* 4-6. 표현 3개 + 의미/뉘앙스/사용 상황/예문 + 저장 버튼 */}
