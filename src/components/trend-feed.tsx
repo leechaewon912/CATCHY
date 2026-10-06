@@ -3,7 +3,18 @@
 import { useState, type ReactNode } from "react";
 import type { Category } from "@/lib/mock-data";
 
-const filters: (Category | "전체")[] = ["전체", "글로벌 이슈", "디지털 권리", "과학·우주"];
+// mock-data.ts는 "server-only"라 클라이언트 컴포넌트에서 값을 import할 수
+// 없다. 카테고리 목록은 Category 타입과 나란히 여기서도 직접 유지한다.
+const filters: (Category | "전체")[] = [
+  "전체",
+  "음악",
+  "영화·시리즈",
+  "밈·인터넷",
+  "라이프스타일",
+  "테크·게임",
+  "스포츠",
+  "글로벌 이슈",
+];
 
 export function TrendFeed({
   trends,

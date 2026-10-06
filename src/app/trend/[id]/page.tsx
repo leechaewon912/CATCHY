@@ -15,7 +15,15 @@ import {
   categoryStyles,
   getExpressionsByTrendId,
   getTrendById,
+  type SourceType,
 } from "@/lib/mock-data";
+
+const SOURCE_TYPE_LABELS: Record<SourceType, string> = {
+  official: "공식",
+  platform: "플랫폼/차트",
+  media: "보조 매체",
+  reference: "참고 자료",
+};
 
 export default async function TrendDetailPage(
   props: PageProps<"/trend/[id]">,
@@ -68,7 +76,7 @@ export default async function TrendDetailPage(
               </h1>
 
               <p className="max-w-2xl text-base leading-relaxed text-black/80 sm:text-lg">
-                {trend.koreanSummary}
+                {trend.summary}
               </p>
 
               <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 font-mono text-xs uppercase tracking-widest text-black/70">
@@ -137,11 +145,11 @@ export default async function TrendDetailPage(
           className="mx-auto max-w-4xl scroll-mt-24 px-5 pt-8 sm:px-8"
         >
           <h2 className="mb-1 text-lg font-black tracking-tight text-white sm:text-xl">
-            참고한 공개 출처
+            참고 출처
           </h2>
           <p className="mb-5 text-sm text-white/45">
-            이 콘텐츠는 공개 출처를 참고해 CATCHY가 영어 학습용으로 재구성한
-            요약입니다. 원문 전문은 각 출처 링크에서 확인해 주세요.
+            이 콘텐츠는 여러 공개 출처를 참고해 CATCHY가 영어 학습용으로 새로
+            작성한 콘텐츠입니다. 원문 전문은 각 출처 링크에서 확인해 주세요.
           </p>
           <ul className="flex flex-col gap-3">
             {trend.sources.map((source) => (
@@ -151,9 +159,14 @@ export default async function TrendDetailPage(
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
-                    <p className="font-mono text-[11px] uppercase tracking-widest text-white/40">
-                      {source.sourceName}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[11px] uppercase tracking-widest text-white/40">
+                        {source.sourceName}
+                      </span>
+                      <span className="rounded-full border border-white/15 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-widest text-white/60">
+                        {SOURCE_TYPE_LABELS[source.sourceType]}
+                      </span>
+                    </div>
                     <p className="mt-1 text-sm font-semibold text-white/85">
                       {source.originalTitle}
                     </p>
@@ -170,18 +183,6 @@ export default async function TrendDetailPage(
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-white/10 pt-3 text-xs text-white/40">
                   <span>{source.publishedAt}</span>
-                  {source.licenseUrl ? (
-                    <a
-                      href={source.licenseUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="cursor-pointer text-white/50 underline decoration-white/20 underline-offset-2 transition-colors hover:text-lime-300"
-                    >
-                      {source.licenseName}
-                    </a>
-                  ) : (
-                    <span>{source.licenseName}</span>
-                  )}
                 </div>
               </li>
             ))}

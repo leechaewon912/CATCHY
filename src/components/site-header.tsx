@@ -38,9 +38,6 @@ export function SiteHeader() {
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="hidden rounded-full border border-white/15 px-3 py-1 font-mono text-xs uppercase tracking-widest text-white/60 sm:inline">
-            Lv.2 · 캐주얼
-          </span>
           <Link
             href="/bookmarks"
             aria-label="저장한 표현 보기"

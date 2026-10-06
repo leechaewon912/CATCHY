@@ -30,7 +30,7 @@ export function TrendCard({ trend }: { trend: Trend }) {
           {trend.title}
         </h3>
         <p className="line-clamp-2 text-sm leading-relaxed text-white/55">
-          {trend.koreanSummary}
+          {trend.summary}
         </p>
 
         <div className="mt-auto flex items-center justify-between pt-2 font-mono text-[11px] uppercase tracking-widest text-white/40">

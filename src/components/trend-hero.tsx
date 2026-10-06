@@ -32,7 +32,7 @@ export function TrendHero({ trend }: { trend: Trend }) {
           </h1>
 
           <p className="max-w-2xl text-base leading-relaxed text-black/80 sm:text-lg">
-            {trend.koreanSummary}
+            {trend.summary}
           </p>
 
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3 pt-2">
