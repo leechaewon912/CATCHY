@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans } from "next/font/google";
 
+import { AmplitudeInit } from "@/components/amplitude-init";
 import { BookmarksProvider } from "@/components/bookmarks-provider";
 
 import "./globals.css";
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ko" className={`${dmSans.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col font-sans">
+        <AmplitudeInit />
         <BookmarksProvider>{children}</BookmarksProvider>
       </body>
     </html>
