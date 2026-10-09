@@ -6,7 +6,7 @@ export function SiteFooter() {
           모든 트렌드 콘텐츠는 공개 출처를 참고해 CATCHY가 영어 학습용으로
           재구성한 것이며, 원문 출처 링크를 함께 제공합니다.
         </p>
-        <p>© 2026 CATCHY.</p>
+        <p>© 2026 CATCHY. Source discovery via GDELT.</p>
       </div>
     </footer>
   );

@@ -5,6 +5,8 @@ import {
   hasOfficialOrPlatformSource,
   isPublishableTrend,
 } from "@/lib/trend-validation";
+import { buildQuizFromExpressions } from "@/lib/server/build-quiz";
+import { toExpressions } from "@/lib/server/to-expressions";
 
 export { hasEnoughSources, hasOfficialOrPlatformSource, isPublishableTrend };
 
@@ -106,27 +108,11 @@ export const categoryStyles: Record<Category, { gradient: string; tag: string }>
   },
 };
 
-function buildQuiz(expressions: ExpressionSeed[]): QuizQuestionSeed[] {
-  return expressions.map((expression, index) => {
-    const distractorPool = expressions
-      .filter((_, i) => i !== index)
-      .map((e) => e.meaningKo);
-    const options = [expression.meaningKo, ...distractorPool];
-    const rotation = index % options.length;
-    const optionsKo = [...options.slice(rotation), ...options.slice(0, rotation)];
-    return {
-      phrase: expression.phrase,
-      correctMeaningKo: expression.meaningKo,
-      optionsKo,
-    };
-  });
-}
-
 const GENERATED_AT = "2026-10-06T00:00:00.000Z";
 const REVIEWED_AT = "2026-10-06T00:00:00.000Z";
 
 function makeTrend(input: Omit<Trend, "quiz">): Trend {
-  return { ...input, quiz: buildQuiz(input.expressions) };
+  return { ...input, quiz: buildQuizFromExpressions(input.expressions) };
 }
 
 // 사람이 직접 검토하고 작성한 트렌드 목록. 자동 수집·자동 게시 파이프라인은
@@ -696,26 +682,17 @@ export const trends: Trend[] = getPublishedTrends();
 export const allTrends: Trend[] = trends;
 export const heroTrend: Trend = trends[0];
 
-function attachContext(trend: Trend): Expression[] {
-  return trend.expressions.map((expression, index) => ({
-    ...expression,
-    id: `${trend.id}-expr-${index}`,
-    trendId: trend.id,
-    category: trend.category,
-  }));
-}
-
 export function getTrendById(id: string): Trend | undefined {
   return trends.find((trend) => trend.id === id);
 }
 
 export function getExpressionsByTrendId(trendId: string): Expression[] {
   const trend = getTrendById(trendId);
-  return trend ? attachContext(trend) : [];
+  return trend ? toExpressions(trend) : [];
 }
 
 export const featuredExpressions: Expression[] = trends.flatMap((trend) => {
-  const [first] = attachContext(trend);
+  const [first] = toExpressions(trend);
   return first ? [first] : [];
 });
 

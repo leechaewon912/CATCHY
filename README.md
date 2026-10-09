@@ -29,6 +29,230 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## GDELT-based daily trend collection
+
+CATCHY can collect trend candidates from the public [GDELT DOC 2.0
+API](https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/) (no API
+key needed), cluster same-issue articles, keep only clusters backed by
+2+ distinct domains, generate stub English-learning content (no OpenAI
+key configured yet — see `src/lib/server/generate-trend-draft.ts`), and
+upsert up to 3 published trends per category into Supabase. See
+`src/lib/server/collect-trends.ts` for the pipeline and
+`supabase/schema.sql` for the table shapes.
+
+### Setup
+
+1. Copy `.env.example` to `.env.local` and fill in
+   `NEXT_PUBLIC_SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`.
+2. Add an `ADMIN_CRON_SECRET` to `.env.local` (not committed — generate
+   one with `openssl rand -hex 32`). Both collection routes return 401
+   without a matching bearer token.
+3. Run `supabase/schema.sql` in the Supabase SQL Editor once.
+
+### ⚠️ Don't repeatedly test against real GDELT
+
+GDELT's rate limiting turned out to be much stricter in practice than
+its own docs ("one request every ~5 seconds") suggest — repeated manual
+testing during development got this network's egress IP throttled with
+persistent `HTTP 429`s, and eventually connections were dropped
+outright at the TCP level (not just 429s). Treat the live endpoint as a
+scarce, shared resource:
+
+- Prefer `?category=<one category>` for local testing (one GDELT
+  request instead of seven).
+- Leave several minutes between manual runs — don't loop/retry quickly
+  even if a run comes back empty.
+- A single 429 or "please limit requests" response aborts the *entire*
+  run and saves nothing (see "Rate-limit behavior" below) — that's
+  expected, not a bug, and retrying immediately will likely just get
+  rate-limited again.
+
+### Trigger collection manually
+
+Full run (all 7 categories, time-budget-limited — see below):
+
+```bash
+curl -X POST http://localhost:3000/api/admin/collect-trends \
+  -H "Authorization: Bearer $ADMIN_CRON_SECRET"
+```
+
+Single category (preferred for local testing — one GDELT request):
+
+```bash
+curl -X POST "http://localhost:3000/api/admin/collect-trends?category=%EA%B8%80%EB%A1%9C%EB%B2%8C%20%EC%9D%B4%EC%8A%88" \
+  -H "Authorization: Bearer $ADMIN_CRON_SECRET"
+```
+
+(`%EA%B8%80...` is `글로벌 이슈` URL-encoded — any of the 7 category
+strings works: 음악, 영화·시리즈, 밈·인터넷, 라이프스타일, 테크·게임,
+스포츠, 글로벌 이슈.)
+
+First N categories instead of one specific one:
+
+```bash
+curl -X POST "http://localhost:3000/api/admin/collect-trends?limitCategories=1" \
+  -H "Authorization: Bearer $ADMIN_CRON_SECRET"
+```
+
+Each returns a JSON report with, per category, how many GDELT articles
+were fetched, how many clusters were found, which trend ids got
+published, and how many clusters were skipped for having fewer than 2
+distinct domains — plus `abortedDueToRateLimit` and `skippedCategories`
+(see below).
+
+### Rate-limit behavior
+
+`src/lib/server/gdelt.ts`'s `fetchGdeltArticlesForCategory` throws
+`GdeltRateLimitedError` specifically for `HTTP 429` or a "please limit
+requests" response body (never for network errors/timeouts/malformed
+JSON — those stay non-fatal and just count as 0 articles for that
+category). `runDailyTrendCollection` (`src/lib/server/collect-trends.ts`)
+treats that as fatal for the *whole run*: it stops immediately and
+saves nothing to Supabase, including categories that succeeded earlier
+in the same run — a run that got rate-limited partway through isn't a
+trustworthy sample, so it's all-or-nothing rather than a partial save.
+The response reflects this with `"abortedDueToRateLimit": true` and
+`"rateLimitedCategory"`, and every category's `published` array comes
+back empty even if clusters were found before the abort.
+
+Separately, if a run's internal time budget (40s by default, leaving
+headroom under a 60s `maxDuration`) runs out before all requested
+categories are attempted, that's treated as a normal, healthy outcome —
+whatever was already collected for earlier categories *is* saved, and
+the unattempted ones show up in `"skippedCategories"` with
+`"abortedDueToRateLimit": false`.
+
+### Verify data landed in Supabase
+
+In the Supabase SQL Editor:
+
+```sql
+select id, category, title, status, generated_at
+from trends
+order by generated_at desc
+limit 10;
+
+select trend_id, source_name, source_type, original_url
+from trend_sources
+where trend_id = '<a trend id from above>';
+```
+
+### Verify the homepage picks it up
+
+Open [http://localhost:3000](http://localhost:3000) after a successful
+collection run. The home feed and `/trend/[id]` pages read Supabase
+first (`src/lib/server/trend-repository.ts`) and only fall back to the
+hand-written trends in `src/lib/mock-data.ts` if Supabase has nothing
+publishable — so newly collected trends should appear alongside (or
+instead of) the mock ones immediately, no rebuild needed.
+
+### Deploying to Vercel
+
+#### Required environment variables
+
+Set these in the Vercel project (Settings → Environment Variables)
+before deploying — without them, Supabase reads/writes and the
+collection routes' auth check all fail the same way they do locally
+without `.env.local`:
+
+| Variable | Required for | Notes |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | reading/writing Supabase from server code | safe to expose; see `src/lib/server/supabase-client.ts` |
+| `SUPABASE_SERVICE_ROLE_KEY` | reading/writing Supabase from server code | **server-only**, bypasses RLS — never prefix with `NEXT_PUBLIC_` |
+| `ADMIN_CRON_SECRET` | both collection routes return 401 without it | generate with `openssl rand -hex 32`; use the *same* value as `CRON_SECRET` below |
+
+Optional but recommended:
+
+| Variable | Required for | Notes |
+|---|---|---|
+| `CRON_SECRET` | letting Vercel Cron auto-authenticate | Vercel automatically sends `Authorization: Bearer $CRON_SECRET` when invoking cron jobs if this exact-named var exists. Set it to the **same value** as `ADMIN_CRON_SECRET` so `/api/cron/daily-trends`'s bearer check (which reads `ADMIN_CRON_SECRET`) passes. Without this, the daily cron invocation will get 401'd — the schedule will still fire, it just won't be authorized. |
+
+No GDELT env var is needed — the DOC 2.0 API is public and unauthenticated.
+
+#### Cron schedule
+
+`vercel.json` is already configured for 09:00 KST daily:
+
+```json
+{
+  "crons": [{ "path": "/api/cron/daily-trends", "schedule": "0 0 * * *" }]
+}
+```
+
+`0 0 * * *` is cron syntax for "00:00 every day" in **UTC** (Vercel
+Cron schedules are always UTC) — `00:00 UTC = 09:00 KST` (UTC+9, no
+DST), so this matches "매일 한국시간 오전 9시" as requested. No change
+needed; just confirm in the Vercel dashboard (Settings → Cron Jobs)
+that the job shows up after deploying.
+
+#### Manual test after deploying
+
+Once deployed and the env vars above are set, test from the production
+URL (replace with your actual Vercel domain) — this uses a *different*
+egress IP than local dev, so it isn't affected by the rate-limit/block
+this sandboxed network hit during development:
+
+```bash
+# Single category first — safest first test, only one GDELT request
+curl -X POST "https://<your-project>.vercel.app/api/admin/collect-trends?category=%EA%B8%80%EB%A1%9C%EB%B2%8C%20%EC%9D%B4%EC%8A%88" \
+  -H "Authorization: Bearer $ADMIN_CRON_SECRET"
+
+# Full run, once the single-category test looks healthy
+curl -X POST "https://<your-project>.vercel.app/api/admin/collect-trends" \
+  -H "Authorization: Bearer $ADMIN_CRON_SECRET"
+```
+
+Then re-run the Supabase SQL and homepage checks above, against the
+deployed Supabase project and `https://<your-project>.vercel.app`.
+
+**Still don't loop/retry this quickly, even against the production
+URL** — see "⚠️ Don't repeatedly test against real GDELT" above; a
+fresh egress IP just means you're starting from zero violations, not
+that the rate limit doesn't apply.
+
+### Timing, time budget, and Vercel Hobby's 60s limit
+
+GDELT categories are always fetched sequentially, never in parallel,
+with at least `GDELT_REQUEST_SPACING_MS` (8s) between requests
+(`src/lib/server/gdelt.ts`). On top of that, `runDailyTrendCollection`
+won't start a new category once `timeBudgetMs` (40s by default) has
+elapsed since the run started — so a run always wraps up with enough
+headroom under both routes' `maxDuration = 60` (the Vercel Hobby plan's
+cap) for Supabase writes and response serialization, even if every
+fetch takes the full 15s timeout. In the worst case this means only
+~2-3 of the 7 categories get attempted per invocation; the rest show up
+in `"skippedCategories"` and get picked up on the next run (see "Rate-
+limit behavior" above for why that's different from a rate-limit
+abort, which saves nothing). If GDELT consistently can't cover all 7
+categories in one daily run, consider triggering
+`/api/cron/daily-trends?limitCategories=n` more than once a day instead
+of raising the time budget.
+
+In practice, testing from this sandboxed dev network during
+development got persistent `HTTP 429`s even with 10-45s between
+individual requests — stricter than GDELT's "one request every ~5
+seconds" docs suggest — and eventually connections were refused/timed
+out at the TCP level entirely (confirmed with a bare `curl`, independent
+of any of this app's code), most likely because the egress IP had
+accumulated enough violations to get temporarily blocked. If you hit
+that, don't retry in a loop — wait at least several minutes, or test
+from a different network (e.g. the deployed Vercel function's egress
+IP, or your own machine instead of a shared/sandboxed one). A quick
+`curl https://api.gdeltproject.org/api/v2/doc/doc?query=election&mode=artlist&format=json&timespan=24h&maxrecords=5`
+confirms whether it's your network being throttled before assuming a
+code issue.
+
+### Scope notes
+
+- Only GDELT is used — no NewsData.io/NewsAPI/Guardian API, no API key
+  for any external news source.
+- Only metadata is read/stored (title, url, domain, sourceCountry,
+  seendate, language) — never article bodies, images, or thumbnails.
+- `title`/`summary`/`englishSummary`/`koreanSummary`/`whyTrending`/
+  `expressions` are always CATCHY's own stub copy, never derived from
+  article text — see the comment at the top of
+  `src/lib/server/generate-trend-draft.ts`.
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.

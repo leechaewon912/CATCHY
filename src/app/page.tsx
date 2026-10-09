@@ -5,9 +5,17 @@ import { SiteHeader } from "@/components/site-header";
 import { TrendCard } from "@/components/trend-card";
 import { TrendFeed } from "@/components/trend-feed";
 import { TrendHero } from "@/components/trend-hero";
-import { featuredExpressions, heroTrend, trends } from "@/lib/mock-data";
+import { getHomeTrends } from "@/lib/server/trend-repository";
+import { toExpressions } from "@/lib/server/to-expressions";
 
-export default function Home() {
+export default async function Home() {
+  const trends = await getHomeTrends();
+  const heroTrend = trends[0];
+  const featuredExpressions = trends.flatMap((trend) => {
+    const [first] = toExpressions(trend);
+    return first ? [first] : [];
+  });
+
   return (
     <div className="flex min-h-full flex-col bg-[#0a0a0b]">
       <SiteHeader />

@@ -11,12 +11,8 @@ import {
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { highlightExpressionsInText } from "@/lib/highlight-expressions";
-import {
-  categoryStyles,
-  getExpressionsByTrendId,
-  getTrendById,
-  type SourceType,
-} from "@/lib/mock-data";
+import { categoryStyles, type SourceType } from "@/lib/mock-data";
+import { getTrendDetail, getTrendExpressions } from "@/lib/server/trend-repository";
 
 const SOURCE_TYPE_LABELS: Record<SourceType, string> = {
   official: "공식",
@@ -29,14 +25,14 @@ export default async function TrendDetailPage(
   props: PageProps<"/trend/[id]">,
 ) {
   const { id } = await props.params;
-  const trend = getTrendById(id);
+  const trend = await getTrendDetail(id);
 
   if (!trend) {
     notFound();
   }
 
   const style = categoryStyles[trend.category];
-  const trendExpressions = getExpressionsByTrendId(trend.id);
+  const trendExpressions = await getTrendExpressions(trend.id);
 
   return (
     <div className="flex min-h-full flex-col bg-[#0a0a0b]">
