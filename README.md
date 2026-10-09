@@ -238,9 +238,38 @@ accumulated enough violations to get temporarily blocked. If you hit
 that, don't retry in a loop — wait at least several minutes, or test
 from a different network (e.g. the deployed Vercel function's egress
 IP, or your own machine instead of a shared/sandboxed one). A quick
-`curl https://api.gdeltproject.org/api/v2/doc/doc?query=election&mode=artlist&format=json&timespan=24h&maxrecords=5`
+`curl https://api.gdeltproject.org/api/v2/doc/doc?query=election&mode=artlist&format=json&timespan=72h&maxrecords=5`
 confirms whether it's your network being throttled before assuming a
 code issue.
+
+### Query/timespan tuning (why queries look simple)
+
+After deploying and running real (non-throttled, `HTTP 200`) requests
+against production, GDELT came back with a clean `{}` — no `articles`
+key, no error, no throttle message — for queries like
+`(protest OR election OR climate OR "human rights")` with
+`timespan=24h` and `sort=hybridrel`. Confirmed via a direct `curl`
+independent of this app's code, so it wasn't a bug on our end — GDELT's
+index for a narrow window + quoted-phrase + multi-OR query combination
+can just be sparse at a given moment.
+
+In response, `src/lib/server/gdelt.ts` now uses:
+- **72h timespan** (was 24h) — more room for clustering to find 2+
+  domains on the same story.
+- **Simple 1-2 keyword queries, no quoted phrases** (e.g. `music OR
+  concert` instead of `(music OR album OR concert OR grammy OR
+  "billboard chart")`) — quoted phrases require an exact match, which
+  was likely the main cause of the empty results.
+- **No explicit `sort`** (was `hybridrel`) — defaults to GDELT's native
+  `datedesc`; result order doesn't matter since everything gets
+  clustered anyway.
+- **Explicit logging** for the `{}`/empty-`articles`-array case
+  (`fetchGdeltArticlesForCategory`) so "0 articles" shows up in logs
+  with a reason, distinguishable from a silent failure.
+
+Published-per-category stays capped at 3 but isn't a target — 0, 1, or
+2 published trends for a category in a given run is expected whenever
+fewer qualifying (2+ distinct domain) clusters turn up, not a bug.
 
 ### Scope notes
 

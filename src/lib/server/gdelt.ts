@@ -14,17 +14,27 @@ const GDELT_DOC_ENDPOINT = "https://api.gdeltproject.org/api/v2/doc/doc";
 const REQUEST_TIMEOUT_MS = 15_000;
 const MAX_RECORDS_PER_CATEGORY = 150;
 
-// English-language keyword queries per CATCHY category. Kept broad
-// enough to surface candidates, narrowed later by clustering +
-// publishability checks (distinct domains, official/platform presence).
+// Widened from 24h after seeing clean (non-throttled) `{}` responses —
+// GDELT's index for a narrow 24h window can simply be sparse for a given
+// query at a given moment. 72h gives clustering more to work with while
+// still being "recent" for a daily trend feed.
+const DEFAULT_TIMESPAN = "72h";
+
+// Simple, single/double-keyword queries — no quoted multi-word phrases.
+// Quoted phrases require an exact match, which stacked on top of a
+// multi-OR query made results disappear even outside of rate-limiting
+// (confirmed by curling GDELT directly and getting a clean `{}`, not a
+// 429). Plain keywords cast a wider net; clustering + the 2-distinct-
+// domain gate downstream are what keep quality in check, not query
+// precision.
 export const CATEGORY_QUERIES: Record<Category, string> = {
-  "음악": '(music OR album OR concert OR grammy OR "billboard chart")',
-  "영화·시리즈": '(movie OR film OR "box office" OR netflix OR "tv series")',
-  "밈·인터넷": '(meme OR viral OR "internet trend" OR tiktok)',
-  "라이프스타일": '(fashion OR celebrity OR "red carpet" OR lifestyle trend)',
-  "테크·게임": '("AI model" OR "tech launch" OR "video game" OR gaming)',
-  "스포츠": '(NBA OR soccer OR championship OR "sports trade")',
-  "글로벌 이슈": "(protest OR election OR climate OR \"human rights\")",
+  "음악": "music OR concert",
+  "영화·시리즈": "movie OR film",
+  "밈·인터넷": "viral OR meme",
+  "라이프스타일": "celebrity OR fashion",
+  "테크·게임": "technology OR gaming",
+  "스포츠": "sports OR championship",
+  "글로벌 이슈": "protest OR election",
 };
 
 // English slug per category, used for trend ids / cluster keys —
@@ -91,14 +101,17 @@ type GdeltApiResponse = {
   articles?: GdeltApiArticle[];
 };
 
+// No explicit `sort` — defaults to GDELT's native "datedesc". `hybridrel`
+// (relevance-ranked) was dropped after it coincided with clean `{}`
+// responses for multi-OR queries; datedesc is simpler to reason about
+// and clustering doesn't care about result order anyway.
 function buildGdeltUrl(query: string): string {
   const params = new URLSearchParams({
     query,
     mode: "artlist",
     format: "json",
-    timespan: "24h",
+    timespan: DEFAULT_TIMESPAN,
     maxrecords: String(MAX_RECORDS_PER_CATEGORY),
-    sort: "hybridrel",
   });
   return `${GDELT_DOC_ENDPOINT}?${params.toString()}`;
 }
@@ -157,8 +170,21 @@ export async function fetchGdeltArticlesForCategory(
     return [];
   }
 
-  const articles = payload.articles ?? [];
-  return articles
+  if (!payload.articles) {
+    // A clean `{}` (no "articles" key, no error, no throttle message) is
+    // GDELT's normal way of saying "nothing matched" — not a bug on our
+    // end. Logged so a run of all-zero categories is distinguishable
+    // from a silent failure when reading logs later.
+    console.log(`[gdelt] ${category}: 0 articles (no "articles" key — query/timespan likely too narrow right now)`);
+    return [];
+  }
+
+  if (payload.articles.length === 0) {
+    console.log(`[gdelt] ${category}: 0 articles (empty "articles" array)`);
+    return [];
+  }
+
+  return payload.articles
     .filter((article) => article.title && article.url && article.domain)
     .map((article) => ({
       title: article.title!.trim(),

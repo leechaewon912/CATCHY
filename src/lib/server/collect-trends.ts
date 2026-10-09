@@ -12,6 +12,9 @@ import {
 import { generateTrendDraft } from "@/lib/server/generate-trend-draft";
 import { upsertTrend, type UpsertTrendInput } from "@/lib/server/db/save-trends";
 
+// Ceiling, not a target — 0, 1, or 2 published per category is a normal
+// outcome when GDELT has fewer qualifying (2+ domain) clusters that
+// run, not a failure. Nothing downstream assumes exactly 3.
 const MAX_PUBLISHED_PER_CATEGORY = 3;
 const MIN_DISTINCT_DOMAINS = 2;
 const CLUSTER_SIMILARITY_THRESHOLD = 0.3;
