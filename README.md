@@ -40,24 +40,26 @@ upsert up to 3 published trends per category into Supabase. See
 `src/lib/server/collect-trends.ts` for the pipeline and
 `supabase/schema.sql` for the table shapes.
 
-### Current status (as of 2026-10-09) — waiting on tomorrow's cron
+### Current status (as of 2026-10-10) — waiting on the next scheduled cron
 
 Deployed to Vercel (`catchy-three.vercel.app`), env vars set, Supabase
 permissions fixed, auth/pipeline/abort-on-rate-limit logic all verified
 working end-to-end against production. **Not yet verified: a real,
 non-throttled GDELT response with actual articles.**
 
-Today's manual testing (local sandbox + production) used up enough of
-GDELT's rate-limit headroom on both networks that every later attempt
-came back `429`/`abortedDueToRateLimit: true` — including after
-widening the timespan to 72h and simplifying the queries (see "Query
-timespan tuning" below), so that fix itself is still unconfirmed with
-real data. Decision: stop manual retries for today and let tomorrow's
-scheduled cron (`vercel.json`, `0 0 * * *` UTC = 09:00 KST) be the
-first real attempt — it'll hit GDELT from a cold, untested window
-instead of one we've already been hammering.
+Manual testing against production (`POST
+/api/admin/collect-trends?category=글로벌 이슈`) on 2026-10-10 around
+01:16 KST (`2026-10-09T16:16:27Z`) came back
+`abortedDueToRateLimit: true` / `rateLimitedCategory: "글로벌 이슈"`
+again — same pattern as the local-sandbox testing described below,
+now also reproduced from production's own egress IP. Decision: **no
+more manual `/api/admin/collect-trends` calls today.** Let the
+scheduled cron (`vercel.json`, `0 0 * * *` UTC = 09:00 KST,
+`/api/cron/daily-trends`) be the only trigger going forward, and check
+its result after it fires — rather than continuing to spend down the
+same rate-limit window with manual retries.
 
-**How to check tomorrow, after 09:00 KST:**
+**How to check after the next scheduled run (09:00 KST):**
 
 1. Vercel dashboard → the project → Deployments/Functions logs →
    `/api/cron/daily-trends` — confirm it ran and check the JSON
