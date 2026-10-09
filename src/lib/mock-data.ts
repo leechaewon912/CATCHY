@@ -91,6 +91,13 @@ export type Trend = {
   status: "draft" | "published";
   generatedAt: string;
   reviewedAt: string | null;
+  // Neither is populated anywhere yet (no DB column, no mock value) —
+  // when/if a real trending-ness score or editorial rank is added, the
+  // home hero/feed ordering in trend-repository.ts picks it up
+  // automatically. Until then, ordering falls back to source count then
+  // recency.
+  trendScore?: number;
+  rank?: number;
 };
 
 // DESIGN.md's palette is 99% achromatic with a single reserved accent
@@ -810,7 +817,4 @@ export const featuredExpressions: Expression[] = trends.flatMap((trend) => {
 
 export const quizStats = {
   questionCount: 3,
-  estimatedMinutes: 1,
-  reviewDue: trends.length * 3,
-  streakDays: 5,
 };

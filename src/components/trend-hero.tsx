@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { ArrowUpRightIcon, SparkleIcon } from "@/components/icons";
+import { ArrowUpRightIcon } from "@/components/icons";
 import type { Trend } from "@/lib/mock-data";
 
 export function TrendHero({ trend }: { trend: Trend }) {
@@ -8,13 +8,7 @@ export function TrendHero({ trend }: { trend: Trend }) {
     <section className="mx-auto max-w-6xl px-5 pt-8 sm:px-8 sm:pt-12">
       <div className="surface-dark p-8 sm:p-12">
         <div className="flex flex-col gap-6">
-          <div className="flex items-center gap-2">
-            <span className="badge-filled">{trend.category}</span>
-            <span className="flex items-center gap-1 text-[12px] text-mist">
-              <SparkleIcon className="h-3.5 w-3.5" />
-              AI 요약
-            </span>
-          </div>
+          <span className="badge-filled w-fit">{trend.category}</span>
 
           <h1 className="max-w-3xl text-[40px] font-semibold leading-[1.28] tracking-normal text-snow sm:text-[56px] sm:leading-[1.28]">
             {trend.title}
@@ -23,14 +17,6 @@ export function TrendHero({ trend }: { trend: Trend }) {
           <p className="max-w-2xl text-[15px] leading-relaxed text-mist sm:text-[18px]">
             {trend.summary}
           </p>
-
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 pt-2">
-            <div className="flex items-center gap-4 text-[12px] text-ash">
-              <span>출처 {trend.sources.length}개</span>
-              <span>·</span>
-              <span>표현 {trend.expressions.length}개</span>
-            </div>
-          </div>
 
           <Link
             href={`/trend/${trend.id}`}

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
 import { QuizClient, type QuizQuestionWithExpression } from "@/app/quiz/quiz-client";
+import { QuizEntryClient, type QuizPickerTrend } from "@/app/quiz/quiz-entry-client";
 import { ArrowLeftIcon } from "@/components/icons";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -91,9 +92,18 @@ export default async function QuizPage({
 }
 
 function QuizTrendPicker({ trends }: { trends: Trend[] }) {
-  const quizzableTrends = trends.filter(
-    (trend) => trend.expressions.length >= MIN_EXPRESSIONS_FOR_QUIZ,
-  );
+  // Plain, serializable summaries only — the client component can't
+  // import mock-data.ts's Trend value (it's "server-only"), and doesn't
+  // need the full trend (sources, quiz, etc.) anyway.
+  const quizzableTrends: QuizPickerTrend[] = trends
+    .filter((trend) => trend.expressions.length >= MIN_EXPRESSIONS_FOR_QUIZ)
+    .map((trend) => ({
+      id: trend.id,
+      title: trend.title,
+      category: trend.category,
+      summary: trend.summary,
+      expressionCount: trend.expressions.length,
+    }));
 
   return (
     <div className="flex min-h-full flex-col bg-paper">
@@ -117,37 +127,7 @@ function QuizTrendPicker({ trends }: { trends: Trend[] }) {
             트렌드별로 배운 표현만 모아서 짧게 복습할 수 있어요.
           </p>
 
-          {quizzableTrends.length === 0 ? (
-            <p className="mt-10 text-[14px] text-fog">
-              아직 퀴즈를 만들 수 있는 트렌드가 없어요. 잠시 후 다시 확인해주세요.
-            </p>
-          ) : (
-            <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {quizzableTrends.map((trend) => (
-                <Link
-                  key={trend.id}
-                  href={`/quiz?trend=${trend.id}`}
-                  className="surface-card group flex cursor-pointer flex-col transition-colors hover:border-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
-                >
-                  <div className="p-5 pb-0">
-                    <span className={CATEGORY_BADGE_CLASS}>{trend.category}</span>
-                  </div>
-
-                  <div className="flex flex-1 flex-col gap-3 p-5">
-                    <h2 className="text-[18px] font-semibold leading-snug text-obsidian transition-colors group-hover:text-graphite">
-                      {trend.title}
-                    </h2>
-                    <p className="line-clamp-2 text-[14px] leading-relaxed text-fog">
-                      {trend.summary}
-                    </p>
-                    <p className="mt-auto text-[12px] text-fog">
-                      표현 {trend.expressions.length}개
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
+          <QuizEntryClient trends={quizzableTrends} />
         </section>
       </main>
 

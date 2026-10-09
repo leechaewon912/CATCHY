@@ -8,6 +8,7 @@ import {
   ArrowUpRightIcon,
   SparkleIcon,
 } from "@/components/icons";
+import { RecordTrendView } from "@/components/record-trend-view";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { highlightExpressionsInText } from "@/lib/highlight-expressions";
@@ -35,6 +36,7 @@ export default async function TrendDetailPage(
 
   return (
     <div className="flex min-h-full flex-col bg-paper">
+      <RecordTrendView trendId={trend.id} />
       <SiteHeader />
 
       <main className="flex-1">

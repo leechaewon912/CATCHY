@@ -48,19 +48,6 @@ export function ArrowUpRightIcon({ className }: IconProps) {
   );
 }
 
-export function FlameIcon({ className }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M12 2c1.2 2.6-1.6 4.2-1.6 6.8 0 1.2.8 2 1.8 2s1.8-.9 1.6-2.1c1.8 1.4 3.2 3.7 3.2 6.1a5 5 0 1 1-10 0c0-3.6 2.4-5.6 5-12.8Z" />
-    </svg>
-  );
-}
-
 export function ArrowLeftIcon({ className }: IconProps) {
   return (
     <svg
