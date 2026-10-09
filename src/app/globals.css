@@ -66,6 +66,21 @@ body {
   color: var(--foreground);
 }
 
+/* Hides the horizontal scrollbar on the featured-expressions carousel
+   while keeping the element natively scrollable (mouse-drag/trackpad/
+   touch swipe all still work) — only the chevron buttons and native
+   swipe are meant to be visible ways to move it. */
+@layer utilities {
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /*
  * Component classes mirroring DESIGN.md's "Components" section 1:1, so
  * every page reuses the same handful of primitives instead of

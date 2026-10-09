@@ -137,7 +137,11 @@ export function highlightExpressionsInText(
 // Highlights every occurrence of a single phrase inside its own example
 // sentence (exampleEn/dailyExampleEn) — no link, since the phrase is
 // already on the card it's rendered in.
-export function highlightPhraseInText(text: string, phrase: string): ReactNode[] {
+export function highlightPhraseInText(
+  text: string,
+  phrase: string,
+  markClassName: string = "rounded bg-ember/15 px-0.5 font-semibold text-ember",
+): ReactNode[] {
   const regex = new RegExp(phraseToRegexSource(phrase), "gi");
 
   const nodes: ReactNode[] = [];
@@ -158,10 +162,7 @@ export function highlightPhraseInText(text: string, phrase: string): ReactNode[]
     }
 
     nodes.push(
-      <mark
-        key={`phrase-highlight-${key++}`}
-        className="rounded bg-ember/15 px-0.5 font-semibold text-ember"
-      >
+      <mark key={`phrase-highlight-${key++}`} className={markClassName}>
         {matchedText}
       </mark>,
     );
