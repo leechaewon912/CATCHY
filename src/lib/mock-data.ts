@@ -803,11 +803,6 @@ export function getTrendById(id: string): Trend | undefined {
   return trends.find((trend) => trend.id === id);
 }
 
-export function getExpressionsByTrendId(trendId: string): Expression[] {
-  const trend = getTrendById(trendId);
-  return trend ? toExpressions(trend) : [];
-}
-
 export const featuredExpressions: Expression[] = trends.flatMap((trend) => {
   const [first] = toExpressions(trend);
   return first ? [first] : [];
@@ -819,31 +814,3 @@ export const quizStats = {
   reviewDue: trends.length * 3,
   streakDays: 5,
 };
-
-export type QuizQuestion = {
-  id: string;
-  phrase: string;
-  correctMeaning: string;
-  options: string[];
-};
-
-export function buildQuizQuestions(params?: {
-  trendId?: string;
-  count?: number;
-}): QuizQuestion[] {
-  const pool = params?.trendId
-    ? trends.filter((trend) => trend.id === params.trendId)
-    : trends;
-
-  const allQuestions: QuizQuestion[] = pool.flatMap((trend) =>
-    trend.quiz.map((question, index) => ({
-      id: `${trend.id}-quiz-${index}`,
-      phrase: question.phrase,
-      correctMeaning: question.correctMeaningKo,
-      options: question.optionsKo,
-    })),
-  );
-
-  const count = params?.count ?? allQuestions.length;
-  return allQuestions.slice(0, count);
-}
