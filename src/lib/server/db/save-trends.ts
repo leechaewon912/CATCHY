@@ -95,6 +95,8 @@ export async function upsertTrend(input: UpsertTrendInput): Promise<void> {
         usage_situation: expression.usageSituation,
         example_en: expression.exampleEn,
         example_ko: expression.exampleKo,
+        comparison_phrase: expression.comparison?.phrase ?? null,
+        comparison_nuance_diff: expression.comparison?.nuanceDiff ?? null,
         sort_order: index,
       })),
     );

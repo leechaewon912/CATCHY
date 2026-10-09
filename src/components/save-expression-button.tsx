@@ -34,13 +34,13 @@ export function SaveExpressionButton({
       aria-label={saved ? `${expression.phrase} 저장 취소` : `${expression.phrase} 표현 저장`}
       onClick={handleClick}
       className={[
-        "flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300",
+        "flex shrink-0 cursor-pointer items-center gap-1.5 rounded-pills border px-3.5 py-2 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian",
         saved
-          ? "border-lime-300 bg-lime-300/10 text-lime-300"
-          : "border-white/15 text-white/60 hover:border-white/40 hover:text-white",
+          ? "border-obsidian bg-obsidian text-snow"
+          : "border-cloud text-fog hover:border-ash hover:text-graphite",
       ].join(" ")}
     >
-      <BookmarkIcon className={`h-3.5 w-3.5 ${saved ? "fill-lime-300" : "fill-none"}`} />
+      <BookmarkIcon className={`h-3.5 w-3.5 ${saved ? "fill-snow" : "fill-none"}`} />
       {saved ? "저장됨" : "저장"}
     </button>
   );

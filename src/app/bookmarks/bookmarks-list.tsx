@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { useBookmarks } from "@/components/bookmarks-provider";
 import { ArrowUpRightIcon } from "@/components/icons";
+import { highlightPhraseInText } from "@/lib/highlight-expressions";
 
 function formatSavedDate(iso: string): string {
   try {
@@ -22,18 +23,15 @@ export function BookmarksList() {
 
   if (bookmarks.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-4 rounded-3xl border border-white/10 bg-white/[0.03] p-10 text-center sm:p-14">
-        <p className="text-lg font-bold text-white">
+      <div className="surface-card flex flex-col items-center gap-4 p-10 text-center sm:p-14">
+        <p className="text-[18px] font-semibold text-obsidian">
           아직 저장한 표현이 없어요
         </p>
-        <p className="max-w-sm text-sm leading-relaxed text-white/50">
+        <p className="max-w-sm text-[14px] leading-relaxed text-fog">
           트렌드 상세 페이지에서 마음에 드는 영어 표현의 저장 버튼을 눌러
           여기에 모아보세요.
         </p>
-        <Link
-          href="/"
-          className="mt-2 inline-flex cursor-pointer items-center gap-2 rounded-full bg-lime-300 px-6 py-3 text-sm font-bold text-black transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0b] focus-visible:ring-lime-300"
-        >
+        <Link href="/" className="btn-primary mt-2">
           트렌드 피드로 가기
         </Link>
       </div>
@@ -45,40 +43,42 @@ export function BookmarksList() {
       {bookmarks.map((bookmark) => (
         <article
           key={bookmark.id}
-          className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 sm:p-8"
+          className="surface-card p-6 sm:p-8"
         >
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-2xl font-black leading-tight text-white sm:text-3xl">
+              <p className="text-[32px] font-semibold leading-tight text-obsidian">
                 &ldquo;{bookmark.phrase}&rdquo;
               </p>
-              <p className="mt-2 text-base font-semibold text-lime-300">
+              <p className="mt-2 text-[16px] font-medium text-graphite">
                 {bookmark.meaning}
               </p>
             </div>
             <button
               type="button"
               onClick={() => removeBookmark(bookmark.id)}
-              className="shrink-0 cursor-pointer rounded-full border border-white/15 px-3.5 py-2 text-xs font-bold text-white/60 transition-colors hover:border-rose-400 hover:text-rose-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300"
+              className="shrink-0 cursor-pointer rounded-pills border border-cloud px-3.5 py-2 text-[12px] font-medium text-fog transition-colors hover:border-iron hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
             >
               삭제
             </button>
           </div>
 
-          <div className="my-5 h-px bg-white/10" />
+          <div className="my-5 h-px bg-cloud" />
 
-          <div className="rounded-xl bg-white/[0.04] p-4">
-            <span className="mb-2 block font-mono text-[11px] uppercase tracking-widest text-white/35">
+          <div className="surface-card-subtle p-4">
+            <span className="mb-2 block text-[12px] text-fog">
               예문
             </span>
-            <p className="font-medium text-white">{bookmark.example}</p>
-            <p className="mt-1 text-white/50">{bookmark.exampleTranslation}</p>
+            <p className="font-medium text-graphite">
+              {highlightPhraseInText(bookmark.example, bookmark.phrase)}
+            </p>
+            <p className="mt-1 text-fog">{bookmark.exampleTranslation}</p>
           </div>
 
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 font-mono text-[11px] uppercase tracking-widest text-white/40">
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-[12px] text-fog">
             <Link
               href={`/trend/${bookmark.trendId}`}
-              className="group inline-flex cursor-pointer items-center gap-1 normal-case text-white/60 transition-colors hover:text-lime-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300"
+              className="group inline-flex cursor-pointer items-center gap-1 text-steel transition-colors hover:text-obsidian focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
             >
               {bookmark.trendTitle}
               <ArrowUpRightIcon className="h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />

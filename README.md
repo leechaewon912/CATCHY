@@ -40,6 +40,49 @@ upsert up to 3 published trends per category into Supabase. See
 `src/lib/server/collect-trends.ts` for the pipeline and
 `supabase/schema.sql` for the table shapes.
 
+### Current status (as of 2026-10-09) — waiting on tomorrow's cron
+
+Deployed to Vercel (`catchy-three.vercel.app`), env vars set, Supabase
+permissions fixed, auth/pipeline/abort-on-rate-limit logic all verified
+working end-to-end against production. **Not yet verified: a real,
+non-throttled GDELT response with actual articles.**
+
+Today's manual testing (local sandbox + production) used up enough of
+GDELT's rate-limit headroom on both networks that every later attempt
+came back `429`/`abortedDueToRateLimit: true` — including after
+widening the timespan to 72h and simplifying the queries (see "Query
+timespan tuning" below), so that fix itself is still unconfirmed with
+real data. Decision: stop manual retries for today and let tomorrow's
+scheduled cron (`vercel.json`, `0 0 * * *` UTC = 09:00 KST) be the
+first real attempt — it'll hit GDELT from a cold, untested window
+instead of one we've already been hammering.
+
+**How to check tomorrow, after 09:00 KST:**
+
+1. Vercel dashboard → the project → Deployments/Functions logs →
+   `/api/cron/daily-trends` — confirm it ran and check the JSON
+   response body it logged (or check Cron Jobs tab for the invocation
+   record). Look specifically at `abortedDueToRateLimit` and
+   `articlesFetched` per category.
+2. Supabase SQL Editor:
+   ```sql
+   select id, category, title, status, generated_at
+   from trends
+   order by generated_at desc
+   limit 10;
+   ```
+   Rows timestamped around 09:00 KST = the cron worked and GDELT
+   returned real articles this time.
+3. Open [https://catchy-three.vercel.app](https://catchy-three.vercel.app)
+   — if step 2 shows rows, the homepage should show those instead of
+   (or alongside) the mock-data trends.
+4. If it's still `0 articles`/`abortedDueToRateLimit` for every
+   category, that means either GDELT is still constrained for this
+   IP/time, or the query simplification needs further adjustment — not
+   a reason to immediately retry manually; let it ride to the next
+   day's run, or use `?category=<one>` sparingly rather than a full
+   manual run.
+
 ### Setup
 
 1. Copy `.env.example` to `.env.local` and fill in

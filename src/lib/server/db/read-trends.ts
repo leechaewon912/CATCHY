@@ -42,6 +42,10 @@ type ExpressionRow = {
   usage_situation: string;
   example_en: string;
   example_ko: string;
+  // Added after this table was first created — absent (undefined) on
+  // rows read before the column existed, not just null on new ones.
+  comparison_phrase?: string | null;
+  comparison_nuance_diff?: string | null;
   sort_order: number;
 };
 
@@ -69,6 +73,13 @@ function mapTrend(row: TrendRow, sourceRows: TrendSourceRow[], expressionRows: E
     usageSituation: expression.usage_situation,
     exampleEn: expression.example_en,
     exampleKo: expression.example_ko,
+    comparison:
+      expression.comparison_phrase && expression.comparison_nuance_diff
+        ? {
+            phrase: expression.comparison_phrase,
+            nuanceDiff: expression.comparison_nuance_diff,
+          }
+        : undefined,
   }));
 
   return {

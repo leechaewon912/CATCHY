@@ -95,6 +95,14 @@ create table if not exists public.expressions (
   created_at timestamptz not null default now()
 );
 
+-- A single commonly-confused "similar but different" expression plus a
+-- short explanation of the nuance difference (ExpressionComparison in
+-- src/lib/mock-data.ts). Nullable/optional on purpose — existing rows
+-- from before this field existed won't have it, and the app treats a
+-- missing comparison as "don't show that section" rather than an error.
+alter table public.expressions add column if not exists comparison_phrase text;
+alter table public.expressions add column if not exists comparison_nuance_diff text;
+
 -- Tables created via raw SQL (rather than the Table Editor UI) don't
 -- always inherit Supabase's usual default grants, which shows up as
 -- "permission denied for table trends" even when using the service role

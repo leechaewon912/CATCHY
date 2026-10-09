@@ -5,7 +5,7 @@ import { QuizClient } from "@/app/quiz/quiz-client";
 import { ArrowLeftIcon } from "@/components/icons";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { buildQuizQuestions, categoryStyles, getTrendById } from "@/lib/mock-data";
+import { buildQuizQuestions, CATEGORY_BADGE_CLASS, getTrendById } from "@/lib/mock-data";
 
 export const metadata: Metadata = {
   title: "오늘의 퀵 퀴즈 — CATCHY",
@@ -27,32 +27,28 @@ export default async function QuizPage({
   const backLabel = trend ? "트렌드로 돌아가기" : "홈으로 돌아가기";
 
   return (
-    <div className="flex min-h-full flex-col bg-[#0a0a0b]">
+    <div className="flex min-h-full flex-col bg-paper">
       <SiteHeader />
 
       <main className="flex-1">
         <section className="mx-auto max-w-2xl px-5 pt-8 pb-20 sm:px-8 sm:pt-12">
           <Link
             href={backHref}
-            className="mb-6 inline-flex cursor-pointer items-center gap-1.5 rounded text-sm font-medium text-white/50 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300"
+            className="mb-6 inline-flex cursor-pointer items-center gap-1.5 rounded text-[14px] font-normal text-fog transition-colors hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
           >
             <ArrowLeftIcon className="h-4 w-4" />
             {backLabel}
           </Link>
 
           {trend ? (
-            <span
-              className={`inline-block rounded-full px-3 py-1 font-mono text-xs font-bold uppercase tracking-widest text-black ${categoryStyles[trend.category].tag}`}
-            >
-              {trend.category}
-            </span>
+            <span className={CATEGORY_BADGE_CLASS}>{trend.category}</span>
           ) : (
-            <p className="font-mono text-xs font-bold uppercase tracking-widest text-lime-300">
+            <p className="text-[12px] font-medium text-ember">
               오늘의 퀵 퀴즈
             </p>
           )}
 
-          <h1 className="mt-2 text-3xl font-black tracking-tight text-white sm:text-4xl">
+          <h1 className="mt-2 text-[32px] font-semibold leading-tight text-obsidian sm:text-[40px]">
             {trend ? trend.title : "배운 표현, 짧게 체크하기"}
           </h1>
 

@@ -1,19 +1,126 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens sourced from DESIGN.md ("Awesomic — Style Reference").
+ * Cosmica isn't a real installed font, so per DESIGN.md's own
+ * substitution note, DM Sans (loaded in layout.tsx) stands in for it —
+ * everything else (colors, radii, spacing, component shapes) follows
+ * DESIGN.md's documented values directly.
+ */
 :root {
-  --background: #0a0a0b;
-  --foreground: #f5f5f2;
+  --color-obsidian: #09090b;
+  --color-graphite: #18181b;
+  --color-slate: #27272a;
+  --color-iron: #3f3f46;
+  --color-steel: #52525b;
+  --color-fog: #71717a;
+  --color-ash: #a1a1aa;
+  --color-mist: #d4d4d8;
+  --color-cloud: #ececee;
+  --color-paper: #f4f4f5;
+  --color-snow: #ffffff;
+  --color-ember: #ff5a00;
+  --color-magenta-spark: #fe45e2;
+
+  --background: var(--color-paper);
+  --foreground: var(--color-graphite);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans), "Apple SD Gothic Neo", "Malgun Gothic",
+
+  /* Additive — doesn't touch Tailwind's built-in palette. Enables
+     bg-obsidian / text-obsidian / border-obsidian / etc. for every
+     token above. */
+  --color-obsidian: var(--color-obsidian);
+  --color-graphite: var(--color-graphite);
+  --color-slate: var(--color-slate);
+  --color-iron: var(--color-iron);
+  --color-steel: var(--color-steel);
+  --color-fog: var(--color-fog);
+  --color-ash: var(--color-ash);
+  --color-mist: var(--color-mist);
+  --color-cloud: var(--color-cloud);
+  --color-paper: var(--color-paper);
+  --color-snow: var(--color-snow);
+  --color-ember: var(--color-ember);
+  --color-magenta-spark: var(--color-magenta-spark);
+
+  --font-sans: var(--font-dm-sans), "Apple SD Gothic Neo", "Malgun Gothic",
     sans-serif;
-  --font-mono: var(--font-geist-mono), "Apple SD Gothic Neo", monospace;
+
+  /* Named radii from DESIGN.md's "Tokens — Spacing & Shapes" table.
+     Additive next to Tailwind's default `rounded-*` scale — enables
+     rounded-cards / rounded-buttons / etc. */
+  --radius-cards: 36px;
+  --radius-icons: 40px;
+  --radius-pills: 10000px;
+  --radius-badges: 12px;
+  --radius-inputs: 14px;
+  --radius-buttons: 14px;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+/*
+ * Component classes mirroring DESIGN.md's "Components" section 1:1, so
+ * every page reuses the same handful of primitives instead of
+ * redefining card/button/badge styling per file.
+ */
+@layer components {
+  .surface-card {
+    @apply rounded-cards border border-cloud bg-snow;
+  }
+
+  .surface-card-subtle {
+    @apply rounded-2xl border border-cloud bg-[#fafafa];
+  }
+
+  .surface-dark {
+    @apply rounded-cards bg-graphite text-snow;
+  }
+
+  /* "Primary Action Button (Dark Filled)" */
+  .btn-primary {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-buttons bg-obsidian px-4 py-3 text-[14px] font-normal text-snow transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-paper focus-visible:ring-obsidian disabled:cursor-not-allowed disabled:opacity-50;
+    box-shadow:
+      inset 0 0.5px 0 0 rgba(255, 255, 255, 0.5),
+      inset 0 9px 14px -5px rgba(117, 123, 133, 0.4),
+      0 0 0 1.5px rgb(44, 46, 52),
+      0 4px 6px 0 rgba(0, 0, 0, 0.14);
+  }
+
+  /* "Ghost Action Button (White)" */
+  .btn-ghost {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-pills border border-iron bg-snow px-5 py-3 text-[14px] font-normal text-iron transition-colors hover:border-graphite hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-paper focus-visible:ring-obsidian;
+  }
+
+  /* "Neutral Pill Button (Light)" */
+  .btn-neutral {
+    @apply inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-buttons bg-[#fafafa] px-4 py-3 text-[14px] font-normal text-graphite transition-colors hover:bg-cloud focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-paper focus-visible:ring-obsidian;
+  }
+
+  /* "Tag Pill Badge" */
+  .badge-outline {
+    @apply inline-flex items-center gap-1 rounded-badges border border-cloud px-2 py-1 text-[12px] font-normal text-graphite;
+  }
+
+  /* "Filled Tag Badge" */
+  .badge-filled {
+    @apply inline-flex items-center gap-1 rounded-badges bg-iron px-2 py-1 text-[12px] font-normal text-[#fafafa];
+  }
+
+  /* "Orange Accent Badge" — reserved for sparse highlight/count chips only. */
+  .badge-accent {
+    @apply inline-flex items-center gap-1 rounded-badges bg-ember px-2 py-1 text-[12px] font-medium text-snow;
+  }
+
+  /* "Email Input Field" (reused for the quiz answer options' resting state) */
+  .field-input {
+    @apply rounded-inputs border border-cloud bg-snow px-4 py-3 text-[14px] text-graphite;
+  }
 }

@@ -36,6 +36,13 @@ export type TrendSource = {
   usageNote: string;
 };
 
+// 헷갈리기 쉬운 유사 표현 하나와, 단순 동의어가 아니라 둘의 뉘앙스가 어떻게
+// 다른지에 대한 짧은 설명.
+export type ExpressionComparison = {
+  phrase: string;
+  nuanceDiff: string;
+};
+
 export type ExpressionSeed = {
   phrase: string;
   meaningKo: string;
@@ -43,6 +50,15 @@ export type ExpressionSeed = {
   usageSituation: string;
   exampleEn: string;
   exampleKo: string;
+  // 트렌드 요약 속 예문과는 별개로, 일상 대화에서 쓸 수 있는 두 번째 예문.
+  // 아직 일부 기존 DB 행에는 채워지지 않았을 수 있어 선택 필드로 둔다 —
+  // 없으면 상세 페이지에서 두 번째 예문 블록을 그냥 생략한다.
+  dailyExampleEn?: string;
+  dailyExampleKo?: string;
+  // 마찬가지로 기존 DB 행과의 호환을 위해 선택 필드. GDELT 수집 파이프라인
+  // (generate-trend-draft.ts)은 항상 기본값을 채워 넣지만, 이 필드가 생기기
+  // 전에 저장된 행에는 없을 수 있다.
+  comparison?: ExpressionComparison;
 };
 
 export type Expression = ExpressionSeed & {
@@ -77,36 +93,11 @@ export type Trend = {
   reviewedAt: string | null;
 };
 
-export const categoryStyles: Record<Category, { gradient: string; tag: string }> = {
-  "음악": {
-    gradient: "from-pink-500 to-rose-400",
-    tag: "bg-pink-300",
-  },
-  "영화·시리즈": {
-    gradient: "from-indigo-500 to-blue-500",
-    tag: "bg-indigo-300",
-  },
-  "밈·인터넷": {
-    gradient: "from-lime-400 to-emerald-400",
-    tag: "bg-lime-300",
-  },
-  "라이프스타일": {
-    gradient: "from-violet-500 via-fuchsia-500 to-rose-500",
-    tag: "bg-fuchsia-300",
-  },
-  "테크·게임": {
-    gradient: "from-cyan-500 to-sky-400",
-    tag: "bg-cyan-300",
-  },
-  "스포츠": {
-    gradient: "from-orange-500 to-amber-400",
-    tag: "bg-amber-300",
-  },
-  "글로벌 이슈": {
-    gradient: "from-emerald-500 to-teal-400",
-    tag: "bg-emerald-300",
-  },
-};
+// DESIGN.md's palette is 99% achromatic with a single reserved accent
+// (never for general UI), so category badges no longer get a distinct
+// color per category — every category renders with the same neutral
+// "Tag Pill Badge" styling (see .badge-outline in globals.css).
+export const CATEGORY_BADGE_CLASS = "badge-outline";
 
 const GENERATED_AT = "2026-10-06T00:00:00.000Z";
 const REVIEWED_AT = "2026-10-06T00:00:00.000Z";
@@ -154,12 +145,18 @@ const ALL_TRENDS: Trend[] = [
     ],
     expressions: [
       {
-        phrase: "take [x] by storm",
+        phrase: "take [somewhere] by storm",
         meaningKo: "~을 순식간에 사로잡다, 강타하다",
         nuance: "짧은 시간 안에 폭발적인 인기를 얻었을 때 쓰는 표현이에요.",
         usageSituation: "연예/음악 뉴스, 공식 보도자료",
         exampleEn: "The single took global charts by storm within a week.",
         exampleKo: "그 싱글은 일주일 만에 글로벌 차트를 순식간에 사로잡았다.",
+        dailyExampleEn: "Her homemade kimchi took the office potluck by storm.",
+        dailyExampleKo: "그녀가 직접 담근 김치는 사무실 회식 자리를 순식간에 사로잡았다.",
+        comparison: {
+          phrase: "become popular",
+          nuanceDiff: "become popular는 그냥 인기를 얻었다는 뜻이고, take ... by storm은 그 인기가 아주 빠르고 강렬하게 퍼졌다는 느낌을 더해요.",
+        },
       },
       {
         phrase: "climb the charts",
@@ -168,15 +165,27 @@ const ALL_TRENDS: Trend[] = [
         usageSituation: "음악 뉴스 헤드라인",
         exampleEn: "Her solo track kept climbing the charts for weeks.",
         exampleKo: "그녀의 솔로 곡은 몇 주 동안 계속 차트를 올라갔다.",
+        dailyExampleEn: "My step count has been climbing the charts since I got a dog.",
+        dailyExampleKo: "강아지를 키우기 시작한 뒤로 내 걸음 수가 계속 올라가고 있다.",
+        comparison: {
+          phrase: "top the charts",
+          nuanceDiff: "top the charts는 이미 1위를 차지했다는 뜻이고, climb the charts는 아직 순위가 올라가는 중이라는 과정에 초점을 맞춰요.",
+        },
       },
       {
-        phrase: "cross over into [x]",
+        phrase: "cross over into [something]",
         meaningKo: "~ 영역으로 넘어가다, 진출하다",
         nuance:
           "원래 활동하던 영역을 넘어 새로운 시장이나 분야로 확장할 때 쓰는 표현이에요.",
         usageSituation: "음악/엔터테인먼트 분석 기사",
         exampleEn: "The song helped the group cross over into the global pop mainstream.",
         exampleKo: "그 노래는 그룹이 글로벌 팝 메인스트림으로 진출하는 데 도움을 줬다.",
+        dailyExampleEn: "He started as a chef but crossed over into running his own YouTube channel.",
+        dailyExampleKo: "그는 요리사로 시작했지만 자신의 유튜브 채널을 운영하는 쪽으로 넘어갔다.",
+        comparison: {
+          phrase: "branch out into [something]",
+          nuanceDiff: "branch out into는 원래 영역을 유지하면서 새 분야를 넓혀가는 느낌이고, cross over into는 원래 영역을 벗어나 다른 영역으로 옮겨가는 느낌이 더 강해요.",
+        },
       },
     ],
     status: "published",
@@ -222,24 +231,42 @@ const ALL_TRENDS: Trend[] = [
         usageSituation: "엔터테인먼트 산업 분석 기사",
         exampleEn: "The series finally broke through to a global audience.",
         exampleKo: "그 시리즈는 마침내 전세계 시청자에게 성공적으로 다가갔다.",
+        dailyExampleEn: "After months of practice, she finally broke through and nailed the dance routine.",
+        dailyExampleKo: "몇 달간의 연습 끝에 그녀는 마침내 그 춤 동작을 성공적으로 해냈다.",
+        comparison: {
+          phrase: "succeed",
+          nuanceDiff: "succeed는 그냥 성공했다는 일반적인 말이고, break through는 원래 뚫기 어려웠던 장벽을 넘어섰다는 느낌을 담고 있어요.",
+        },
       },
       {
-        phrase: "put [x] on the map",
+        phrase: "put [somewhere] on the map",
         meaningKo: "~을 유명하게 만들다, 주목받게 만들다",
         nuance:
           "이전에 잘 알려지지 않았던 대상이 어떤 사건을 계기로 널리 알려질 때 쓰는 표현이에요.",
         usageSituation: "산업/문화 분석 기사",
         exampleEn: "This one show put the country's streaming industry on the map.",
         exampleKo: "이 작품 하나가 그 나라의 스트리밍 산업을 널리 알렸다.",
+        dailyExampleEn: "That one food truck put our neighborhood on the map.",
+        dailyExampleKo: "그 푸드트럭 하나가 우리 동네를 유명하게 만들었다.",
+        comparison: {
+          phrase: "make [somewhere] famous",
+          nuanceDiff: "make famous는 단순히 유명해졌다는 뜻이고, put on the map은 원래 잘 알려지지 않았던 곳이 처음으로 주목받기 시작했다는 느낌이 강해요.",
+        },
       },
       {
-        phrase: "set the stage for [x]",
+        phrase: "set the stage for [something]",
         meaningKo: "~을 위한 발판을 마련하다",
         nuance:
           "앞으로 일어날 일의 토대나 분위기를 미리 만들어줄 때 쓰는 표현이에요.",
         usageSituation: "리뷰, 산업 전망 기사",
         exampleEn: "Its success set the stage for a wave of similar international shows.",
         exampleKo: "그 작품의 성공은 비슷한 해외 작품들이 이어질 발판을 마련했다.",
+        dailyExampleEn: "Finishing the first draft set the stage for the rest of the project.",
+        dailyExampleKo: "초안을 끝낸 것이 나머지 프로젝트를 위한 발판을 마련했다.",
+        comparison: {
+          phrase: "pave the way for [something]",
+          nuanceDiff: "pave the way for는 다음 일이 더 쉽게 일어나도록 길을 닦아준다는 뜻이고, set the stage for는 다음 일이 일어날 상황이나 분위기를 조성했다는 쪽에 더 가까워요.",
+        },
       },
     ],
     status: "published",
@@ -286,6 +313,12 @@ const ALL_TRENDS: Trend[] = [
         usageSituation: "온라인 트렌드 분석",
         exampleEn: "The phrase gained traction long before any dictionary noticed it.",
         exampleKo: "그 표현은 어떤 사전이 주목하기 훨씬 전부터 이미 확산되고 있었다.",
+        dailyExampleEn: "My new morning routine is finally gaining traction.",
+        dailyExampleKo: "내 새로운 아침 루틴이 마침내 자리를 잡아가고 있다.",
+        comparison: {
+          phrase: "become popular",
+          nuanceDiff: "become popular는 그냥 인기가 많아졌다는 뜻이고, gain traction은 점점 더 많은 지지나 관심을 서서히 얻어가는 과정을 강조해요.",
+        },
       },
       {
         phrase: "enter the mainstream",
@@ -295,14 +328,26 @@ const ALL_TRENDS: Trend[] = [
         usageSituation: "문화 트렌드 기사",
         exampleEn: "Slang terms often enter the mainstream once older generations start using them too.",
         exampleKo: "속어는 보통 기성세대도 쓰기 시작하면 대중적으로 자리잡는다.",
+        dailyExampleEn: "Oat milk has really entered the mainstream at coffee shops now.",
+        dailyExampleKo: "오트밀크는 이제 카페에서 완전히 대중적으로 자리잡았다.",
+        comparison: {
+          phrase: "go viral",
+          nuanceDiff: "go viral은 짧은 시간에 폭발적으로 퍼졌다는 뜻이고, enter the mainstream은 시간이 걸리더라도 결국 주류 문화로 받아들여졌다는 뜻이에요.",
+        },
       },
       {
-        phrase: "start out as [x]",
+        phrase: "start out as [something]",
         meaningKo: "처음엔 ~으로 시작하다",
         nuance: "지금과 다른 모습에서 출발했음을 설명할 때 쓰는 표현이에요.",
         usageSituation: "배경 설명, 기원 소개",
         exampleEn: "The word started out as a joke among a small group of users.",
         exampleKo: "그 단어는 처음엔 소수 사용자들 사이의 농담으로 시작했다.",
+        dailyExampleEn: "This recipe started out as a joke between roommates.",
+        dailyExampleKo: "이 레시피는 원래 룸메이트들 사이의 농담으로 시작됐다.",
+        comparison: {
+          phrase: "begin as [something]",
+          nuanceDiff: "begin as는 그냥 출발점을 설명하는 중립적인 말이고, start out as는 지금과는 다른 모습에서 시작해 변화해왔다는 느낌을 담고 있어요.",
+        },
       },
     ],
     status: "published",
@@ -348,6 +393,12 @@ const ALL_TRENDS: Trend[] = [
         usageSituation: "연예 뉴스, 시상식 리뷰",
         exampleEn: "One guest's outfit stole the spotlight from the winners.",
         exampleKo: "한 게스트의 옷차림이 수상자들보다 더 큰 스포트라이트를 가로챘다.",
+        dailyExampleEn: "My little brother stole the spotlight at dinner with his jokes.",
+        dailyExampleKo: "내 남동생은 농담으로 저녁 식사 자리에서 스포트라이트를 가로챘다.",
+        comparison: {
+          phrase: "stand out",
+          nuanceDiff: "stand out은 단순히 눈에 띈다는 뜻이고, steal the spotlight는 원래 주인공이 받아야 할 관심까지 가져온다는 뉘앙스가 있어요.",
+        },
       },
       {
         phrase: "turn heads",
@@ -357,6 +408,12 @@ const ALL_TRENDS: Trend[] = [
         usageSituation: "패션/스타일 기사",
         exampleEn: "Her bold look turned heads the moment she arrived.",
         exampleKo: "그녀의 과감한 룩은 도착하는 순간부터 시선을 끌었다.",
+        dailyExampleEn: "Her new haircut turned heads at the office this morning.",
+        dailyExampleKo: "그녀의 새 머리 스타일은 오늘 아침 사무실에서 시선을 끌었다.",
+        comparison: {
+          phrase: "attract attention",
+          nuanceDiff: "attract attention은 중립적으로 관심을 끈다는 뜻이고, turn heads는 놀라움이나 감탄 때문에 사람들이 반응적으로 쳐다본다는 느낌이 더 강해요.",
+        },
       },
       {
         phrase: "split opinion",
@@ -366,6 +423,12 @@ const ALL_TRENDS: Trend[] = [
         usageSituation: "리뷰, 반응 기사",
         exampleEn: "The outfit split opinion online almost instantly.",
         exampleKo: "그 옷차림은 거의 즉시 온라인에서 호불호가 갈렸다.",
+        dailyExampleEn: "The new coffee shop's prices really split opinion among my friends.",
+        dailyExampleKo: "그 새 카페의 가격은 내 친구들 사이에서 의견을 완전히 갈리게 했다.",
+        comparison: {
+          phrase: "spark debate",
+          nuanceDiff: "spark debate는 사람들이 그 주제로 활발히 논쟁하게 만든다는 뜻이고, split opinion은 찬성과 반대로 의견이 뚜렷이 둘로 나뉘는 결과에 초점을 맞춰요.",
+        },
       },
     ],
     status: "published",
@@ -404,31 +467,49 @@ const ALL_TRENDS: Trend[] = [
     ],
     expressions: [
       {
-        phrase: "put [x] through its paces",
+        phrase: "put [something] through its paces",
         meaningKo: "~의 성능을 실제로 테스트해보다",
         nuance:
           "새 도구나 모델이 실제로 잘 작동하는지 다양하게 시험해볼 때 쓰는 표현이에요.",
         usageSituation: "테크 리뷰",
         exampleEn: "Developers immediately put the new model through its paces.",
         exampleKo: "개발자들은 새 모델이 공개되자마자 바로 성능을 테스트해봤다.",
+        dailyExampleEn: "We put the new blender through its paces by making five smoothies in a row.",
+        dailyExampleKo: "우리는 스무디를 연달아 다섯 개 만들면서 새 블렌더의 성능을 테스트해봤다.",
+        comparison: {
+          phrase: "test [something] out",
+          nuanceDiff: "test out은 그냥 한번 써본다는 가벼운 느낌이고, put through its paces는 다양한 상황에서 제대로 작동하는지 꼼꼼히 시험해본다는 뜻이 강해요.",
+        },
       },
       {
-        phrase: "rack up [x]",
+        phrase: "rack up [something]",
         meaningKo: "~을 쌓아 올리다, 많이 모으다",
         nuance:
           "짧은 시간 안에 수치(다운로드 수, 조회수 등)가 빠르게 쌓일 때 쓰는 표현이에요.",
         usageSituation: "테크 뉴스, 성과 보도",
         exampleEn: "The model racked up thousands of downloads within a day.",
         exampleKo: "그 모델은 하루 만에 수천 건의 다운로드를 쌓아 올렸다.",
+        dailyExampleEn: "He racked up a ton of likes on his very first post.",
+        dailyExampleKo: "그는 첫 게시물에서 엄청난 좋아요를 쌓아 올렸다.",
+        comparison: {
+          phrase: "get a lot of [something]",
+          nuanceDiff: "get a lot of는 그냥 많이 얻었다는 중립적인 표현이고, rack up은 짧은 시간 안에 수치가 빠르게 쌓여가는 속도감을 담고 있어요.",
+        },
       },
       {
-        phrase: "give [x] a real shot",
+        phrase: "give [something] a real shot",
         meaningKo: "~을 진지하게 한번 써보다, 제대로 시도해보다",
         nuance:
           "이전에는 크게 고려하지 않았던 선택지를 이제는 진지하게 검토해볼 때 쓰는 표현이에요.",
         usageSituation: "개발자 커뮤니티, 리뷰",
         exampleEn: "More teams are finally giving open-source models a real shot.",
         exampleKo: "더 많은 팀들이 마침내 오픈소스 모델을 진지하게 써보고 있다.",
+        dailyExampleEn: "I finally gave meal prepping a real shot this week.",
+        dailyExampleKo: "나는 이번 주에 마침내 밀프렙을 진지하게 한번 해봤다.",
+        comparison: {
+          phrase: "try [something]",
+          nuanceDiff: "try는 그냥 한번 시도해본다는 뜻이고, give something a real shot은 이전엔 가볍게 여겼던 걸 이번엔 제대로 진지하게 시도해본다는 느낌이 있어요.",
+        },
       },
     ],
     status: "published",
@@ -472,15 +553,27 @@ const ALL_TRENDS: Trend[] = [
         usageSituation: "SNS, 스포츠 뉴스",
         exampleEn: "The trade news blew up social media within minutes.",
         exampleKo: "그 트레이드 소식은 몇 분 만에 SNS에서 난리가 났다.",
+        dailyExampleEn: "The video of my cat blew up overnight.",
+        dailyExampleKo: "내 고양이 영상이 하룻밤 사이에 폭발적으로 화제가 됐다.",
+        comparison: {
+          phrase: "go viral",
+          nuanceDiff: "go viral은 온라인에서 빠르게 공유되며 퍼진다는 뜻이고, blow up은 꼭 온라인이 아니어도 화제성 자체가 갑자기 폭발적으로 커진다는 데 초점이 있어요.",
+        },
       },
       {
-        phrase: "weigh in on [x]",
+        phrase: "weigh in on [something]",
         meaningKo: "~에 대해 의견을 내다, 한마디 하다",
         nuance:
           "전문가나 유명인이 특정 이슈에 대한 자신의 의견을 밝힐 때 쓰는 표현이에요.",
         usageSituation: "분석 기사, 전문가 코멘트",
         exampleEn: "Analysts quickly weighed in on who won the trade.",
         exampleKo: "분석가들은 누가 이번 트레이드에서 이득을 봤는지에 대해 바로 의견을 냈다.",
+        dailyExampleEn: "Everyone in the group chat weighed in on where to eat.",
+        dailyExampleKo: "단체 채팅방의 모두가 어디서 먹을지에 대해 의견을 냈다.",
+        comparison: {
+          phrase: "comment on [something]",
+          nuanceDiff: "comment on은 그냥 어떤 주제에 대해 말한다는 중립적인 표현이고, weigh in on은 관련자가 자신의 입장을 분명히 밝힌다는 느낌이 강해요.",
+        },
       },
       {
         phrase: "come out ahead",
@@ -490,6 +583,12 @@ const ALL_TRENDS: Trend[] = [
         usageSituation: "스포츠 분석, 비즈니스 기사",
         exampleEn: "Most analysts agreed that the smaller team came out ahead.",
         exampleKo: "대부분의 분석가들은 그 작은 구단이 더 이득을 봤다고 평가했다.",
+        dailyExampleEn: "After splitting the bill fairly, we both came out ahead.",
+        dailyExampleKo: "비용을 공평하게 나눈 뒤 우리 둘 다 더 나은 결과를 얻었다.",
+        comparison: {
+          phrase: "win",
+          nuanceDiff: "win은 명확한 승패가 있는 상황에서 이겼다는 뜻이고, come out ahead는 꼭 승부가 아니어도 비교했을 때 더 유리한 쪽이 됐다는 뜻으로 더 넓게 쓰여요.",
+        },
       },
     ],
     status: "published",
@@ -537,24 +636,42 @@ const ALL_TRENDS: Trend[] = [
         usageSituation: "시사 뉴스",
         exampleEn: "Thousands took to the streets to demand electoral reform.",
         exampleKo: "수천 명이 선거 제도 개혁을 요구하며 거리로 나섰다.",
+        dailyExampleEn: "Fans took to the streets to celebrate the team's win.",
+        dailyExampleKo: "팬들은 팀의 승리를 축하하기 위해 거리로 나섰다.",
+        comparison: {
+          phrase: "protest",
+          nuanceDiff: "protest는 반대 의사를 표현하는 행위 자체를 가리키고, take to the streets는 많은 사람이 실제로 거리에 나와 집단으로 행동하는 장면을 강조해요.",
+        },
       },
       {
-        phrase: "keep pace with [x]",
+        phrase: "keep pace with [something]",
         meaningKo: "~에 발맞추다, ~을 따라가다",
         nuance:
           "변화하는 상황이나 흐름에 맞춰 함께 변하고 있는지를 설명할 때 쓰는 표현이에요.",
         usageSituation: "시사 분석 기사",
         exampleEn: "Critics say election laws haven't kept pace with a younger population.",
         exampleKo: "비판가들은 선거법이 젊어진 인구 구조에 발맞추지 못했다고 말한다.",
+        dailyExampleEn: "My phone can barely keep pace with all the new apps I download.",
+        dailyExampleKo: "내 휴대폰은 내가 다운로드하는 새 앱들을 거의 따라가지 못한다.",
+        comparison: {
+          phrase: "catch up with [something]",
+          nuanceDiff: "catch up with는 뒤처진 상태에서 따라잡는다는 뜻이고, keep pace with는 처음부터 계속 같은 속도를 유지하며 따라간다는 뜻이에요.",
+        },
       },
       {
-        phrase: "shed light on [x]",
+        phrase: "shed light on [something]",
         meaningKo: "~을 조명하다, 밝히다",
         nuance:
           "잘 드러나지 않던 문제를 더 잘 이해할 수 있게 드러낼 때 쓰는 표현이에요.",
         usageSituation: "뉴스 분석, 보고서",
         exampleEn: "The protests shed light on a generational gap in political representation.",
         exampleKo: "그 시위는 정치적 대표성에서 나타나는 세대 간 간극을 조명했다.",
+        dailyExampleEn: "The documentary shed light on how my favorite coffee is actually grown.",
+        dailyExampleKo: "그 다큐멘터리는 내가 좋아하는 커피가 실제로 어떻게 재배되는지를 조명했다.",
+        comparison: {
+          phrase: "reveal [something]",
+          nuanceDiff: "reveal은 숨겨진 사실을 드러낸다는 뜻이고, shed light on은 이미 알려져 있었지만 잘 이해되지 않던 부분을 더 명확히 이해할 수 있게 해준다는 뉘앙스예요.",
+        },
       },
     ],
     status: "published",
@@ -592,7 +709,7 @@ const ALL_TRENDS: Trend[] = [
         exampleKo: "전체 이야기는 아직 준비 중이다.",
       },
       {
-        phrase: "hold off on [x]",
+        phrase: "hold off on [something]",
         meaningKo: "~을 미루다, 보류하다",
         nuance: "아직 확실하지 않아서 결정이나 발표를 뒤로 미룰 때 쓰는 표현이에요.",
         usageSituation: "편집/검토 프로세스",
@@ -600,7 +717,7 @@ const ALL_TRENDS: Trend[] = [
         exampleKo: "편집자들은 출처가 더 확인될 때까지 게시를 보류하기로 했다.",
       },
       {
-        phrase: "fall short of [x]",
+        phrase: "fall short of [something]",
         meaningKo: "~에 미치지 못하다",
         nuance: "어떤 기준이나 조건을 충분히 만족시키지 못했을 때 쓰는 표현이에요.",
         usageSituation: "검토/평가 기준 설명",
@@ -642,7 +759,7 @@ const ALL_TRENDS: Trend[] = [
     ],
     expressions: [
       {
-        phrase: "slip through [x]",
+        phrase: "slip through [something]",
         meaningKo: "~을 모르게 통과하다, 빠져나가다",
         nuance: "점검 과정에서 걸러지지 않고 넘어갈 뻔했을 때 쓰는 표현이에요.",
         usageSituation: "품질 관리, 검토 프로세스",
@@ -650,7 +767,7 @@ const ALL_TRENDS: Trend[] = [
         exampleKo: "잘못 표시된 초안이 검토 과정을 거의 통과할 뻔했다.",
       },
       {
-        phrase: "catch [x]",
+        phrase: "catch [something]",
         meaningKo: "~을 발견하다, 잡아내다",
         nuance: "실수나 오류를 미리 발견해냈을 때 쓰는 표현이에요.",
         usageSituation: "검증/디버깅 설명",
@@ -658,7 +775,7 @@ const ALL_TRENDS: Trend[] = [
         exampleKo: "검증 함수가 홈 화면에 노출되기 전에 그 실수를 잡아냈다.",
       },
       {
-        phrase: "double-check [x]",
+        phrase: "double-check [something]",
         meaningKo: "~을 다시 한번 확인하다",
         nuance: "이미 확인한 내용을 한 번 더 점검할 때 쓰는 표현이에요.",
         usageSituation: "검토/편집 프로세스",

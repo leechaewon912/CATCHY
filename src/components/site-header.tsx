@@ -15,21 +15,21 @@ export function SiteHeader() {
   const bookmarkCount = bookmarks.length;
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0a0a0b]/90 backdrop-blur">
+    <header className="sticky top-0 z-50 bg-snow/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
         <div className="flex items-center gap-8">
           <Link
             href="/"
-            className="rounded text-2xl font-black tracking-tight text-white transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300"
+            className="rounded text-[20px] font-semibold tracking-tight text-obsidian transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
           >
-            CATCHY<span className="text-lime-300">.</span>
+            CATCHY<span className="text-ember">.</span>
           </Link>
           <nav className="hidden items-center gap-6 md:flex">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.label}
                 href={item.href}
-                className="rounded text-sm font-medium text-white/45 transition-colors hover:text-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300"
+                className="rounded text-[14px] font-normal text-fog transition-colors hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
               >
                 {item.label}
               </Link>
@@ -41,11 +41,11 @@ export function SiteHeader() {
           <Link
             href="/bookmarks"
             aria-label="저장한 표현 보기"
-            className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/15 text-white/70 transition-colors hover:border-white/40 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-300"
+            className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-cloud text-fog transition-colors hover:border-ash hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
           >
             <BookmarkIcon className="h-4 w-4" />
             {bookmarkCount > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-lime-300 px-1 font-mono text-[10px] font-bold text-black">
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-ember px-1 text-[10px] font-medium text-snow">
                 {bookmarkCount}
               </span>
             )}
