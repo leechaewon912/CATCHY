@@ -17,19 +17,19 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 bg-snow/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
-        <div className="flex items-center gap-8">
+        <div className="flex min-w-0 items-center gap-4 sm:gap-8">
           <Link
             href="/"
-            className="rounded text-[20px] font-semibold tracking-tight text-obsidian transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
+            className="shrink-0 rounded text-[20px] font-semibold tracking-tight text-obsidian transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
           >
             CATCHY<span className="text-ember">.</span>
           </Link>
-          <nav className="hidden items-center gap-6 md:flex">
+          <nav className="flex items-center gap-3 sm:gap-6">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.label}
                 href={item.href}
-                className="rounded text-[14px] font-normal text-fog transition-colors hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
+                className="shrink-0 cursor-pointer rounded text-[13px] font-normal text-fog transition-colors hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian sm:text-[14px]"
               >
                 {item.label}
               </Link>
@@ -37,7 +37,7 @@ export function SiteHeader() {
           </nav>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-3">
           <Link
             href="/bookmarks"
             aria-label="저장한 표현 보기"
