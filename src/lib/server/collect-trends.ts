@@ -7,15 +7,59 @@ import {
   fetchGdeltArticlesForCategory,
   GDELT_REQUEST_SPACING_MS,
   GdeltRateLimitedError,
-  type GdeltArticle,
 } from "@/lib/server/gdelt";
-import { generateTrendDraft } from "@/lib/server/generate-trend-draft";
-import { upsertTrend, type UpsertTrendInput } from "@/lib/server/db/save-trends";
+import { fetchRssArticlesForCategory } from "@/lib/server/rss-collect";
+import { CURATED_RSS_DOMAINS } from "@/lib/server/rss-sources";
+import { generateTrendDraft, type GenerateTrendDraftOutput } from "@/lib/server/generate-trend-draft";
+import { generateTrendDraftWithLlm } from "@/lib/server/generate-trend-with-llm";
+import {
+  deleteOldestPublishedBeyondLimit,
+  fetchRecentPublishedClusterKeys,
+  upsertTrend,
+  type UpsertTrendInput,
+} from "@/lib/server/db/save-trends";
 
-// Ceiling, not a target — 0, 1, or 2 published per category is a normal
-// outcome when GDELT has fewer qualifying (2+ domain) clusters that
-// run, not a failure. Nothing downstream assumes exactly 3.
+export type CollectionSource = "rss" | "gdelt";
+
+// A courtesy pause between categories when using RSS — these are static
+// publisher files, not a throttled search API, so this is about not
+// bursting requests rather than defending against a documented limit
+// (contrast with GDELT_REQUEST_SPACING_MS below).
+const RSS_CATEGORY_SPACING_MS = 500;
+
+const USAGE_NOTE_BY_SOURCE: Record<CollectionSource, string> = {
+  rss: "언론사 공식 RSS로 발견된 출처 — 사실관계 교차 확인용으로만 참고하며, 원문 문장이나 이미지는 인용하지 않음.",
+  gdelt: "GDELT로 발견된 출처 — 사실관계 교차 확인용으로만 참고하며, 원문 문장이나 이미지는 인용하지 않음.",
+};
+
+// Shared input shape for clustering — intentionally narrower than either
+// RssArticle or GdeltArticle so clusterArticles works with either source
+// unmodified.
+type ClusterableArticle = {
+  title: string;
+  url: string;
+  domain: string;
+  publishedAt: string;
+};
+
+// Ceiling, not a target — 0, 1, or 2 *new* published per category in a
+// single run is a normal outcome when a run has fewer qualifying (2+
+// domain) clusters, not a failure. Nothing downstream assumes exactly 3.
 const MAX_PUBLISHED_PER_CATEGORY = 3;
+// Separate, stricter cap on the *total* published trends a category can
+// ever hold at once, enforced after every run by trimming the oldest
+// rows beyond this count (see deleteOldestPublishedBeyondLimit below).
+// Without this, a category that publishes 3/day would grow unbounded
+// since nothing else ever removes old trends.
+const MAX_TOTAL_PUBLISHED_PER_CATEGORY = 6;
+// How far back to look for "is this the same story already published"
+// when deciding whether a candidate cluster is a duplicate (see
+// isDuplicateClusterKey below). A cluster's key depends on which
+// article happened to anchor it that run (clusterKeyFromTokens), so the
+// same real-world story can get a different key on a same-day rerun or
+// the next day's run — comparing against a short recent window (not
+// just today) catches both.
+const DUPLICATE_CHECK_WINDOW_DAYS = 3;
 const MIN_DISTINCT_DOMAINS = 2;
 const CLUSTER_SIMILARITY_THRESHOLD = 0.3;
 const MAX_SOURCES_PER_TREND = 5;
@@ -112,7 +156,12 @@ function classifySourceType(domain: string): SourceType {
   ) {
     return "official";
   }
-  if (PLATFORM_DOMAINS.has(normalized)) {
+  // Curated RSS domains (src/lib/server/rss-sources.ts) were each
+  // individually vetted as a reputable outlet at curation time — that
+  // trust call already happened, so they satisfy the official/platform
+  // gate the same way a hand-picked GDELT domain would, without
+  // needing every one of them re-listed in PLATFORM_DOMAINS below.
+  if (PLATFORM_DOMAINS.has(normalized) || CURATED_RSS_DOMAINS.has(normalized)) {
     return "platform";
   }
   return "media";
@@ -140,7 +189,7 @@ function jaccardSimilarity(a: Set<string>, b: Set<string>): number {
 
 type ArticleCluster = {
   anchorTokens: Set<string>;
-  articles: GdeltArticle[];
+  articles: ClusterableArticle[];
 };
 
 export type TrendCluster = {
@@ -163,13 +212,18 @@ function clusterKeyFromTokens(tokens: Set<string>, fallbackTitle: string): strin
     .join("-");
 }
 
-// Groups GDELT articles that look like the same underlying story: each
-// incoming article joins the first existing cluster whose anchor title's
-// token set it's similar enough to (Jaccard >= threshold), otherwise it
-// starts a new cluster. The anchor stays fixed (the first article's
-// tokens) rather than growing with every addition, so clusters don't
-// drift onto a different topic as more articles join.
-export function clusterArticles(category: Category, articles: GdeltArticle[]): TrendCluster[] {
+// Groups same-story articles from either source (RSS or GDELT — both
+// satisfy ClusterableArticle) together: each incoming article joins the
+// first existing cluster whose anchor title's token set it's similar
+// enough to (Jaccard >= threshold), otherwise it starts a new cluster.
+// The anchor stays fixed (the first article's tokens) rather than
+// growing with every addition, so clusters don't drift onto a different
+// topic as more articles join.
+export function clusterArticles(
+  category: Category,
+  articles: ClusterableArticle[],
+  source: CollectionSource,
+): TrendCluster[] {
   const clusters: ArticleCluster[] = [];
 
   for (const article of articles) {
@@ -191,7 +245,7 @@ export function clusterArticles(category: Category, articles: GdeltArticle[]): T
   }
 
   return clusters.map((cluster) => {
-    const byDomain = new Map<string, GdeltArticle>();
+    const byDomain = new Map<string, ClusterableArticle>();
     for (const article of cluster.articles) {
       if (!byDomain.has(article.domain)) {
         byDomain.set(article.domain, article);
@@ -213,8 +267,7 @@ export function clusterArticles(category: Category, articles: GdeltArticle[]): T
         originalTitle: article.title,
         originalUrl: article.url,
         publishedAt: article.publishedAt,
-        usageNote:
-          "GDELT로 발견된 출처 — 사실관계 교차 확인용으로만 참고하며, 원문 문장이나 이미지는 인용하지 않음.",
+        usageNote: USAGE_NOTE_BY_SOURCE[source],
         domain: article.domain,
       }),
     );
@@ -234,17 +287,32 @@ export function clusterArticles(category: Category, articles: GdeltArticle[]): T
 // hasEnoughSources/hasOfficialOrPlatformSource gate (see
 // src/lib/trend-validation.ts), applied before any content is written.
 // Official/platform-backed clusters are preferred; within that, bigger
-// clusters (more corroborating domains) win. At most
-// MAX_PUBLISHED_PER_CATEGORY per category.
-export function selectPublishableClusters(clusters: TrendCluster[]): TrendCluster[] {
+// clusters (more corroborating domains) win. Deliberately NOT sliced to
+// MAX_PUBLISHED_PER_CATEGORY here — the caller slices after filtering
+// out duplicates of already-published stories, so a duplicate doesn't
+// waste one of the category's publish slots.
+export function rankPublishableClusters(clusters: TrendCluster[]): TrendCluster[] {
   return clusters
     .filter((cluster) => cluster.distinctDomainCount >= MIN_DISTINCT_DOMAINS)
     .sort((a, b) => {
       const officialDiff = Number(b.hasOfficialOrPlatform) - Number(a.hasOfficialOrPlatform);
       if (officialDiff !== 0) return officialDiff;
       return b.distinctDomainCount - a.distinctDomainCount;
-    })
-    .slice(0, MAX_PUBLISHED_PER_CATEGORY);
+    });
+}
+
+// A cluster's key is a handful of tokens from whichever article
+// happened to anchor it (clusterKeyFromTokens) — not a stable id for
+// the underlying story. Reusing the same Jaccard-similarity approach
+// clusterArticles uses for titles, but over clusterKeys, catches the
+// same story recurring under a different key (e.g. "apple-home-smart"
+// vs "apple-event-expect-home" for the same Apple event).
+function isDuplicateClusterKey(candidateKey: string, knownKeys: string[]): boolean {
+  const candidateTokens = new Set(candidateKey.split("-").filter(Boolean));
+  return knownKeys.some((knownKey) => {
+    const knownTokens = new Set(knownKey.split("-").filter(Boolean));
+    return jaccardSimilarity(candidateTokens, knownTokens) >= CLUSTER_SIMILARITY_THRESHOLD;
+  });
 }
 
 // Asia/Seoul has no DST, so this is a fixed +9h offset from UTC.
@@ -266,11 +334,17 @@ export type CategoryCollectionSummary = {
   clustersFound: number;
   published: string[];
   skippedForTooFewDomains: number;
+  // Cleared the domain-count gate but wasn't published anyway — either
+  // it looked like a duplicate of an already-published story (see
+  // isDuplicateClusterKey), or the category already hit
+  // MAX_PUBLISHED_PER_CATEGORY for this run.
+  skippedAsDuplicateOrOverCap: number;
 };
 
 export type CollectionReport = {
   startedAt: string;
   finishedAt: string;
+  source: CollectionSource;
   categories: CategoryCollectionSummary[];
   // Categories never attempted this run — either because a rate limit
   // aborted the run early, or the time budget ran out first.
@@ -280,6 +354,12 @@ export type CollectionReport = {
 };
 
 export type RunCollectionOptions = {
+  // "rss" (default) uses the curated publisher feeds in
+  // src/lib/server/rss-sources.ts. "gdelt" is opt-in only — see
+  // parseCollectionOptionsFromRequest's `?source=gdelt` — kept for
+  // manual testing/fallback now that GDELT has proven too rate-limit
+  // prone for the default daily run (see README).
+  source?: CollectionSource;
   // Restrict to specific categories (e.g. for local single-category
   // testing). Takes precedence over limitCategories.
   categories?: Category[];
@@ -309,10 +389,12 @@ function resolveTargetCategories(options: RunCollectionOptions): Category[] {
 }
 
 // The single entry point both /api/admin/collect-trends and
-// /api/cron/daily-trends call: fetch GDELT candidates per category,
-// cluster them, keep only clusters with >=2 distinct domains, generate
-// stub learning content (src/lib/server/generate-trend-draft.ts) for up
-// to 3 per category, and upsert them into Supabase.
+// /api/cron/daily-trends call: fetch candidate articles per category
+// (RSS by default; GDELT only when explicitly requested — see
+// CollectionSource above and the README), cluster them, keep only
+// clusters with >=2 distinct domains, generate stub learning content
+// (src/lib/server/generate-trend-draft.ts) for up to 3 per category,
+// and upsert them into Supabase.
 //
 // Two distinct "stop early" conditions, handled differently:
 // - Time budget exceeded: a normal, healthy outcome. Whatever was
@@ -320,13 +402,16 @@ function resolveTargetCategories(options: RunCollectionOptions): Category[] {
 //   persisted; remaining categories are just skipped and picked up next
 //   run.
 // - GDELT rate limit (429 / "please limit requests") hit on any
-//   category: treated as fatal for the *whole* run. Nothing collected
-//   this run — including earlier, successful categories — is persisted,
-//   since a run that got rate-limited partway through isn't a reliable
-//   sample. No partial saves.
+//   category, when source is "gdelt": treated as fatal for the *whole*
+//   run. Nothing collected this run — including earlier, successful
+//   categories — is persisted, since a run that got rate-limited
+//   partway through isn't a reliable sample. No partial saves. The RSS
+//   path has no equivalent condition — a single feed failing just means
+//   fewer articles for that category (see rss-collect.ts).
 export async function runDailyTrendCollection(
   options: RunCollectionOptions = {},
 ): Promise<CollectionReport> {
+  const source = options.source ?? "rss";
   const startedAt = new Date();
   const timeBudgetMs = options.timeBudgetMs ?? DEFAULT_TIME_BUDGET_MS;
   const targetCategories = resolveTargetCategories(options);
@@ -348,40 +433,82 @@ export async function runDailyTrendCollection(
     }
 
     if (i > 0) {
-      await delay(GDELT_REQUEST_SPACING_MS);
+      await delay(source === "gdelt" ? GDELT_REQUEST_SPACING_MS : RSS_CATEGORY_SPACING_MS);
     }
 
-    let articles: GdeltArticle[];
-    try {
-      articles = await fetchGdeltArticlesForCategory(category);
-    } catch (error) {
-      if (error instanceof GdeltRateLimitedError) {
-        console.error(
-          `[collect-trends] ${error.message} — aborting run, nothing collected so far will be saved`,
-        );
-        abortedDueToRateLimit = true;
-        rateLimitedCategory = category;
-        skippedCategories.push(...targetCategories.slice(i + 1));
-        break;
+    let articles: ClusterableArticle[];
+    if (source === "gdelt") {
+      try {
+        articles = await fetchGdeltArticlesForCategory(category);
+      } catch (error) {
+        if (error instanceof GdeltRateLimitedError) {
+          console.error(
+            `[collect-trends] ${error.message} — aborting run, nothing collected so far will be saved`,
+          );
+          abortedDueToRateLimit = true;
+          rateLimitedCategory = category;
+          skippedCategories.push(...targetCategories.slice(i + 1));
+          break;
+        }
+        throw error;
       }
-      throw error;
+    } else {
+      articles = await fetchRssArticlesForCategory(category);
     }
 
-    const clusters = clusterArticles(category, articles);
-    const publishable = selectPublishableClusters(clusters);
+    const clusters = clusterArticles(category, articles, source);
+    const ranked = rankPublishableClusters(clusters);
+
+    const sinceIso = new Date(
+      startedAt.getTime() - DUPLICATE_CHECK_WINDOW_DAYS * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    const knownKeys = await fetchRecentPublishedClusterKeys(category, sinceIso);
+
+    const publishable: TrendCluster[] = [];
+    for (const cluster of ranked) {
+      if (publishable.length >= MAX_PUBLISHED_PER_CATEGORY) break;
+      if (isDuplicateClusterKey(cluster.clusterKey, knownKeys)) {
+        console.log(
+          `[collect-trends] ${category}/${cluster.clusterKey}: skipping — looks like a duplicate of an already-published story`,
+        );
+        continue;
+      }
+      publishable.push(cluster);
+      knownKeys.push(cluster.clusterKey);
+    }
 
     const published: string[] = [];
     for (let index = 0; index < publishable.length; index += 1) {
       const cluster = publishable[index];
       const id = trendIdFor(category, cluster.clusterKey, dateStamp);
 
-      const content = await generateTrendDraft({
+      // LLM generation only runs for clusters that already cleared
+      // rankPublishableClusters + the duplicate filter above, never for
+      // the full candidate list — keeps LLM spend bounded to at most
+      // MAX_PUBLISHED_PER_CATEGORY calls per category per run.
+      let content: GenerateTrendDraftOutput | null = await generateTrendDraftWithLlm({
         category,
         clusterKey: cluster.clusterKey,
-        variantIndex: index,
-        sourceCount: cluster.sources.length,
-        domainCount: cluster.distinctDomainCount,
+        articles: cluster.sources.map((source) => ({
+          title: source.originalTitle,
+          sourceName: source.sourceName,
+          originalUrl: source.originalUrl,
+          publishedAt: source.publishedAt,
+        })),
       });
+
+      if (content) {
+        console.log(`[collect-trends] ${id}: generated via LLM`);
+      } else {
+        console.log(`[collect-trends] ${id}: LLM unavailable or failed — falling back to template`);
+        content = await generateTrendDraft({
+          category,
+          clusterKey: cluster.clusterKey,
+          variantIndex: index,
+          sourceCount: cluster.sources.length,
+          domainCount: cluster.distinctDomainCount,
+        });
+      }
 
       const sources: TrendSource[] = cluster.sources.map((source) => ({
         sourceName: source.sourceName,
@@ -401,7 +528,8 @@ export async function runDailyTrendCollection(
       articlesFetched: articles.length,
       clustersFound: clusters.length,
       published,
-      skippedForTooFewDomains: clusters.length - publishable.length,
+      skippedForTooFewDomains: clusters.length - ranked.length,
+      skippedAsDuplicateOrOverCap: ranked.length - publishable.length,
     });
   }
 
@@ -409,6 +537,7 @@ export async function runDailyTrendCollection(
     return {
       startedAt: startedAt.toISOString(),
       finishedAt: new Date().toISOString(),
+      source,
       // Nothing was saved, so report published as empty even for
       // categories that were processed before the rate limit hit.
       categories: categorySummaries.map((summary) => ({ ...summary, published: [] })),
@@ -426,22 +555,35 @@ export async function runDailyTrendCollection(
     }
   }
 
+  // Enforce the MAX_TOTAL_PUBLISHED_PER_CATEGORY cap for every category
+  // this run touched, regardless of whether it published anything new —
+  // a category sitting at the cap from previous runs still needs no
+  // action, but this call is what actually trims it if a save above
+  // pushed it over.
+  for (const category of categorySummaries.map((summary) => summary.category)) {
+    await deleteOldestPublishedBeyondLimit(category, MAX_TOTAL_PUBLISHED_PER_CATEGORY);
+  }
+
   return {
     startedAt: startedAt.toISOString(),
     finishedAt: new Date().toISOString(),
+    source,
     categories: categorySummaries,
     skippedCategories,
     abortedDueToRateLimit: false,
   };
 }
 
-// Shared by both routes so `?category=<Korean category>` or
-// `?limitCategories=<n>` work the same way for manual admin testing and
-// (if ever added to vercel.json) the cron trigger.
+// Shared by both routes so `?category=<Korean category>`,
+// `?limitCategories=<n>`, or `?source=gdelt` work the same way for
+// manual admin testing and the cron trigger. `source` defaults to
+// "rss" whenever the param is absent or anything other than exactly
+// "gdelt" — GDELT only ever runs when explicitly asked for.
 export function parseCollectionOptionsFromRequest(request: Request): RunCollectionOptions {
   const url = new URL(request.url);
   const categoryParam = url.searchParams.get("category")?.trim();
   const limitParam = url.searchParams.get("limitCategories");
+  const source: CollectionSource = url.searchParams.get("source") === "gdelt" ? "gdelt" : "rss";
 
   if (categoryParam) {
     if (!(ALL_CATEGORIES as string[]).includes(categoryParam)) {
@@ -449,7 +591,7 @@ export function parseCollectionOptionsFromRequest(request: Request): RunCollecti
         `invalid category "${categoryParam}" — expected one of: ${ALL_CATEGORIES.join(", ")}`,
       );
     }
-    return { categories: [categoryParam as Category] };
+    return { source, categories: [categoryParam as Category] };
   }
 
   if (limitParam) {
@@ -457,8 +599,8 @@ export function parseCollectionOptionsFromRequest(request: Request): RunCollecti
     if (!Number.isFinite(limitCategories) || limitCategories <= 0) {
       throw new Error(`invalid limitCategories "${limitParam}" — expected a positive integer`);
     }
-    return { limitCategories };
+    return { source, limitCategories };
   }
 
-  return {};
+  return { source };
 }

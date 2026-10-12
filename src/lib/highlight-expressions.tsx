@@ -73,6 +73,14 @@ function phraseToRegexSource(phrase: string): string {
     .join(WILDCARD_PATTERN);
 }
 
+// Used server-side (generate-trend-with-llm.ts) to verify a generated
+// englishSummary actually contains a given phrase in a form this
+// module's own matcher can find — the exact check the UI will later
+// run, so "passes this" and "will actually highlight" can't diverge.
+export function textContainsPhrase(text: string, phrase: string): boolean {
+  return new RegExp(phraseToRegexSource(phrase), "i").test(text);
+}
+
 export function highlightExpressionsInText(
   text: string,
   expressions: Expression[],

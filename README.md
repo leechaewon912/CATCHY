@@ -29,61 +29,68 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## GDELT-based daily trend collection
+## Daily trend collection
 
-CATCHY can collect trend candidates from the public [GDELT DOC 2.0
-API](https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/) (no API
-key needed), cluster same-issue articles, keep only clusters backed by
-2+ distinct domains, generate stub English-learning content (no OpenAI
-key configured yet — see `src/lib/server/generate-trend-draft.ts`), and
-upsert up to 3 published trends per category into Supabase. See
-`src/lib/server/collect-trends.ts` for the pipeline and
-`supabase/schema.sql` for the table shapes.
+CATCHY collects trend candidates, clusters same-issue articles, keeps
+only clusters backed by 2+ distinct domains, generates English-learning
+content for up to 3 clusters per category (real, LLM-generated content
+if `OPENAI_API_KEY` is set — see "LLM-generated content" below;
+otherwise the rule-based stub templates in
+`src/lib/server/generate-trend-draft.ts`), and upserts the result into
+Supabase. See `src/lib/server/collect-trends.ts` for the pipeline and
+`supabase/schema.sql` for the table shapes. The pipeline itself doesn't
+care which source fed it articles — only the fetch step at the top
+differs between the two sources below.
 
-### Current status (as of 2026-10-10) — waiting on the next scheduled cron
+### Default source: curated publisher RSS feeds
 
-Deployed to Vercel (`catchy-three.vercel.app`), env vars set, Supabase
-permissions fixed, auth/pipeline/abort-on-rate-limit logic all verified
-working end-to-end against production. **Not yet verified: a real,
-non-throttled GDELT response with actual articles.**
+As of 2026-10-12, **RSS is the default collection source**, not GDELT
+(see "Why GDELT isn't the default anymore" below). `src/lib/server/
+rss-sources.ts` lists 2-4 hand-picked, verified-live RSS feeds per
+category from official outlets/publishers (Billboard, Variety, The
+Verge, ESPN, BBC, etc.) — add, remove, or re-verify feeds there.
+`src/lib/server/rss-collect.ts` fetches each category's feeds
+sequentially with a small courtesy delay (`RSS_REQUEST_SPACING_MS`,
+300ms — these are static publisher files, not a throttled search API,
+so this is politeness, not rate-limit defense) and extracts **only**
+`title`, `url` (→ `domain`), and `publishedAt` from each item —
+`item.content`/`contentSnippet`/`summary`/`enclosure` (body text,
+thumbnails) are never read, matching the same metadata-only constraint
+GDELT was already held to. A single feed failing (moved, malformed,
+down) only means fewer articles for that category — it never aborts
+the whole run.
 
-Manual testing against production (`POST
-/api/admin/collect-trends?category=글로벌 이슈`) on 2026-10-10 around
-01:16 KST (`2026-10-09T16:16:27Z`) came back
-`abortedDueToRateLimit: true` / `rateLimitedCategory: "글로벌 이슈"`
-again — same pattern as the local-sandbox testing described below,
-now also reproduced from production's own egress IP. Decision: **no
-more manual `/api/admin/collect-trends` calls today.** Let the
-scheduled cron (`vercel.json`, `0 0 * * *` UTC = 09:00 KST,
-`/api/cron/daily-trends`) be the only trigger going forward, and check
-its result after it fires — rather than continuing to spend down the
-same rate-limit window with manual retries.
+### GDELT (manual fallback only)
 
-**How to check after the next scheduled run (09:00 KST):**
+`src/lib/server/gdelt.ts` is still in the codebase and still works —
+it's just no longer called by default. Request it explicitly with
+`?source=gdelt` on either collection route (see "Trigger collection
+manually" below). Kept for manual testing and as a fallback if the
+curated RSS list ever runs dry for a category.
 
-1. Vercel dashboard → the project → Deployments/Functions logs →
-   `/api/cron/daily-trends` — confirm it ran and check the JSON
-   response body it logged (or check Cron Jobs tab for the invocation
-   record). Look specifically at `abortedDueToRateLimit` and
-   `articlesFetched` per category.
-2. Supabase SQL Editor:
-   ```sql
-   select id, category, title, status, generated_at
-   from trends
-   order by generated_at desc
-   limit 10;
-   ```
-   Rows timestamped around 09:00 KST = the cron worked and GDELT
-   returned real articles this time.
-3. Open [https://catchy-three.vercel.app](https://catchy-three.vercel.app)
-   — if step 2 shows rows, the homepage should show those instead of
-   (or alongside) the mock-data trends.
-4. If it's still `0 articles`/`abortedDueToRateLimit` for every
-   category, that means either GDELT is still constrained for this
-   IP/time, or the query simplification needs further adjustment — not
-   a reason to immediately retry manually; let it ride to the next
-   day's run, or use `?category=<one>` sparingly rather than a full
-   manual run.
+#### Why GDELT isn't the default anymore
+
+GDELT's rate limiting turned out to be much stricter in practice than
+its own docs ("one request every ~5 seconds") suggest. Across repeated
+testing — both from the sandboxed dev network *and*, later, from
+production's own Vercel egress IP on 2026-10-10 and again on
+2026-10-11 — manual and even scheduled-cron runs kept coming back
+`abortedDueToRateLimit: true`. Rate limiting a public API on their own
+network is GDELT's call to make, but it means GDELT can't be trusted as
+the *default*, unattended daily source — hence the move to RSS, with
+GDELT demoted to an explicit opt-in for manual testing only.
+
+If you do test it manually, treat the live endpoint as a scarce, shared
+resource:
+
+- Prefer `?category=<one category>&source=gdelt` (one GDELT request
+  instead of seven).
+- Leave several minutes between manual runs — don't loop/retry quickly
+  even if a run comes back empty.
+- A single 429 or "please limit requests" response aborts the *entire*
+  run and saves nothing (see "Rate-limit behavior" below) — that's
+  expected, not a bug, and retrying immediately will likely just get
+  rate-limited again.
 
 ### Setup
 
@@ -94,34 +101,19 @@ same rate-limit window with manual retries.
    without a matching bearer token.
 3. Run `supabase/schema.sql` in the Supabase SQL Editor once.
 
-### ⚠️ Don't repeatedly test against real GDELT
-
-GDELT's rate limiting turned out to be much stricter in practice than
-its own docs ("one request every ~5 seconds") suggest — repeated manual
-testing during development got this network's egress IP throttled with
-persistent `HTTP 429`s, and eventually connections were dropped
-outright at the TCP level (not just 429s). Treat the live endpoint as a
-scarce, shared resource:
-
-- Prefer `?category=<one category>` for local testing (one GDELT
-  request instead of seven).
-- Leave several minutes between manual runs — don't loop/retry quickly
-  even if a run comes back empty.
-- A single 429 or "please limit requests" response aborts the *entire*
-  run and saves nothing (see "Rate-limit behavior" below) — that's
-  expected, not a bug, and retrying immediately will likely just get
-  rate-limited again.
+No env var or API key is needed for either collection source — the RSS
+feeds and the GDELT DOC 2.0 API are both public and unauthenticated.
 
 ### Trigger collection manually
 
-Full run (all 7 categories, time-budget-limited — see below):
+Full run, all 7 categories, RSS (default):
 
 ```bash
 curl -X POST http://localhost:3000/api/admin/collect-trends \
   -H "Authorization: Bearer $ADMIN_CRON_SECRET"
 ```
 
-Single category (preferred for local testing — one GDELT request):
+Single category (useful for local testing either source):
 
 ```bash
 curl -X POST "http://localhost:3000/api/admin/collect-trends?category=%EA%B8%80%EB%A1%9C%EB%B2%8C%20%EC%9D%B4%EC%8A%88" \
@@ -132,6 +124,14 @@ curl -X POST "http://localhost:3000/api/admin/collect-trends?category=%EA%B8%80%
 strings works: 음악, 영화·시리즈, 밈·인터넷, 라이프스타일, 테크·게임,
 스포츠, 글로벌 이슈.)
 
+Explicitly use GDELT instead of RSS (add `&source=gdelt`, or `?source=gdelt`
+if it's the only param):
+
+```bash
+curl -X POST "http://localhost:3000/api/admin/collect-trends?source=gdelt&category=%EA%B8%80%EB%A1%9C%EB%B2%8C%20%EC%9D%B4%EC%8A%88" \
+  -H "Authorization: Bearer $ADMIN_CRON_SECRET"
+```
+
 First N categories instead of one specific one:
 
 ```bash
@@ -139,26 +139,28 @@ curl -X POST "http://localhost:3000/api/admin/collect-trends?limitCategories=1" 
   -H "Authorization: Bearer $ADMIN_CRON_SECRET"
 ```
 
-Each returns a JSON report with, per category, how many GDELT articles
-were fetched, how many clusters were found, which trend ids got
-published, and how many clusters were skipped for having fewer than 2
-distinct domains — plus `abortedDueToRateLimit` and `skippedCategories`
-(see below).
+Each returns a JSON report (now including `"source": "rss" | "gdelt"`)
+with, per category, how many articles were fetched, how many clusters
+were found, which trend ids got published, and how many clusters were
+skipped for having fewer than 2 distinct domains — plus
+`abortedDueToRateLimit` and `skippedCategories` (see below).
 
-### Rate-limit behavior
+### Rate-limit behavior (GDELT path only)
 
 `src/lib/server/gdelt.ts`'s `fetchGdeltArticlesForCategory` throws
 `GdeltRateLimitedError` specifically for `HTTP 429` or a "please limit
 requests" response body (never for network errors/timeouts/malformed
 JSON — those stay non-fatal and just count as 0 articles for that
 category). `runDailyTrendCollection` (`src/lib/server/collect-trends.ts`)
-treats that as fatal for the *whole run*: it stops immediately and
-saves nothing to Supabase, including categories that succeeded earlier
-in the same run — a run that got rate-limited partway through isn't a
-trustworthy sample, so it's all-or-nothing rather than a partial save.
-The response reflects this with `"abortedDueToRateLimit": true` and
-`"rateLimitedCategory"`, and every category's `published` array comes
-back empty even if clusters were found before the abort.
+treats that as fatal for the *whole run* when `source: "gdelt"`: it
+stops immediately and saves nothing to Supabase, including categories
+that succeeded earlier in the same run — a run that got rate-limited
+partway through isn't a trustworthy sample, so it's all-or-nothing
+rather than a partial save. The response reflects this with
+`"abortedDueToRateLimit": true` and `"rateLimitedCategory"`, and every
+category's `published` array comes back empty even if clusters were
+found before the abort. The RSS path has no equivalent — a failed feed
+just yields fewer articles for that category, never an aborted run.
 
 Separately, if a run's internal time budget (40s by default, leaving
 headroom under a 60s `maxDuration`) runs out before all requested
@@ -211,12 +213,49 @@ Optional but recommended:
 | Variable | Required for | Notes |
 |---|---|---|
 | `CRON_SECRET` | letting Vercel Cron auto-authenticate | Vercel automatically sends `Authorization: Bearer $CRON_SECRET` when invoking cron jobs if this exact-named var exists. Set it to the **same value** as `ADMIN_CRON_SECRET` so `/api/cron/daily-trends`'s bearer check (which reads `ADMIN_CRON_SECRET`) passes. Without this, the daily cron invocation will get 401'd — the schedule will still fire, it just won't be authorized. |
+| `OPENAI_API_KEY` | real, per-trend LLM-generated summaries/expressions instead of the rule-based stub templates | **server-only**, never prefix with `NEXT_PUBLIC_`. See "LLM-generated content" below. Without it (or if a call fails), collection automatically falls back to the stub generator — the app and the daily cron both keep working either way, just with more generic copy. |
 
-No GDELT env var is needed — the DOC 2.0 API is public and unauthenticated.
+RSS/GDELT fetching itself needs no key either way — only the optional LLM step does.
+
+### LLM-generated content (optional, falls back automatically)
+
+`src/lib/server/generate-trend-with-llm.ts` can turn a cluster's RSS
+metadata into a real, specific trend write-up instead of the generic
+stub templates in `generate-trend-draft.ts`. It's called from
+`collect-trends.ts` **only for clusters that already passed
+`selectPublishableClusters`** — i.e. at most `MAX_PUBLISHED_PER_CATEGORY`
+(3) LLM calls per category per run, never for the full candidate list.
+
+What it sends and doesn't send:
+- Input is metadata only — each article's `title`, `sourceName`,
+  `originalUrl`, `publishedAt`, plus the `category`. Article bodies are
+  never fetched anywhere in this app, so there's nothing to send even
+  if we wanted to.
+- The prompt explicitly instructs the model to never copy an article's
+  sentences, never reuse an article's title as the trend's title, and
+  to only describe what's corroborated across the cluster's multiple
+  sources — not invent detail that only one source might have.
+- The model must return exactly 3 expressions and a small, strictly
+  validated JSON shape (`src/lib/server/generate-trend-with-llm.ts`'s
+  `parseDraft`) — any mismatch is treated as a failure, not patched up,
+  so a malformed completion never reaches Supabase.
+
+Fallback behavior: no `OPENAI_API_KEY`, a network error, a non-2xx
+response, or a response that fails the shape validation all result in
+`generateTrendDraftWithLlm` returning `null` (never throwing) —
+`collect-trends.ts` logs `LLM unavailable or failed — falling back to
+template` and calls the existing stub generator instead. A single
+cluster's LLM failure never aborts the run or affects other clusters.
+
+Source links are unaffected either way — `trend_sources` is always
+built straight from the RSS/GDELT cluster's own metadata
+(`originalTitle`/`originalUrl`/`sourceName`), regardless of which
+generator produced the summary/expressions.
 
 #### Cron schedule
 
-`vercel.json` is already configured for 09:00 KST daily:
+`vercel.json` is already configured for 09:00 KST daily, and runs the
+default RSS source (no `?source=gdelt` in the path):
 
 ```json
 {
@@ -233,12 +272,10 @@ that the job shows up after deploying.
 #### Manual test after deploying
 
 Once deployed and the env vars above are set, test from the production
-URL (replace with your actual Vercel domain) — this uses a *different*
-egress IP than local dev, so it isn't affected by the rate-limit/block
-this sandboxed network hit during development:
+URL (replace with your actual Vercel domain):
 
 ```bash
-# Single category first — safest first test, only one GDELT request
+# Single category first (RSS, the default)
 curl -X POST "https://<your-project>.vercel.app/api/admin/collect-trends?category=%EA%B8%80%EB%A1%9C%EB%B2%8C%20%EC%9D%B4%EC%8A%88" \
   -H "Authorization: Bearer $ADMIN_CRON_SECRET"
 
@@ -248,46 +285,40 @@ curl -X POST "https://<your-project>.vercel.app/api/admin/collect-trends" \
 ```
 
 Then re-run the Supabase SQL and homepage checks above, against the
-deployed Supabase project and `https://<your-project>.vercel.app`.
-
-**Still don't loop/retry this quickly, even against the production
-URL** — see "⚠️ Don't repeatedly test against real GDELT" above; a
-fresh egress IP just means you're starting from zero violations, not
-that the rate limit doesn't apply.
+deployed Supabase project and `https://<your-project>.vercel.app`. If
+you add `&source=gdelt` to either command to test the fallback path
+specifically, see "Why GDELT isn't the default anymore" above first —
+don't loop/retry it quickly even from production's egress IP.
 
 ### Timing, time budget, and Vercel Hobby's 60s limit
 
-GDELT categories are always fetched sequentially, never in parallel,
-with at least `GDELT_REQUEST_SPACING_MS` (8s) between requests
-(`src/lib/server/gdelt.ts`). On top of that, `runDailyTrendCollection`
-won't start a new category once `timeBudgetMs` (40s by default) has
-elapsed since the run started — so a run always wraps up with enough
-headroom under both routes' `maxDuration = 60` (the Vercel Hobby plan's
-cap) for Supabase writes and response serialization, even if every
-fetch takes the full 15s timeout. In the worst case this means only
-~2-3 of the 7 categories get attempted per invocation; the rest show up
-in `"skippedCategories"` and get picked up on the next run (see "Rate-
-limit behavior" above for why that's different from a rate-limit
-abort, which saves nothing). If GDELT consistently can't cover all 7
-categories in one daily run, consider triggering
-`/api/cron/daily-trends?limitCategories=n` more than once a day instead
-of raising the time budget.
+Categories are always fetched sequentially, never in parallel, with a
+spacing delay between them — `RSS_CATEGORY_SPACING_MS` (500ms, a
+courtesy pause) for the default RSS path, or
+`GDELT_REQUEST_SPACING_MS` (8s, rate-limit defense) when
+`source=gdelt`. On top of that, `runDailyTrendCollection` won't start a
+new category once `timeBudgetMs` (40s by default) has elapsed since
+the run started — so a run always wraps up with enough headroom under
+both routes' `maxDuration = 60` (the Vercel Hobby plan's cap) for
+Supabase writes and response serialization. With RSS this budget
+comfortably covers all 7 categories (each fetching 2-4 small static
+feeds) in one invocation; the old GDELT-specific guidance below about
+needing multiple narrower invocations no longer applies by default,
+but is kept here for when `?source=gdelt` is used.
 
-In practice, testing from this sandboxed dev network during
-development got persistent `HTTP 429`s even with 10-45s between
-individual requests — stricter than GDELT's "one request every ~5
-seconds" docs suggest — and eventually connections were refused/timed
-out at the TCP level entirely (confirmed with a bare `curl`, independent
-of any of this app's code), most likely because the egress IP had
-accumulated enough violations to get temporarily blocked. If you hit
-that, don't retry in a loop — wait at least several minutes, or test
-from a different network (e.g. the deployed Vercel function's egress
-IP, or your own machine instead of a shared/sandboxed one). A quick
+**GDELT-specific history** (`?source=gdelt` only): in the worst case,
+GDELT's 8s-per-category spacing meant only ~2-3 of the 7 categories got
+attempted per invocation; the rest showed up in `"skippedCategories"`.
+Separately, testing from this project's dev network got persistent
+`HTTP 429`s even with 10-45s between individual requests — stricter
+than GDELT's "one request every ~5 seconds" docs suggest — and
+eventually connections were refused/timed out at the TCP level
+entirely (confirmed with a bare `curl`, independent of any of this
+app's code). A quick
 `curl https://api.gdeltproject.org/api/v2/doc/doc?query=election&mode=artlist&format=json&timespan=72h&maxrecords=5`
-confirms whether it's your network being throttled before assuming a
-code issue.
+confirms whether a given network is currently throttled by GDELT.
 
-### Query/timespan tuning (why queries look simple)
+### Query/timespan tuning (GDELT path only — why its queries look simple)
 
 After deploying and running real (non-throttled, `HTTP 200`) requests
 against production, GDELT came back with a clean `{}` — no `articles`
@@ -318,14 +349,21 @@ fewer qualifying (2+ distinct domain) clusters turn up, not a bug.
 
 ### Scope notes
 
-- Only GDELT is used — no NewsData.io/NewsAPI/Guardian API, no API key
-  for any external news source.
-- Only metadata is read/stored (title, url, domain, sourceCountry,
-  seendate, language) — never article bodies, images, or thumbnails.
+- **RSS (default) is the curated feed list in
+  `src/lib/server/rss-sources.ts`** — official publisher feeds only, no
+  third-party news aggregator API (NewsData.io/NewsAPI/Guardian API
+  etc.) and no API key. **GDELT (fallback, `?source=gdelt`)** is the
+  public DOC 2.0 API, also no key.
+- Only metadata is read/stored — RSS: title, url, domain, publishedAt
+  (`src/lib/server/rss-collect.ts` never reads an item's
+  content/contentSnippet/summary/enclosure fields). GDELT: title, url,
+  domain, sourceCountry, seendate, language. Neither path ever touches
+  article bodies, images, or thumbnails.
 - `title`/`summary`/`englishSummary`/`koreanSummary`/`whyTrending`/
   `expressions` are always CATCHY's own stub copy, never derived from
   article text — see the comment at the top of
-  `src/lib/server/generate-trend-draft.ts`.
+  `src/lib/server/generate-trend-draft.ts`. This holds regardless of
+  which source fed the cluster.
 
 ## Deploy on Vercel
 

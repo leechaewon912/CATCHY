@@ -1,13 +1,14 @@
 import { isAuthorizedAdminRequest } from "@/lib/server/admin-auth";
 import { parseCollectionOptionsFromRequest, runDailyTrendCollection } from "@/lib/server/collect-trends";
 
-// Manual trigger for the GDELT-based daily trend collection. Protected
-// by ADMIN_CRON_SECRET — see README for curl examples.
+// Manual trigger for daily trend collection. Protected by
+// ADMIN_CRON_SECRET — see README for curl examples.
 //
-// Supports `?category=<Korean category>` or `?limitCategories=<n>` to
-// run a subset for local testing — GDELT rate-limits aggressively (see
-// src/lib/server/gdelt.ts), so avoid running this repeatedly without a
-// category/limitCategories filter.
+// Defaults to the curated RSS feeds in src/lib/server/rss-sources.ts.
+// Add `?source=gdelt` to use GDELT instead (kept for manual
+// testing/fallback only — see src/lib/server/gdelt.ts for why it's no
+// longer the default). Supports `?category=<Korean category>` or
+// `?limitCategories=<n>` to run a subset for local testing.
 //
 // A run's internal time budget (collect-trends.ts) stops starting new
 // categories before this runs out, so 60s (the Vercel Hobby max) is

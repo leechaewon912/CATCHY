@@ -4,6 +4,77 @@ import type { Category, ExpressionSeed, TrendSource } from "@/lib/mock-data";
 import type { GenerateTrendDraftOutput } from "@/lib/server/generate-trend-draft";
 import { getSupabaseServerClient } from "@/lib/server/supabase-client";
 
+// cluster_key strings of published trends in this category generated
+// since `sinceIso` — used by collect-trends.ts to skip republishing the
+// same real-world story under a new id (the clusterKey an RSS run picks
+// for one story isn't guaranteed stable run-to-run, since it's derived
+// from whichever article happened to anchor the cluster — see
+// clusterKeyFromTokens in collect-trends.ts). Returns [] (never throws)
+// on any error or missing config, same fail-open posture as the rest of
+// this file's read paths — a dedupe check that can't run shouldn't block
+// collection.
+export async function fetchRecentPublishedClusterKeys(
+  category: Category,
+  sinceIso: string,
+): Promise<string[]> {
+  const client = getSupabaseServerClient();
+  if (!client) return [];
+
+  const { data, error } = await client
+    .from("trends")
+    .select("cluster_key")
+    .eq("category", category)
+    .eq("status", "published")
+    .gte("generated_at", sinceIso)
+    .returns<Array<{ cluster_key: string | null }>>();
+
+  if (error) {
+    console.error(`[supabase] failed to load recent cluster keys for ${category}:`, error.message);
+    return [];
+  }
+
+  return (data ?? []).flatMap((row) => (row.cluster_key ? [row.cluster_key] : []));
+}
+
+// Keeps at most `limit` published trends per category: deletes the
+// oldest ones (by generated_at) beyond that count. trend_sources/
+// expressions cascade-delete with their parent trend row (see
+// supabase/schema.sql's "on delete cascade"), so this is a single
+// delete per excess row. Called once per touched category at the end
+// of every collection run, so the cap holds no matter how many new
+// trends a single run tries to add.
+export async function deleteOldestPublishedBeyondLimit(
+  category: Category,
+  limit: number,
+): Promise<void> {
+  const client = getSupabaseServerClient();
+  if (!client) return;
+
+  const { data, error } = await client
+    .from("trends")
+    .select("id")
+    .eq("category", category)
+    .eq("status", "published")
+    .order("generated_at", { ascending: false })
+    .returns<Array<{ id: string }>>();
+
+  if (error) {
+    console.error(`[supabase] failed to list published trends for ${category}:`, error.message);
+    return;
+  }
+
+  const excessIds = (data ?? []).slice(limit).map((row) => row.id);
+  if (excessIds.length === 0) return;
+
+  const { error: deleteError } = await client.from("trends").delete().in("id", excessIds);
+  if (deleteError) {
+    console.error(`[supabase] failed to delete excess trends for ${category}:`, deleteError.message);
+    return;
+  }
+
+  console.log(`[collect-trends] ${category}: trimmed ${excessIds.length} trend(s) beyond the ${limit}-per-category cap`);
+}
+
 export type UpsertTrendInput = {
   id: string;
   category: Category;

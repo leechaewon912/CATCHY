@@ -8,11 +8,17 @@ import { parseCollectionOptionsFromRequest, runDailyTrendCollection } from "@/li
 // set a `CRON_SECRET` env var in the Vercel project with the same value
 // as ADMIN_CRON_SECRET.
 //
+// Runs the curated RSS feeds (src/lib/server/rss-sources.ts) by
+// default — GDELT proved too rate-limit prone in production to run
+// unattended, see the README. Add `?source=gdelt` to this path in
+// vercel.json only for manual fallback testing, not as the standing
+// schedule.
+//
 // runDailyTrendCollection's internal time budget (collect-trends.ts)
 // stops starting new categories well before this runs out, so a run
 // always finishes within the Vercel Hobby plan's 60s maxDuration cap
-// instead of relying on a higher-tier plan. If GDELT turns out to need
-// more than one run per day to cover all 7 categories, add
+// instead of relying on a higher-tier plan. If a source ever needs more
+// than one run per day to cover all 7 categories, add
 // `?limitCategories=n` to the path in vercel.json to spread collection
 // across more frequent, narrower triggers.
 export const maxDuration = 60;
