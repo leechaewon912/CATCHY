@@ -1,7 +1,14 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { ChevronDownIcon } from "@/components/icons";
 import type { Category } from "@/lib/mock-data";
+
+// "전체" 카테고리에서는 모든 카테고리의 카드가 합쳐져 한 번에 너무 많이
+// 쌓일 수 있어, 처음엔 이만큼만 보여주고 "더보기"로 나머지를 펼친다.
+// 특정 카테고리를 선택하면(이미 카테고리당 최대 6개로 발행이 제한돼
+// 있으므로) 이 제한을 적용할 필요가 없다.
+const ALL_CATEGORIES_VISIBLE_LIMIT = 6;
 
 // mock-data.ts는 "server-only"라 클라이언트 컴포넌트에서 값을 import할 수
 // 없다. 카테고리 목록은 Category 타입과 나란히 여기서도 직접 유지한다.
@@ -37,6 +44,7 @@ export function TrendFeed({
 }) {
   const [selectedCategory, setSelectedCategory] = useState<Category | "전체">("전체");
   const [selectedDay, setSelectedDay] = useState<DayFilter>(defaultDay);
+  const [showAll, setShowAll] = useState(false);
 
   const visibleIndexes = trends
     .map((_, index) => index)
@@ -47,6 +55,14 @@ export function TrendFeed({
       const dayMatches = selectedDay === "전체" || trend.dayOfWeek === selectedDay;
       return categoryMatches && dayMatches;
     });
+
+  const isAllCategorySelected = selectedCategory === "전체";
+  const canExpandOrCollapse =
+    isAllCategorySelected && visibleIndexes.length > ALL_CATEGORIES_VISIBLE_LIMIT;
+  const shouldTruncate = canExpandOrCollapse && !showAll;
+  const displayedIndexes = shouldTruncate
+    ? visibleIndexes.slice(0, ALL_CATEGORIES_VISIBLE_LIMIT)
+    : visibleIndexes;
 
   return (
     <section className="mx-auto max-w-6xl px-5 pt-16 sm:px-8" aria-labelledby="trend-feed-heading">
@@ -67,7 +83,10 @@ export function TrendFeed({
               type="button"
               aria-pressed={isSelected}
               aria-controls="trend-results"
-              onClick={() => setSelectedDay(day)}
+              onClick={() => {
+                setSelectedDay(day);
+                setShowAll(false);
+              }}
               className={[
                 "shrink-0 cursor-pointer border-b-2 pb-2 text-[14px] transition-colors focus-visible:outline-none",
                 isSelected
@@ -84,7 +103,10 @@ export function TrendFeed({
       {/* 카테고리 필터 — 버튼/칩 형태, 기존 디자인 그대로 */}
       <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="트렌드 카테고리">
         {CATEGORY_FILTERS.map((category) => (
-          <button key={category} type="button" aria-pressed={selectedCategory === category} aria-controls="trend-results" onClick={() => setSelectedCategory(category)}
+          <button key={category} type="button" aria-pressed={selectedCategory === category} aria-controls="trend-results" onClick={() => {
+              setSelectedCategory(category);
+              setShowAll(false);
+            }}
             className={`shrink-0 cursor-pointer rounded-pills border px-4 py-2.5 text-[14px] font-normal transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian focus-visible:ring-offset-2 focus-visible:ring-offset-paper ${selectedCategory === category ? "border-obsidian bg-obsidian text-snow" : "border-cloud bg-snow text-iron hover:border-ash hover:text-graphite"}`}>
             {category}
           </button>
@@ -93,9 +115,22 @@ export function TrendFeed({
       <div className="mb-6 h-px bg-cloud" />
 
       <div id="trend-results" className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {visibleIndexes.map((index) => children[index])}
+        {displayedIndexes.map((index) => children[index])}
         {visibleIndexes.length === 0 && <p className="col-span-full py-12 text-center text-fog">아직 이 조건에 맞는 트렌드가 없어요.</p>}
       </div>
+
+      {canExpandOrCollapse && (
+        <div className="mt-8 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setShowAll((prev) => !prev)}
+            className="flex cursor-pointer items-center gap-1.5 rounded-pills border border-cloud bg-snow px-5 py-2.5 text-[14px] font-medium text-iron transition-colors hover:border-ash hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
+          >
+            {showAll ? "접기" : "더보기"}
+            <ChevronDownIcon className={`h-4 w-4 transition-transform ${showAll ? "rotate-180" : ""}`} />
+          </button>
+        </div>
+      )}
     </section>
   );
 }
