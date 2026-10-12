@@ -11,6 +11,7 @@
   "dependencies": {
     "@amplitude/analytics-browser": "^2.47.4",
     "@supabase/supabase-js": "^2.117.3",
+    "mixpanel-browser": "^2.84.0",
     "next": "16.3.7",
     "react": "19.2.8",
     "react-dom": "19.2.8",
