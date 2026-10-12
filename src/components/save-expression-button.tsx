@@ -4,6 +4,7 @@ import type { MouseEvent } from "react";
 
 import { useBookmarks } from "@/components/bookmarks-provider";
 import { BookmarkIcon } from "@/components/icons";
+import { trackExpressionSaved } from "@/lib/mixpanel-client";
 import type { Expression } from "@/lib/mock-data";
 
 export function SaveExpressionButton({
@@ -26,6 +27,16 @@ export function SaveExpressionButton({
   function handleClick(event: MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
     event.stopPropagation();
+    // `saved` reflects state *before* this click — toggleBookmark flips
+    // it. Only the unsaved -> saved direction counts as "actually
+    // saved"; un-saving shouldn't fire expression_saved.
+    if (!saved) {
+      trackExpressionSaved({
+        expression_id: expression.id,
+        trend_id: expression.trendId,
+        category: expression.category,
+      });
+    }
     toggleBookmark({
       id: expression.id,
       phrase: expression.phrase,

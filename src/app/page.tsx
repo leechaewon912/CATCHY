@@ -3,7 +3,6 @@ import { FeaturedExpressionsCarousel } from "@/components/featured-expressions-c
 import { QuizBanner } from "@/components/quiz-banner";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { TrendCard } from "@/components/trend-card";
 import { TrendFeed, type DayFilter } from "@/components/trend-feed";
 import { TrendHero } from "@/components/trend-hero";
 import { getHomeTrends } from "@/lib/server/trend-repository";
@@ -82,17 +81,12 @@ export default async function Home() {
         <TrendHero />
 
         <TrendFeed
-          trends={trends.map((trend) => ({
-            id: trend.id,
-            category: trend.category,
+          items={trends.map((trend) => ({
+            trend,
             dayOfWeek: weekdayLabelIfThisWeek(trend.generatedAt, thisWeek),
           }))}
           defaultDay={thisWeek.todayLabel}
-        >
-          {trends.map((trend) => (
-            <TrendCard key={trend.id} trend={trend} />
-          ))}
-        </TrendFeed>
+        />
 
         <section className="mx-auto max-w-6xl px-5 pt-16 sm:px-8">
           <FeaturedExpressionsCarousel

@@ -57,7 +57,7 @@ export function QuizEntryClient({ trends }: { trends: QuizPickerTrend[] }) {
           {featuredIsRecent ? "최근 본 트렌드로 퀴즈 풀기" : "오늘의 주요 트렌드로 퀴즈 풀기"}
         </p>
         <Link
-          href={`/quiz?trend=${featuredTrend.id}`}
+          href={`/quiz?trend=${featuredTrend.id}&entry=quiz_picker`}
           className="surface-dark group flex cursor-pointer flex-col gap-3 p-6 transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-paper focus-visible:ring-snow sm:p-8"
         >
           <span className="badge-filled self-start">{featuredTrend.category}</span>
@@ -76,7 +76,7 @@ export function QuizEntryClient({ trends }: { trends: QuizPickerTrend[] }) {
             {otherTrends.map((trend) => (
               <Link
                 key={trend.id}
-                href={`/quiz?trend=${trend.id}`}
+                href={`/quiz?trend=${trend.id}&entry=quiz_picker`}
                 className="surface-card group flex cursor-pointer flex-col transition-colors hover:border-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
               >
                 <div className="p-5 pb-0">

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { EnglishSummary } from "@/components/english-summary";
 import { ExpressionDetailCard } from "@/components/expression-detail-card";
+import { ExpressionSectionTracker } from "@/components/expression-section-tracker";
 import {
   ArrowDownIcon,
   ArrowLeftIcon,
@@ -11,7 +13,6 @@ import {
 import { RecordTrendView } from "@/components/record-trend-view";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { highlightExpressionsInText } from "@/lib/highlight-expressions";
 import type { SourceType } from "@/lib/mock-data";
 import { getTrendDetail, getTrendExpressions } from "@/lib/server/trend-repository";
 
@@ -93,9 +94,12 @@ export default async function TrendDetailPage(
               <h3 className="mb-3 text-[13px] font-medium text-ember">
                 EN · 영어 요약
               </h3>
-              <p lang="en" className="text-[15px] leading-8 text-graphite sm:text-[18px]">
-                {highlightExpressionsInText(trend.englishSummary, trendExpressions)}
-              </p>
+              <EnglishSummary
+                text={trend.englishSummary}
+                expressions={trendExpressions}
+                trendId={trend.id}
+                category={trend.category}
+              />
             </div>
             <div className="border-t border-cloud bg-[#fafafa] p-6 sm:p-8">
               <h3 className="mb-3 text-[13px] font-medium text-ember">
@@ -130,13 +134,20 @@ export default async function TrendDetailPage(
 
         {/* 3-5. 표현 3개 + 의미/뉘앙스/비슷한 표현/예문 + 저장 버튼 */}
         <section className="mx-auto max-w-4xl px-5 pt-14 sm:px-8">
-          <h2 className="mb-2 text-[32px] font-semibold leading-[1.5] text-obsidian">
-            이 트렌드에서 배우는 표현
-          </h2>
-          <p className="mb-8 text-[14px] text-fog">
-            AI가 이 트렌드 콘텐츠에서 실제로 쓰인 표현을 선별해 뜻·뉘앙스·비슷한
-            표현·예문과 함께 정리했어요.
-          </p>
+          {/* expression_viewed fires once this heading block scrolls
+              >=50% into view — tracking the whole section (including
+              all expression cards below) would rarely cross 50% of its
+              own height on a normal viewport, since the section is
+              taller than most viewports once 3 cards are stacked. */}
+          <ExpressionSectionTracker trendId={trend.id} category={trend.category}>
+            <h2 className="mb-2 text-[32px] font-semibold leading-[1.5] text-obsidian">
+              이 트렌드에서 배우는 표현
+            </h2>
+            <p className="mb-8 text-[14px] text-fog">
+              AI가 이 트렌드 콘텐츠에서 실제로 쓰인 표현을 선별해 뜻·뉘앙스·비슷한
+              표현·예문과 함께 정리했어요.
+            </p>
+          </ExpressionSectionTracker>
 
           <div className="flex flex-col gap-5">
             {trendExpressions.map((expression) => (
@@ -150,7 +161,7 @@ export default async function TrendDetailPage(
 
           {/* 6. 퀴즈 CTA */}
           <Link
-            href={`/quiz?trend=${trend.id}`}
+            href={`/quiz?trend=${trend.id}&entry=trend_detail`}
             className="btn-primary group mt-10 w-full sm:w-fit"
           >
             이 표현들로 퀴즈 풀기

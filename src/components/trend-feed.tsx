@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { ChevronDownIcon } from "@/components/icons";
-import type { Category } from "@/lib/mock-data";
+import { TrendCard } from "@/components/trend-card";
+import type { Category, Trend } from "@/lib/mock-data";
 
 // "전체" 카테고리에서는 모든 카테고리의 카드가 합쳐져 한 번에 너무 많이
 // 쌓일 수 있어, 처음엔 이만큼만 보여주고 "더보기"로 나머지를 펼친다.
@@ -27,49 +28,51 @@ const DAY_FILTERS = ["전체", "월", "화", "수", "목", "금", "토", "일"] 
 export type DayFilter = (typeof DAY_FILTERS)[number];
 
 export function TrendFeed({
-  trends,
+  items,
   defaultDay,
-  children,
 }: {
-  // dayOfWeek is the Korean weekday label (월~일) for a trend generated
-  // within the current Mon-Sun week (KST), or null if it falls outside
-  // that week — see weekdayLabelIfThisWeek in src/app/page.tsx. "전체"
-  // excludes null entries too, not just the individual day tabs, since
-  // "전체" means "this week", not "every trend ever".
-  trends: { id: string; category: Category; dayOfWeek: string | null }[];
+  // Full trend + its precomputed dayOfWeek (the Korean weekday label
+  // for a trend generated within the current Mon-Sun week in KST, or
+  // null if it falls outside that week — see weekdayLabelIfThisWeek in
+  // src/app/page.tsx). "전체" excludes null entries too, not just the
+  // individual day tabs, since "전체" means "this week", not "every
+  // trend ever".
+  //
+  // TrendFeed renders <TrendCard> itself (rather than taking pre-built
+  // cards as children, which this used to do) specifically so each
+  // card's `position` prop can be computed fresh every render from its
+  // rank in the *currently filtered/displayed* list — trackTrendClicked
+  // needs that, not the trend's rank in the unfiltered feed.
+  items: { trend: Trend; dayOfWeek: string | null }[];
   // Today's weekday label — the day filter opens on this instead of
   // "전체" so visitors land on today's trends first.
   defaultDay: DayFilter;
-  children: ReactNode[];
 }) {
   const [selectedCategory, setSelectedCategory] = useState<Category | "전체">("전체");
   const [selectedDay, setSelectedDay] = useState<DayFilter>(defaultDay);
   const [showAll, setShowAll] = useState(false);
 
-  const visibleIndexes = trends
-    .map((_, index) => index)
-    .filter((index) => {
-      const trend = trends[index];
-      if (trend.dayOfWeek === null) return false;
-      const categoryMatches = selectedCategory === "전체" || trend.category === selectedCategory;
-      const dayMatches = selectedDay === "전체" || trend.dayOfWeek === selectedDay;
-      return categoryMatches && dayMatches;
-    });
+  const visibleItems = items.filter((item) => {
+    if (item.dayOfWeek === null) return false;
+    const categoryMatches = selectedCategory === "전체" || item.trend.category === selectedCategory;
+    const dayMatches = selectedDay === "전체" || item.dayOfWeek === selectedDay;
+    return categoryMatches && dayMatches;
+  });
 
   const isAllCategorySelected = selectedCategory === "전체";
   const canExpandOrCollapse =
-    isAllCategorySelected && visibleIndexes.length > ALL_CATEGORIES_VISIBLE_LIMIT;
+    isAllCategorySelected && visibleItems.length > ALL_CATEGORIES_VISIBLE_LIMIT;
   const shouldTruncate = canExpandOrCollapse && !showAll;
-  const displayedIndexes = shouldTruncate
-    ? visibleIndexes.slice(0, ALL_CATEGORIES_VISIBLE_LIMIT)
-    : visibleIndexes;
+  const displayedItems = shouldTruncate
+    ? visibleItems.slice(0, ALL_CATEGORIES_VISIBLE_LIMIT)
+    : visibleItems;
 
   return (
     <section className="mx-auto max-w-6xl px-5 pt-16 sm:px-8" aria-labelledby="trend-feed-heading">
       <div className="mb-6">
         <h2 id="trend-feed-heading" className="text-[32px] font-semibold leading-[1.5] text-obsidian">이번 주 트렌드</h2>
         <p className="mt-1 text-[13px] text-fog" role="status" aria-live="polite">
-          {selectedDay} · {selectedCategory} · {visibleIndexes.length}개 트렌드
+          {selectedDay} · {selectedCategory} · {visibleItems.length}개 트렌드
         </p>
       </div>
 
@@ -115,8 +118,10 @@ export function TrendFeed({
       <div className="mb-6 h-px bg-cloud" />
 
       <div id="trend-results" className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {displayedIndexes.map((index) => children[index])}
-        {visibleIndexes.length === 0 && <p className="col-span-full py-12 text-center text-fog">아직 이 조건에 맞는 트렌드가 없어요.</p>}
+        {displayedItems.map((item, displayPosition) => (
+          <TrendCard key={item.trend.id} trend={item.trend} position={displayPosition + 1} />
+        ))}
+        {visibleItems.length === 0 && <p className="col-span-full py-12 text-center text-fog">아직 이 조건에 맞는 트렌드가 없어요.</p>}
       </div>
 
       {canExpandOrCollapse && (

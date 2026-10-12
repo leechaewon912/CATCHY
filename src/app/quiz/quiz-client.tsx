@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { SaveExpressionButton } from "@/components/save-expression-button";
 import { ArrowUpRightIcon, CheckCircleIcon, XCircleIcon } from "@/components/icons";
 import { highlightPhraseInText } from "@/lib/highlight-expressions";
+import { trackQuizCompleted, trackQuizStarted } from "@/lib/mixpanel-client";
 import type { Expression } from "@/lib/mock-data";
 
 export type QuizQuestionWithExpression = {
@@ -20,10 +21,16 @@ export function QuizClient({
   questions,
   trendTitle,
   returnHref = "/",
+  trendId,
+  entryPoint,
 }: {
   questions: QuizQuestionWithExpression[];
   trendTitle: string;
   returnHref?: string;
+  // quiz_id is the underlying trend id — this app has no separate quiz
+  // entity, a quiz is just "the expressions for one trend".
+  trendId: string;
+  entryPoint: string;
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
@@ -33,6 +40,32 @@ export function QuizClient({
   const question = questions[currentIndex];
   const isLastQuestion = currentIndex === questions.length - 1;
   const isAnswerCorrect = selectedOption === question.correctMeaningKo;
+
+  // This component only ever mounts once real questions are ready
+  // (the "표현이 부족해서..." fallback in app/quiz/page.tsx renders
+  // instead of QuizClient otherwise), so mounting IS "actually started
+  // a quiz" — fires once per mount, not again on handleRestart below
+  // (same instance, same ref).
+  const startedTrackedRef = useRef(false);
+  useEffect(() => {
+    if (startedTrackedRef.current) return;
+    startedTrackedRef.current = true;
+    trackQuizStarted({ quiz_id: trendId, entry_point: entryPoint });
+  }, [trendId, entryPoint]);
+
+  // Fires once per finished=false -> true transition (re-arms on
+  // handleRestart, which sets finished back to false) — never on a
+  // re-render that merely keeps finished true, so staying on the
+  // results screen can't send a duplicate.
+  const completedTrackedRef = useRef(false);
+  useEffect(() => {
+    if (finished && !completedTrackedRef.current) {
+      completedTrackedRef.current = true;
+      trackQuizCompleted({ quiz_id: trendId, score, question_count: questions.length });
+    } else if (!finished) {
+      completedTrackedRef.current = false;
+    }
+  }, [finished, trendId, score, questions.length]);
 
   function handleSelect(option: string) {
     if (selectedOption) return;

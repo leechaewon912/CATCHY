@@ -84,6 +84,7 @@ export function textContainsPhrase(text: string, phrase: string): boolean {
 export function highlightExpressionsInText(
   text: string,
   expressions: Expression[],
+  onPhraseClick?: (expression: Expression) => void,
 ): ReactNode[] {
   if (expressions.length === 0) return [text];
 
@@ -123,6 +124,7 @@ export function highlightExpressionsInText(
         <a
           key={`highlight-${key++}`}
           href={`#${owner.id}`}
+          onClick={onPhraseClick ? () => onPhraseClick(owner) : undefined}
           className="cursor-pointer rounded px-0.5 font-medium text-ember underline decoration-ember/40 underline-offset-4 transition-colors hover:bg-ember/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember"
         >
           {matchedText}

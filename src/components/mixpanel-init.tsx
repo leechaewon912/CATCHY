@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import mixpanel from "mixpanel-browser";
 
+import { markMixpanelReady } from "@/lib/mixpanel-client";
+
 // Module-level, not component state: survives React Strict Mode's
 // dev-only double-invoke of effects (mount → cleanup → mount), which
 // would otherwise call mixpanel.init() twice on every page load in
@@ -32,6 +34,7 @@ export function MixpanelInit() {
       // History API, not full page loads) still fire a new pageview.
       autocapture: true,
     });
+    markMixpanelReady();
   }, []);
 
   return null;

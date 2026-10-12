@@ -22,12 +22,25 @@ export const metadata: Metadata = {
 // message instead of rendering a degenerate one-option "quiz".
 const MIN_EXPRESSIONS_FOR_QUIZ = 2;
 
+// Valid entry_point values for the quiz_started event — anything else
+// (missing param, a direct/bookmarked URL visit) falls back to
+// "direct" below.
+const QUIZ_ENTRY_POINTS = ["trend_detail", "quiz_picker"] as const;
+type QuizEntryPoint = (typeof QUIZ_ENTRY_POINTS)[number] | "direct";
+
+function resolveEntryPoint(entry: string | undefined): QuizEntryPoint {
+  return (QUIZ_ENTRY_POINTS as readonly string[]).includes(entry ?? "")
+    ? (entry as QuizEntryPoint)
+    : "direct";
+}
+
 export default async function QuizPage({
   searchParams,
 }: {
-  searchParams: Promise<{ trend?: string }>;
+  searchParams: Promise<{ trend?: string; entry?: string }>;
 }) {
-  const { trend: trendId } = await searchParams;
+  const { trend: trendId, entry } = await searchParams;
+  const entryPoint = resolveEntryPoint(entry);
 
   if (!trendId) {
     const trends = await getHomeTrends();
@@ -73,7 +86,13 @@ export default async function QuizPage({
 
           <div className="mt-8">
             {questions.length >= MIN_EXPRESSIONS_FOR_QUIZ ? (
-              <QuizClient questions={questions} trendTitle={trend.title} returnHref={backHref} />
+              <QuizClient
+                questions={questions}
+                trendTitle={trend.title}
+                returnHref={backHref}
+                trendId={trend.id}
+                entryPoint={entryPoint}
+              />
             ) : (
               <div className="surface-card flex flex-col items-start gap-4 p-8 text-[14px] text-fog">
                 <p>이 트렌드는 아직 표현이 부족해서 퀴즈를 만들 수 없어요.</p>
