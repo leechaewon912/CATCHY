@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import * as amplitude from "@amplitude/analytics-browser";
 
+import { markAmplitudeReady } from "@/lib/mixpanel-client";
+
 // Module-level, not component state: survives React Strict Mode's
 // dev-only double-invoke of effects (mount → cleanup → mount), which
 // would otherwise call amplitude.init() twice on every page load in
@@ -34,6 +36,7 @@ export function AmplitudeInit() {
         elementInteractions: true,
       },
     });
+    markAmplitudeReady();
   }, []);
 
   return null;

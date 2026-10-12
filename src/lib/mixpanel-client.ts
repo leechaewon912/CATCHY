@@ -1,25 +1,47 @@
 import mixpanel from "mixpanel-browser";
+import * as amplitude from "@amplitude/analytics-browser";
 
 import type { Category } from "@/lib/mock-data";
 
-// Flipped by MixpanelInit (src/components/mixpanel-init.tsx) once
-// mixpanel.init() has actually run. Every trackXxx() below checks this
-// first and no-ops otherwise, so a custom event fired from some
-// component's mount effect can never reach an uninitialized SDK
-// instance — it's an explicit gate rather than relying on effect
-// ordering between MixpanelInit and whichever page happens to mount.
-let ready = false;
+// This file's name predates Amplitude being added here — kept as-is
+// (not renamed) to avoid touching every file that imports trackXxx()
+// below for a cosmetic rename. Every trackXxx() fans out to both
+// vendors from this one shared `track()` so the two tools get identical
+// event names/properties/trigger conditions and stay comparable,
+// without duplicating a single call site across the app.
+
+// Flipped by MixpanelInit (src/components/mixpanel-init.tsx) /
+// AmplitudeInit (src/components/amplitude-init.tsx) once each SDK's
+// own init() has actually run. Every trackXxx() below checks these
+// first and no-ops per-vendor otherwise, so a custom event fired from
+// some component's mount effect can never reach an uninitialized SDK
+// instance — an explicit gate rather than relying on effect ordering
+// between the Init components and whichever page happens to mount.
+let mixpanelReady = false;
+let amplitudeReady = false;
 
 export function markMixpanelReady(): void {
-  ready = true;
+  mixpanelReady = true;
+}
+
+export function markAmplitudeReady(): void {
+  amplitudeReady = true;
 }
 
 function track(event: string, properties: Record<string, unknown>): void {
-  if (!ready) return;
-  try {
-    mixpanel.track(event, properties);
-  } catch (error) {
-    console.error(`[mixpanel] failed to track "${event}"`, error);
+  if (mixpanelReady) {
+    try {
+      mixpanel.track(event, properties);
+    } catch (error) {
+      console.error(`[mixpanel] failed to track "${event}"`, error);
+    }
+  }
+  if (amplitudeReady) {
+    try {
+      amplitude.track(event, properties);
+    } catch (error) {
+      console.error(`[amplitude] failed to track "${event}"`, error);
+    }
   }
 }
 
