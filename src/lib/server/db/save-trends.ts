@@ -36,45 +36,6 @@ export async function fetchRecentPublishedClusterKeys(
   return (data ?? []).flatMap((row) => (row.cluster_key ? [row.cluster_key] : []));
 }
 
-// Keeps at most `limit` published trends per category: deletes the
-// oldest ones (by generated_at) beyond that count. trend_sources/
-// expressions cascade-delete with their parent trend row (see
-// supabase/schema.sql's "on delete cascade"), so this is a single
-// delete per excess row. Called once per touched category at the end
-// of every collection run, so the cap holds no matter how many new
-// trends a single run tries to add.
-export async function deleteOldestPublishedBeyondLimit(
-  category: Category,
-  limit: number,
-): Promise<void> {
-  const client = getSupabaseServerClient();
-  if (!client) return;
-
-  const { data, error } = await client
-    .from("trends")
-    .select("id")
-    .eq("category", category)
-    .eq("status", "published")
-    .order("generated_at", { ascending: false })
-    .returns<Array<{ id: string }>>();
-
-  if (error) {
-    console.error(`[supabase] failed to list published trends for ${category}:`, error.message);
-    return;
-  }
-
-  const excessIds = (data ?? []).slice(limit).map((row) => row.id);
-  if (excessIds.length === 0) return;
-
-  const { error: deleteError } = await client.from("trends").delete().in("id", excessIds);
-  if (deleteError) {
-    console.error(`[supabase] failed to delete excess trends for ${category}:`, deleteError.message);
-    return;
-  }
-
-  console.log(`[collect-trends] ${category}: trimmed ${excessIds.length} trend(s) beyond the ${limit}-per-category cap`);
-}
-
 export type UpsertTrendInput = {
   id: string;
   category: Category;

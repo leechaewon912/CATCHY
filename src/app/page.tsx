@@ -8,6 +8,15 @@ import { TrendHero } from "@/components/trend-hero";
 import { getHomeTrends } from "@/lib/server/trend-repository";
 import { toExpressions } from "@/lib/server/to-expressions";
 
+// Without this, Next.js prerenders this page once at build time (it
+// showed up as "○ Static" in `next build`'s route summary) — new
+// trends the daily cron saves to Supabase wouldn't show up here until
+// the next deploy, even though /trend/[id] and /quiz (already
+// server-rendered on demand) would reflect them immediately. Traffic
+// here is low enough that a fresh Supabase read on every request is a
+// non-issue.
+export const dynamic = "force-dynamic";
+
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 // Indices match Date#getUTCDay() (0=Sun..6=Sat) after shifting a UTC

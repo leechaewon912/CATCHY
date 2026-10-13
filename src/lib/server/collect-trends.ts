@@ -13,7 +13,6 @@ import { CURATED_RSS_DOMAINS } from "@/lib/server/rss-sources";
 import { generateTrendDraft, type GenerateTrendDraftOutput } from "@/lib/server/generate-trend-draft";
 import { generateTrendDraftWithLlm } from "@/lib/server/generate-trend-with-llm";
 import {
-  deleteOldestPublishedBeyondLimit,
   fetchRecentPublishedClusterKeys,
   upsertTrend,
   type UpsertTrendInput,
@@ -42,16 +41,17 @@ type ClusterableArticle = {
   publishedAt: string;
 };
 
-// Ceiling, not a target — 0, 1, or 2 *new* published per category in a
-// single run is a normal outcome when a run has fewer qualifying (2+
-// domain) clusters, not a failure. Nothing downstream assumes exactly 3.
-const MAX_PUBLISHED_PER_CATEGORY = 3;
-// Separate, stricter cap on the *total* published trends a category can
-// ever hold at once, enforced after every run by trimming the oldest
-// rows beyond this count (see deleteOldestPublishedBeyondLimit below).
-// Without this, a category that publishes 3/day would grow unbounded
-// since nothing else ever removes old trends.
-const MAX_TOTAL_PUBLISHED_PER_CATEGORY = 6;
+// Ceiling on *new* published trends per category per day (a category
+// normally gets exactly one run per day via the cron fan-out — see
+// /api/cron/daily-trends/route.ts), not a target — 0 through 6 are all
+// normal outcomes depending on how many qualifying (2+ domain) clusters
+// a given day's RSS feeds actually have. Deliberately NOT a total
+// storage cap: older-dated trends are never deleted to make room for
+// new ones — see the project history for why that used to happen and
+// was removed (it silently deleted prior days' published trends,
+// including ones a manual re-run of a category the same day could
+// trigger).
+const MAX_PUBLISHED_PER_CATEGORY = 6;
 // How far back to look for "is this the same story already published"
 // when deciding whether a candidate cluster is a duplicate (see
 // isDuplicateClusterKey below). A cluster's key depends on which
@@ -553,15 +553,6 @@ export async function runDailyTrendCollection(
     } catch (error) {
       console.error(`[collect-trends] failed to save ${save.id}`, error);
     }
-  }
-
-  // Enforce the MAX_TOTAL_PUBLISHED_PER_CATEGORY cap for every category
-  // this run touched, regardless of whether it published anything new —
-  // a category sitting at the cap from previous runs still needs no
-  // action, but this call is what actually trims it if a save above
-  // pushed it over.
-  for (const category of categorySummaries.map((summary) => summary.category)) {
-    await deleteOldestPublishedBeyondLimit(category, MAX_TOTAL_PUBLISHED_PER_CATEGORY);
   }
 
   return {
