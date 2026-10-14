@@ -24,6 +24,29 @@
 
   --background: var(--color-paper);
   --foreground: var(--color-graphite);
+
+  /* Card corner radius — kept as a plain runtime custom property (not a
+     @theme inline token) specifically so it's overridable by viewport
+     width below. @theme inline bakes its values directly into the
+     generated utility CSS (e.g. a literal `border-radius: 24px`), which
+     a media query can't touch; .surface-card/.surface-dark/.radius-card
+     below consume this via var() instead, so the override actually
+     takes effect. Desktop (≥1024px, Tailwind's `lg`) keeps the 24px
+     value the design already shipped with; tablet (≥768px, `md`) and
+     mobile (default) step down from there. */
+  --radius-cards: 16px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --radius-cards: 20px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --radius-cards: 24px;
+  }
 }
 
 @theme inline {
@@ -52,8 +75,8 @@
 
   /* Named radii from DESIGN.md's "Tokens — Spacing & Shapes" table.
      Additive next to Tailwind's default `rounded-*` scale — enables
-     rounded-cards / rounded-buttons / etc. */
-  --radius-cards: 24px;
+     rounded-buttons / etc. --radius-cards is deliberately NOT declared
+     here — see the :root block above for why. */
   --radius-icons: 40px;
   --radius-pills: 10000px;
   --radius-badges: 12px;
@@ -111,7 +134,8 @@ body {
  */
 @layer components {
   .surface-card {
-    @apply rounded-cards border border-cloud bg-snow;
+    @apply border border-cloud bg-snow;
+    border-radius: var(--radius-cards);
   }
 
   .surface-card-subtle {
@@ -119,7 +143,15 @@ body {
   }
 
   .surface-dark {
-    @apply rounded-cards bg-graphite text-snow;
+    @apply bg-graphite text-snow;
+    border-radius: var(--radius-cards);
+  }
+
+  /* Same responsive radius as .surface-card/.surface-dark, for the one
+     spot (the quiz answer-feedback box) that needs just the card
+     radius without pulling in the rest of .surface-card's border/bg. */
+  .radius-card {
+    border-radius: var(--radius-cards);
   }
 
   /* "Primary Action Button (Dark Filled)" */

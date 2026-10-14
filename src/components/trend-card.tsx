@@ -1,10 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 
 import { ArrowUpRightIcon } from "@/components/icons";
 import { trackTrendClicked } from "@/lib/mixpanel-client";
 import type { Trend } from "@/lib/mock-data";
+import { resolveTrendImage } from "@/lib/trend-image";
 
 // mock-data.ts is "server-only", so this client component can't import
 // its CATEGORY_BADGE_CLASS value — it's just this one static utility
@@ -31,12 +33,19 @@ export function TrendCard({ trend, position }: { trend: Trend; position: number 
       onClick={handleClick}
       className="surface-card group flex cursor-pointer flex-col overflow-hidden transition-transform hover:-translate-y-1 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
     >
-      {/* Trend thumbnails aren't collected yet (mock-data.ts / the DB
-          schema have no image field) — this stays an empty, muted block
-          rather than show an unrelated stock photo. Kept as its own
-          slot, not collapsed away, so the card's shape is ready for a
-          real thumbnail once one exists. */}
-      <div className="relative h-36 shrink-0 bg-mist sm:h-40">
+      {/* Trends don't have a real image column yet (mock-data.ts / the
+          DB schema), so this shows a deterministic Midjourney mock photo
+          per trend id — see resolveTrendImage's doc comment. Once a real
+          per-trend image exists, passing it through as that function's
+          second argument takes over automatically, no JSX change here. */}
+      <div className="relative h-36 shrink-0 sm:h-40">
+        <Image
+          src={resolveTrendImage(trend)}
+          alt=""
+          fill
+          sizes="(min-width: 1024px) 360px, (min-width: 640px) 50vw, 100vw"
+          className="object-cover"
+        />
         <span className={`${CATEGORY_BADGE_CLASS} absolute left-3 top-3 bg-snow/90`}>
           {trend.category}
         </span>

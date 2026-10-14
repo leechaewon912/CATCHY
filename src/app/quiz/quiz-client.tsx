@@ -183,7 +183,7 @@ export function QuizClient({
       {selectedOption && (
         <div
           aria-live="polite"
-          className="flex flex-col gap-4 rounded-cards border border-cloud bg-[#fafafa] p-5 text-[14px] leading-relaxed text-steel"
+          className="radius-card flex flex-col gap-4 border border-cloud bg-[#fafafa] p-5 text-[14px] leading-relaxed text-steel"
         >
           <p className={isAnswerCorrect ? "font-medium text-emerald-700" : "font-medium text-rose-700"}>
             {isAnswerCorrect
