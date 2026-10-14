@@ -7,7 +7,7 @@ import { QuizEntryClient, type QuizPickerTrend } from "@/app/quiz/quiz-entry-cli
 import { ArrowLeftIcon } from "@/components/icons";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { CATEGORY_BADGE_CLASS, type Trend } from "@/lib/mock-data";
+import type { Trend } from "@/lib/mock-data";
 import { buildQuizFromExpressions } from "@/lib/server/build-quiz";
 import { getHomeTrends, getTrendDetail, getTrendExpressions } from "@/lib/server/trend-repository";
 
@@ -34,6 +34,25 @@ function resolveEntryPoint(entry: string | undefined): QuizEntryPoint {
     : "direct";
 }
 
+const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+// "YYYY-MM-DD" in Asia/Seoul wall-clock time — the same "treat UTC
+// getters as KST after shifting by +9h" trick src/app/page.tsx and
+// collect-trends.ts's kstDateStamp use. Asia/Seoul has no DST, so a
+// fixed offset is always correct.
+function kstDateStamp(date: Date): string {
+  const kst = new Date(date.getTime() + KST_OFFSET_MS);
+  return `${kst.getUTCFullYear()}-${String(kst.getUTCMonth() + 1).padStart(2, "0")}-${String(kst.getUTCDate()).padStart(2, "0")}`;
+}
+
+// The quiz picker only offers trends generated on the current KST
+// calendar day — older trends (still fine to link to directly or play
+// via /trend/[id]) are filtered out here rather than at the repository
+// level, so getHomeTrends() itself stays untouched.
+function isGeneratedToday(generatedAt: string, now: Date): boolean {
+  return kstDateStamp(new Date(generatedAt)) === kstDateStamp(now);
+}
+
 export default async function QuizPage({
   searchParams,
 }: {
@@ -44,7 +63,8 @@ export default async function QuizPage({
 
   if (!trendId) {
     const trends = await getHomeTrends();
-    return <QuizTrendPicker trends={trends} />;
+    const todaysTrends = trends.filter((trend) => isGeneratedToday(trend.generatedAt, new Date()));
+    return <QuizTrendPicker trends={todaysTrends} />;
   }
 
   const trend = await getTrendDetail(trendId);
@@ -78,9 +98,10 @@ export default async function QuizPage({
             트렌드로 돌아가기
           </Link>
 
-          <span className={CATEGORY_BADGE_CLASS}>{trend.category}</span>
-
-          <h1 className="mt-2 text-[32px] font-semibold leading-tight text-obsidian sm:text-[40px]">
+          {/* Category chip intentionally omitted here — the quiz-solving
+              screen only needs the trend title and the question UI below
+              it, not the category it came from. */}
+          <h1 className="text-[32px] font-semibold leading-tight text-obsidian sm:text-[40px]">
             {trend.title}
           </h1>
 
