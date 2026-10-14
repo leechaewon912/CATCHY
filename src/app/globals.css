@@ -53,7 +53,7 @@
   /* Named radii from DESIGN.md's "Tokens — Spacing & Shapes" table.
      Additive next to Tailwind's default `rounded-*` scale — enables
      rounded-cards / rounded-buttons / etc. */
-  --radius-cards: 36px;
+  --radius-cards: 24px;
   --radius-icons: 40px;
   --radius-pills: 10000px;
   --radius-badges: 12px;
