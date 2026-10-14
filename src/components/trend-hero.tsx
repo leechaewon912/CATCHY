@@ -6,15 +6,17 @@ export function TrendHero() {
     <section className="relative overflow-hidden bg-snow py-12 sm:py-16">
       {/* Pale blue wash rising from the bottom edge, fading to white well
           before the top — kept soft enough that the color boundary never
-          reads as a hard edge. Intentionally inline and scoped to this
-          section only — these accent colors are a trial direction, not
-          tokens promoted into globals.css. */}
+          reads as a hard edge. The bottom stop is the page background
+          token itself (var(--color-paper), not a hardcoded hex) so the
+          seam where this section meets TrendFeed below is a pixel-exact
+          match, not just a close approximation. The blue stops above it
+          are unchanged from before — only the anchor point moved. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "linear-gradient(to top, #E3EBFF 0%, #F0F4FF 55%, #FFFFFF 90%)",
+            "linear-gradient(to top, var(--color-paper) 0%, #E3EBFF 25%, #F0F4FF 60%, #FFFFFF 90%)",
         }}
       />
 
