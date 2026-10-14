@@ -66,6 +66,29 @@ body {
   color: var(--foreground);
 }
 
+/* Hero title/subcopy fade-in. Defined via @utility (not @layer utilities)
+   so Tailwind can combine them with the motion-safe: variant — see
+   trend-hero.tsx, which only applies these under
+   @media (prefers-reduced-motion: no-preference). */
+@keyframes hero-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility animate-hero-fade-up {
+  animation: hero-fade-up 0.6s ease-out both;
+}
+
+@utility animate-hero-fade-up-delay {
+  animation: hero-fade-up 0.6s ease-out 0.15s both;
+}
+
 /* Hides the horizontal scrollbar on the featured-expressions carousel
    while keeping the element natively scrollable (mouse-drag/trackpad/
    touch swipe all still work) — only the chevron buttons and native
