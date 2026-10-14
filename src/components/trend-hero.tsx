@@ -31,8 +31,9 @@ export function TrendHero() {
         </h1>
 
         <p className="motion-safe:animate-hero-fade-up-delay mx-auto mt-6 max-w-[580px] break-keep text-[16px] font-normal leading-[1.6] text-[#6B7280] sm:mt-7 sm:text-[18px] md:text-[19px] lg:text-[20px]">
-          해외에서 지금 화제가 되는 트렌드를 만나고, 그 속에서 실제로 쓰이는
-          영어 표현까지 배워보세요.
+          해외에서 지금 화제가 되는 트렌드를 만나고,
+          <br />
+          그 속에서 실제로 쓰이는 영어 표현까지 배워보세요.
         </p>
       </div>
     </section>
