@@ -78,7 +78,7 @@ Awesomic operates in a restrained, neutral-first visual register: a zinc-gray sc
 
 | Element | Value |
 |---------|-------|
-| cards | 36px |
+| cards | 16px (mobile, <768px) / 20px (tablet, 768–1023px) / 24px (desktop, ≥1024px) — responsive, via `--radius-cards` |
 | icons | 40px |
 | pills | 10000px |
 | badges | 12px |
@@ -174,7 +174,7 @@ Sticky white header, logo left, nav links center (14px Cosmica), login + dark CT
 
 ### Do
 - Use #09090b for all primary action buttons — the dark filled CTA is the system’s single most important interactive element
-- Set card border-radius to 36px and rely on 1px solid #ececee borders instead of shadows for elevation
+- Set card border-radius via the responsive `--radius-cards` token (16px mobile / 20px tablet / 24px desktop) and rely on 1px solid #ececee borders instead of shadows for elevation
 - Keep body text at 14–15px Cosmica weight 400 in #18181b — compact, dense, marketplace-grade
 - Reserve #ff5a00 exclusively for YC-style accent badges and startup credential chips — never use it for general UI
 - Use 56–64px Cosmica weight 600 with line-height 1.12–1.28 for hero and section display headlines
@@ -240,7 +240,7 @@ The page follows a centered max-width (1200px) container with generous vertical 
 
 ## Geometry Philosophy
 
-The system’s spatial language is defined by three radii that repeat everywhere: 12px for tags and small controls, 14px for buttons and inputs, and 36px for cards and large surfaces. Pill shapes (10000px) appear only in navigation CTAs. This creates a consistent visual rhythm where corners curve generously on containers but stay controlled on interactive elements. No sharp corners (0px) are used on visible UI — even the smallest chips get 12px rounding. The asymmetry between 14px (buttons) and 36px (cards) is deliberate: buttons feel precise and contained, cards feel inviting and spacious.
+The system’s spatial language is defined by three radii that repeat everywhere: 12px for tags and small controls, 14px for buttons and inputs, and a responsive 16–24px for cards and large surfaces (16px mobile, 20px tablet, 24px desktop — see `--radius-cards`). Pill shapes (10000px) appear only in navigation CTAs. This creates a consistent visual rhythm where corners curve generously on containers but stay controlled on interactive elements. No sharp corners (0px) are used on visible UI — even the smallest chips get 12px rounding. The asymmetry between 14px (buttons) and the larger card radius is deliberate: buttons feel precise and contained, cards feel inviting and spacious at every screen size.
 
 ## Similar Brands
 
@@ -339,13 +339,29 @@ The system’s spatial language is defined by three radii that repeat everywhere
   --radius-full-6: 10000px;
 
   /* Named Radii */
-  --radius-cards: 36px;
+  /* --radius-cards is responsive, not a flat value — see the media
+     query block below. This flat entry is its mobile-default value. */
+  --radius-cards: 16px;
   --radius-icons: 40px;
   --radius-pills: 10000px;
   --radius-badges: 12px;
   --radius-inputs: 14px;
   --radius-buttons: 14px;
+}
 
+@media (min-width: 768px) {
+  :root {
+    --radius-cards: 20px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --radius-cards: 24px;
+  }
+}
+
+:root {
   /* Shadows */
   --shadow-subtle: rgba(255, 255, 255, 0.5) 0px 0.5px 0px 0px inset, rgba(117, 123, 133, 0.4) 0px 9px 14px -5px inset, rgb(44, 46, 52) 0px 0px 0px 1.5px, rgba(0, 0, 0, 0.14) 0px 4px 6px 0px;
   --shadow-subtle-2: rgb(228, 228, 231) 0px 1px 0px 0px inset;

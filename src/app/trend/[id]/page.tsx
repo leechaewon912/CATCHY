@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -13,15 +14,8 @@ import {
 import { RecordTrendView } from "@/components/record-trend-view";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import type { SourceType } from "@/lib/mock-data";
 import { getTrendDetail, getTrendExpressions } from "@/lib/server/trend-repository";
-
-const SOURCE_TYPE_LABELS: Record<SourceType, string> = {
-  official: "공식",
-  platform: "플랫폼/차트",
-  media: "보조 매체",
-  reference: "참고 자료",
-};
+import { resolveTrendImage } from "@/lib/trend-image";
 
 export default async function TrendDetailPage(
   props: PageProps<"/trend/[id]">,
@@ -49,9 +43,31 @@ export default async function TrendDetailPage(
             <ArrowLeftIcon className="h-4 w-4" />
             트렌드 피드로 돌아가기
           </Link>
+        </section>
 
-          {/* 1. 트렌드 제목 / 카테고리 / 요약 */}
-          <div className="surface-dark p-6 sm:p-12">
+        {/* 1. 트렌드 제목 / 카테고리 / 요약 — full-bleed hero photo (same
+            mock photo as the trend card, resolveTrendImage is id-based
+            so it matches). Full width on purpose, unlike every other
+            section on this page: the image spans the viewport while the
+            text on top of it stays aligned to the page's normal
+            max-w-4xl content column via the inner wrapper below. */}
+        <section className="relative w-full overflow-hidden">
+          <Image
+            src={resolveTrendImage(trend)}
+            alt=""
+            fill
+            sizes="100vw"
+            className="object-cover"
+          />
+          {/* Darkest at the bottom where the text sits, fading to clear
+              at the top — keeps the photo itself visible instead of
+              flattening it under a uniform dark wash. */}
+          <div
+            className="absolute inset-0 bg-gradient-to-t from-graphite/90 via-graphite/45 to-transparent"
+            aria-hidden
+          />
+
+          <div className="relative mx-auto flex min-h-[320px] max-w-4xl flex-col justify-end px-5 py-8 sm:min-h-[420px] sm:px-8 sm:py-12">
             <div className="flex flex-col gap-5 sm:gap-6">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="badge-filled">{trend.category}</span>
@@ -68,12 +84,6 @@ export default async function TrendDetailPage(
               <p className="max-w-2xl text-[15px] leading-relaxed text-mist sm:text-[18px]">
                 {trend.summary}
               </p>
-
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 text-[12px] text-ash">
-                <span>출처 {trend.sources.length}개</span>
-                <span>·</span>
-                <span>표현 {trend.expressions.length}개</span>
-              </div>
             </div>
           </div>
         </section>
@@ -189,14 +199,9 @@ export default async function TrendDetailPage(
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[12px] text-fog">
-                        {source.sourceName}
-                      </span>
-                      <span className="badge-outline">
-                        {SOURCE_TYPE_LABELS[source.sourceType]}
-                      </span>
-                    </div>
+                    <span className="text-[12px] text-fog">
+                      {source.sourceName}
+                    </span>
                     <p className="mt-1 text-[14px] font-medium text-graphite">
                       {source.originalTitle}
                     </p>
