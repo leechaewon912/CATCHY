@@ -4,23 +4,24 @@
 export function TrendHero() {
   return (
     <section className="relative overflow-hidden bg-snow py-12 sm:py-16">
-      {/* Soft blue wash rising from the bottom edge, fading to white at
-          the top. Intentionally inline and scoped to this section only —
-          these accent colors are a trial direction, not tokens promoted
-          into globals.css. */}
+      {/* Pale blue wash rising from the bottom edge, fading to white well
+          before the top — kept soft enough that the color boundary never
+          reads as a hard edge. Intentionally inline and scoped to this
+          section only — these accent colors are a trial direction, not
+          tokens promoted into globals.css. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "linear-gradient(to top, #AFC3FF 0%, #DCE5FF 40%, #FFFFFF 80%)",
+            "linear-gradient(to top, #E3EBFF 0%, #F0F4FF 55%, #FFFFFF 90%)",
         }}
       />
 
       <div className="relative mx-auto max-w-5xl px-5 text-center sm:px-8">
-        {/* Wider than the slogan/description below it so "Catch the
-            language." has room to stay on one line at tablet/desktop
-            sizes instead of wrapping inside its own line. */}
+        {/* Wider than the description below it so "Catch the language."
+            has room to stay on one line at tablet/desktop sizes instead
+            of wrapping inside its own line. */}
         <h1
           className="motion-safe:animate-hero-fade-up mx-auto max-w-[1040px] break-keep font-extrabold tracking-tight text-obsidian"
           style={{ fontSize: "clamp(2.375rem, 1.1rem + 6vw, 5.5rem)", lineHeight: 1.08 }}
@@ -29,13 +30,9 @@ export function TrendHero() {
           <span className="block sm:whitespace-nowrap">Catch the language.</span>
         </h1>
 
-        <p className="motion-safe:animate-hero-fade-up-delay mt-6 break-keep text-[19px] font-semibold leading-snug text-[#171717] sm:mt-7 sm:text-[24px] md:text-[26px] lg:text-[28px]">
-          트렌드를 읽다, 영어를 발견하다.
-        </p>
-
-        <p className="motion-safe:animate-hero-fade-up-delay mx-auto mt-4 max-w-[620px] break-keep text-[14px] font-normal leading-[1.65] text-[#6B7280] sm:mt-5 sm:text-[16px] md:text-[17px] lg:text-[18px]">
-          해외에서 지금 화제가 되는 트렌드를 쉽고 빠르게 만나보세요. 트렌드 속
-          생생한 영어 표현을 익히고, 퀴즈로 배운 내용을 확인할 수 있어요.
+        <p className="motion-safe:animate-hero-fade-up-delay mx-auto mt-6 max-w-[580px] break-keep text-[16px] font-normal leading-[1.6] text-[#6B7280] sm:mt-7 sm:text-[18px] md:text-[19px] lg:text-[20px]">
+          해외에서 지금 화제가 되는 트렌드를 만나고, 그 속에서 실제로 쓰이는
+          영어 표현까지 배워보세요.
         </p>
       </div>
     </section>
