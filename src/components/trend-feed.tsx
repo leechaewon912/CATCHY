@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDownIcon } from "@/components/icons";
 import { TrendCard } from "@/components/trend-card";
 import type { Category, Trend } from "@/lib/mock-data";
@@ -27,6 +27,81 @@ const CATEGORY_FILTERS: (Category | "전체")[] = [
 const DAY_FILTERS = ["전체", "월", "화", "수", "목", "금", "토", "일"] as const;
 export type DayFilter = (typeof DAY_FILTERS)[number];
 
+// Mon→Sun order, matching src/app/page.tsx's weekdayLabelIfThisWeek
+// output and this component's own day-tab order (DAY_FILTERS minus
+// "전체") — used to tell whether a selected day tab is later this week
+// than "today" (Case 2) or is "today" itself (Case 1).
+const WEEKDAY_ORDER = DAY_FILTERS.slice(1);
+
+const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+const RELEASE_HOUR_KST = 9;
+
+// Same "shift by +9h, read back with UTC getters" trick as
+// src/app/page.tsx's toKstWallClock/computeThisWeek — kept local to
+// this file rather than shared, matching how every other file with KST
+// logic in this codebase (src/app/page.tsx, src/app/quiz/page.tsx)
+// already does its own small inline version instead of a shared util.
+function kstTodayLabel(now: Date): DayFilter {
+  const kst = new Date(now.getTime() + KST_OFFSET_MS);
+  return WEEKDAY_ORDER[(kst.getUTCDay() + 6) % 7];
+}
+
+function kstHour(now: Date): number {
+  return new Date(now.getTime() + KST_OFFSET_MS).getUTCHours();
+}
+
+export type TrendFeedEmptyState = { title: string; description: string };
+
+// Pure and synchronous specifically so it's unit-testable by passing an
+// explicit `now` — see the "검증 시에는 실제 시스템 시간을 변경하지 말고
+// 테스트용 시간 주입 등의 방법을 사용" requirement this was written
+// against. `dayHasAnyContent` must already reflect the selected day
+// *ignoring* the category filter — see resolveDayHasAnyContent below —
+// so a day that has content in some other category still falls through
+// to `null` (the existing generic per-category empty message) instead
+// of claiming the whole day isn't live yet.
+export function resolveTrendFeedEmptyState({
+  selectedDay,
+  dayHasAnyContent,
+  now,
+}: {
+  selectedDay: DayFilter;
+  dayHasAnyContent: boolean;
+  now: Date;
+}): TrendFeedEmptyState | null {
+  if (dayHasAnyContent) return null;
+
+  if (selectedDay !== "전체") {
+    const todayLabel = kstTodayLabel(now);
+    const todayIndex = WEEKDAY_ORDER.indexOf(todayLabel);
+    const selectedIndex = WEEKDAY_ORDER.indexOf(selectedDay);
+
+    if (selectedIndex > todayIndex) {
+      // Case 2 — a day later this week than today.
+      return {
+        title: `${selectedDay}요일의 트렌드를 준비하고 있어요.`,
+        description: `새로운 콘텐츠는 ${selectedDay}요일 오전 9시에 공개돼요.`,
+      };
+    }
+
+    if (selectedIndex === todayIndex && kstHour(now) < RELEASE_HOUR_KST) {
+      // Case 1 — today, before the daily 9am KST release.
+      return {
+        title: "오늘의 트렌드를 준비하고 있어요.",
+        description: "새로운 콘텐츠는 오전 9시에 공개돼요.",
+      };
+    }
+  }
+
+  // Case 3 — today after 9am with nothing yet (collection/generation
+  // running late or failed), a past day that never got content, or
+  // "전체" with nothing at all this week.
+  return {
+    title: "아직 새로운 트렌드가 없어요.",
+    description: "새로운 콘텐츠가 준비되면 이곳에서 확인할 수 있어요.",
+  };
+}
+
 export function TrendFeed({
   items,
   defaultDay,
@@ -52,12 +127,39 @@ export function TrendFeed({
   const [selectedDay, setSelectedDay] = useState<DayFilter>(defaultDay);
   const [showAll, setShowAll] = useState(false);
 
+  // Drives resolveTrendFeedEmptyState's Case 1/2/3 wording — ticks every
+  // minute so a tab left open across the 9am release or past midnight
+  // re-evaluates on its own, without a reload. This only changes which
+  // *message* an already-empty state shows; it never assumes content
+  // exists — that's still read from `items`, which stays whatever this
+  // page load's server-rendered props were (src/app/page.tsx's
+  // `force-dynamic` already covers getting fresh data on reload/revisit).
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   const visibleItems = items.filter((item) => {
     if (item.dayOfWeek === null) return false;
     const categoryMatches = selectedCategory === "전체" || item.trend.category === selectedCategory;
     const dayMatches = selectedDay === "전체" || item.dayOfWeek === selectedDay;
     return categoryMatches && dayMatches;
   });
+
+  // Whether the *selected day* has any content at all, ignoring the
+  // category filter — resolveTrendFeedEmptyState needs this to tell "day
+  // not live yet" (Case 1/2/3) apart from "day is live, this one
+  // category just has nothing" (existing generic message).
+  const dayHasAnyContent =
+    selectedDay === "전체"
+      ? items.some((item) => item.dayOfWeek !== null)
+      : items.some((item) => item.dayOfWeek === selectedDay);
+
+  const emptyState =
+    visibleItems.length === 0
+      ? resolveTrendFeedEmptyState({ selectedDay, dayHasAnyContent, now })
+      : null;
 
   const isAllCategorySelected = selectedCategory === "전체";
   const canExpandOrCollapse =
@@ -121,7 +223,15 @@ export function TrendFeed({
         {displayedItems.map((item, displayPosition) => (
           <TrendCard key={item.trend.id} trend={item.trend} position={displayPosition + 1} />
         ))}
-        {visibleItems.length === 0 && <p className="col-span-full py-12 text-center text-fog">아직 이 조건에 맞는 트렌드가 없어요.</p>}
+        {visibleItems.length === 0 &&
+          (emptyState ? (
+            <div className="col-span-full flex flex-col items-center gap-1 py-12 text-center">
+              <p className="text-[16px] font-semibold text-obsidian">{emptyState.title}</p>
+              <p className="text-[14px] text-fog">{emptyState.description}</p>
+            </div>
+          ) : (
+            <p className="col-span-full py-12 text-center text-fog">아직 이 조건에 맞는 트렌드가 없어요.</p>
+          ))}
       </div>
 
       {canExpandOrCollapse && (
