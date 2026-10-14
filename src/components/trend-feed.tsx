@@ -1,15 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ChevronDownIcon } from "@/components/icons";
+import { useEffect, useRef, useState } from "react";
+import { ChevronLeftIcon, ChevronRightIcon } from "@/components/icons";
 import { TrendCard } from "@/components/trend-card";
 import type { Category, Trend } from "@/lib/mock-data";
 
-// "전체" 카테고리에서는 모든 카테고리의 카드가 합쳐져 한 번에 너무 많이
-// 쌓일 수 있어, 처음엔 이만큼만 보여주고 "더보기"로 나머지를 펼친다.
-// 특정 카테고리를 선택하면(이미 카테고리당 최대 6개로 발행이 제한돼
-// 있으므로) 이 제한을 적용할 필요가 없다.
-const ALL_CATEGORIES_VISIBLE_LIMIT = 6;
+// Every filter combination (day × category) paginates the same way once
+// it's past one page — see buildPageItems/TrendFeedPagination below.
+const PAGE_SIZE = 6;
 
 // mock-data.ts는 "server-only"라 클라이언트 컴포넌트에서 값을 import할 수
 // 없다. 카테고리 목록은 Category 타입과 나란히 여기서도 직접 유지한다.
@@ -102,6 +100,105 @@ export function resolveTrendFeedEmptyState({
   };
 }
 
+type PageItem = number | "ellipsis-start" | "ellipsis-end";
+
+// Standard "1 … 4 5 6 … 12" windowing: first page, last page, the
+// current page, and one sibling on each side — collapsed into an
+// ellipsis once there's a gap, so the control stays a fixed width
+// instead of growing with the trend count.
+function buildPageItems(current: number, total: number): PageItem[] {
+  const SIBLING_COUNT = 1;
+  const minVisible = SIBLING_COUNT * 2 + 5; // first + last + current + 2 siblings + room for both ellipses
+
+  if (total <= minVisible) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
+  const leftSibling = Math.max(current - SIBLING_COUNT, 1);
+  const rightSibling = Math.min(current + SIBLING_COUNT, total);
+  const showLeftEllipsis = leftSibling > 2;
+  const showRightEllipsis = rightSibling < total - 1;
+
+  if (!showLeftEllipsis && showRightEllipsis) {
+    const leftRange = Array.from({ length: 3 + SIBLING_COUNT * 2 }, (_, i) => i + 1);
+    return [...leftRange, "ellipsis-end", total];
+  }
+
+  if (showLeftEllipsis && !showRightEllipsis) {
+    const rightCount = 3 + SIBLING_COUNT * 2;
+    const rightRange = Array.from({ length: rightCount }, (_, i) => total - rightCount + 1 + i);
+    return [1, "ellipsis-start", ...rightRange];
+  }
+
+  const middleRange = Array.from(
+    { length: rightSibling - leftSibling + 1 },
+    (_, i) => leftSibling + i,
+  );
+  return [1, "ellipsis-start", ...middleRange, "ellipsis-end", total];
+}
+
+function TrendFeedPagination({
+  page,
+  totalPages,
+  onPageChange,
+}: {
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}) {
+  const pageButtonClass =
+    "flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-pills text-[14px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian sm:h-9 sm:w-9";
+
+  return (
+    <nav
+      className="mt-8 flex flex-wrap items-center justify-center gap-1"
+      aria-label="트렌드 목록 페이지"
+    >
+      <button
+        type="button"
+        onClick={() => onPageChange(page - 1)}
+        disabled={page === 1}
+        aria-label="이전 페이지"
+        className={`${pageButtonClass} text-iron hover:bg-cloud disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent`}
+      >
+        <ChevronLeftIcon className="h-4 w-4" />
+      </button>
+
+      {buildPageItems(page, totalPages).map((item, index) =>
+        typeof item === "number" ? (
+          <button
+            key={item}
+            type="button"
+            aria-current={item === page ? "page" : undefined}
+            onClick={() => onPageChange(item)}
+            className={`${pageButtonClass} ${item === page ? "bg-obsidian text-snow" : "text-iron hover:bg-cloud"}`}
+          >
+            {item}
+          </button>
+        ) : (
+          <span
+            key={`${item}-${index}`}
+            aria-hidden
+            className="flex h-8 w-8 shrink-0 items-center justify-center text-[14px] text-ash sm:h-9 sm:w-9"
+          >
+            …
+          </span>
+        ),
+      )}
+
+      <button
+        type="button"
+        onClick={() => onPageChange(page + 1)}
+        disabled={page === totalPages}
+        aria-label="다음 페이지"
+        className={`${pageButtonClass} text-iron hover:bg-cloud disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent`}
+      >
+        <ChevronRightIcon className="h-4 w-4" />
+      </button>
+    </nav>
+  );
+}
+
 export function TrendFeed({
   items,
   defaultDay,
@@ -125,7 +222,8 @@ export function TrendFeed({
 }) {
   const [selectedCategory, setSelectedCategory] = useState<Category | "전체">("전체");
   const [selectedDay, setSelectedDay] = useState<DayFilter>(defaultDay);
-  const [showAll, setShowAll] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   // Drives resolveTrendFeedEmptyState's Case 1/2/3 wording — ticks every
   // minute so a tab left open across the 9am release or past midnight
@@ -161,13 +259,28 @@ export function TrendFeed({
       ? resolveTrendFeedEmptyState({ selectedDay, dayHasAnyContent, now })
       : null;
 
-  const isAllCategorySelected = selectedCategory === "전체";
-  const canExpandOrCollapse =
-    isAllCategorySelected && visibleItems.length > ALL_CATEGORIES_VISIBLE_LIMIT;
-  const shouldTruncate = canExpandOrCollapse && !showAll;
-  const displayedItems = shouldTruncate
-    ? visibleItems.slice(0, ALL_CATEGORIES_VISIBLE_LIMIT)
-    : visibleItems;
+  const totalPages = Math.max(1, Math.ceil(visibleItems.length / PAGE_SIZE));
+  // Defensive clamp only — currentPage is reset to 1 on every filter
+  // change below, so this only matters if visibleItems' length changes
+  // out from under an already-selected page some other way.
+  const safePage = Math.min(currentPage, totalPages);
+  const pageStartIndex = (safePage - 1) * PAGE_SIZE;
+  const displayedItems = visibleItems.slice(pageStartIndex, pageStartIndex + PAGE_SIZE);
+  const showPagination = visibleItems.length > PAGE_SIZE;
+
+  function changePage(nextPage: number) {
+    setCurrentPage(nextPage);
+    // PC (≥1024px, Tailwind's `lg` — same breakpoint the responsive
+    // --radius-cards token uses) keeps the viewport exactly where it
+    // was: the 3-column grid is short enough there that jumping to its
+    // top on every page click read as a jarring "did the page just
+    // reload" flash. Mobile/tablet's single-column grid is tall enough
+    // that the jump is still worth keeping.
+    const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+    if (!isDesktop) {
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
 
   return (
     <section className="mx-auto max-w-6xl px-5 pt-10 sm:px-8" aria-labelledby="trend-feed-heading">
@@ -190,7 +303,7 @@ export function TrendFeed({
               aria-controls="trend-results"
               onClick={() => {
                 setSelectedDay(day);
-                setShowAll(false);
+                setCurrentPage(1);
               }}
               className={[
                 "shrink-0 cursor-pointer border-b-2 pb-2 text-[14px] transition-colors focus-visible:outline-none",
@@ -210,7 +323,7 @@ export function TrendFeed({
         {CATEGORY_FILTERS.map((category) => (
           <button key={category} type="button" aria-pressed={selectedCategory === category} aria-controls="trend-results" onClick={() => {
               setSelectedCategory(category);
-              setShowAll(false);
+              setCurrentPage(1);
             }}
             className={`shrink-0 cursor-pointer rounded-pills border px-4 py-2.5 text-[14px] font-normal transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian focus-visible:ring-offset-2 focus-visible:ring-offset-paper ${selectedCategory === category ? "border-obsidian bg-obsidian text-snow" : "border-cloud bg-snow text-iron hover:border-ash hover:text-graphite"}`}>
             {category}
@@ -219,9 +332,13 @@ export function TrendFeed({
       </div>
       <div className="mb-6 h-px bg-cloud" />
 
-      <div id="trend-results" className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {displayedItems.map((item, displayPosition) => (
-          <TrendCard key={item.trend.id} trend={item.trend} position={displayPosition + 1} />
+      <div
+        id="trend-results"
+        ref={resultsRef}
+        className="grid scroll-mt-24 grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3"
+      >
+        {displayedItems.map((item, index) => (
+          <TrendCard key={item.trend.id} trend={item.trend} position={pageStartIndex + index + 1} />
         ))}
         {visibleItems.length === 0 &&
           (emptyState ? (
@@ -234,17 +351,8 @@ export function TrendFeed({
           ))}
       </div>
 
-      {canExpandOrCollapse && (
-        <div className="mt-8 flex justify-center">
-          <button
-            type="button"
-            onClick={() => setShowAll((prev) => !prev)}
-            className="flex cursor-pointer items-center gap-1.5 rounded-pills border border-cloud bg-snow px-5 py-2.5 text-[14px] font-medium text-iron transition-colors hover:border-ash hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
-          >
-            {showAll ? "접기" : "더보기"}
-            <ChevronDownIcon className={`h-4 w-4 transition-transform ${showAll ? "rotate-180" : ""}`} />
-          </button>
-        </div>
+      {showPagination && (
+        <TrendFeedPagination page={safePage} totalPages={totalPages} onPageChange={changePage} />
       )}
     </section>
   );
