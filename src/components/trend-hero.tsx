@@ -4,19 +4,18 @@
 export function TrendHero() {
   return (
     <section className="relative overflow-hidden bg-snow py-12 sm:py-16">
-      {/* Pale blue wash rising from the bottom edge, fading to white well
-          before the top — kept soft enough that the color boundary never
-          reads as a hard edge. The bottom stop is the page background
-          token itself (var(--color-paper), not a hardcoded hex) so the
-          seam where this section meets TrendFeed below is a pixel-exact
-          match, not just a close approximation. The blue stops above it
-          are unchanged from before — only the anchor point moved. */}
+      {/* Soft blue wash, white top through pale blue to a deliberately
+          solid blue at the bottom — bottom color (#DCE5FF) is distinct
+          from TrendFeed's cool-gray page background (--color-paper,
+          #F3F5F8) on purpose, so the hero reads as its own section
+          instead of blending into the feed below it. The pure-white
+          band at the top (85%+) keeps the blue contained to the lower
+          portion rather than spreading across the whole section. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
-          background:
-            "linear-gradient(to top, var(--color-paper) 0%, #E3EBFF 25%, #F0F4FF 60%, #FFFFFF 90%)",
+          background: "linear-gradient(to top, #DCE5FF 0%, #F0F4FF 50%, #FFFFFF 85%)",
         }}
       />
 
