@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { ArrowUpRightIcon } from "@/components/icons";
 import { trackTrendClicked } from "@/lib/mixpanel-client";
 import type { Trend } from "@/lib/mock-data";
 
@@ -28,19 +29,33 @@ export function TrendCard({ trend, position }: { trend: Trend; position: number 
     <Link
       href={`/trend/${trend.id}`}
       onClick={handleClick}
-      className="surface-card group flex cursor-pointer flex-col transition-colors hover:border-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
+      className="surface-card group flex cursor-pointer flex-col overflow-hidden transition-transform hover:-translate-y-1 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
     >
-      <div className="p-5 pb-0">
-        <span className={CATEGORY_BADGE_CLASS}>{trend.category}</span>
+      {/* Trend thumbnails aren't collected yet (mock-data.ts / the DB
+          schema have no image field) — this stays an empty, muted block
+          rather than show an unrelated stock photo. Kept as its own
+          slot, not collapsed away, so the card's shape is ready for a
+          real thumbnail once one exists. */}
+      <div className="relative h-36 shrink-0 bg-mist sm:h-40">
+        <span className={`${CATEGORY_BADGE_CLASS} absolute left-3 top-3 bg-snow/90`}>
+          {trend.category}
+        </span>
       </div>
 
       <div className="flex flex-1 flex-col gap-3 p-5">
-        <h3 className="text-[18px] font-semibold leading-snug text-obsidian transition-colors group-hover:text-graphite">
-          {trend.title}
-        </h3>
-        <p className="line-clamp-2 text-[14px] leading-relaxed text-fog">
-          {trend.summary}
-        </p>
+        <div>
+          <h3 className="text-[18px] font-semibold leading-snug text-obsidian transition-colors group-hover:text-graphite">
+            {trend.title}
+          </h3>
+          <p className="mt-1 line-clamp-1 text-[13px] text-fog">{trend.englishSummary}</p>
+        </div>
+
+        <p className="line-clamp-2 text-[14px] leading-relaxed text-fog">{trend.summary}</p>
+
+        <span className="mt-auto inline-flex items-center gap-1 text-[13px] font-medium text-obsidian">
+          트렌드 읽기
+          <ArrowUpRightIcon className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+        </span>
       </div>
     </Link>
   );
