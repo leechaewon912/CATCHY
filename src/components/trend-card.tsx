@@ -36,7 +36,7 @@ export function TrendCard({ trend, position }: { trend: Trend; position: number 
           rather than show an unrelated stock photo. Kept as its own
           slot, not collapsed away, so the card's shape is ready for a
           real thumbnail once one exists. */}
-      <div className="relative h-36 shrink-0 bg-cloud/60 sm:h-40">
+      <div className="relative h-36 shrink-0 bg-mist sm:h-40">
         <span className={`${CATEGORY_BADGE_CLASS} absolute left-3 top-3 bg-snow/90`}>
           {trend.category}
         </span>
