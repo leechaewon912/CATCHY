@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import type { RefObject } from "react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/icons";
 import { TrendCard } from "@/components/trend-card";
 import type { Category, Trend } from "@/lib/mock-data";
@@ -141,16 +142,19 @@ function TrendFeedPagination({
   page,
   totalPages,
   onPageChange,
+  navRef,
 }: {
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  navRef: RefObject<HTMLElement | null>;
 }) {
   const pageButtonClass =
     "flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-pills text-[14px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian sm:h-9 sm:w-9";
 
   return (
     <nav
+      ref={navRef}
       className="mt-8 flex flex-wrap items-center justify-center gap-1"
       aria-label="트렌드 목록 페이지"
     >
@@ -224,6 +228,12 @@ export function TrendFeed({
   const [selectedDay, setSelectedDay] = useState<DayFilter>(defaultDay);
   const [currentPage, setCurrentPage] = useState(1);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const paginationNavRef = useRef<HTMLElement>(null);
+  // Screen-space (viewport-relative) top of the pagination nav right
+  // before a desktop page change, so the layout effect below can
+  // restore it afterward — see changePage's comment for why this is
+  // needed on top of just leaving window.scrollY untouched.
+  const pendingScrollAnchorRef = useRef<number | null>(null);
 
   // Drives resolveTrendFeedEmptyState's Case 1/2/3 wording — ticks every
   // minute so a tab left open across the 9am release or past midnight
@@ -269,7 +279,6 @@ export function TrendFeed({
   const showPagination = visibleItems.length > PAGE_SIZE;
 
   function changePage(nextPage: number) {
-    setCurrentPage(nextPage);
     // PC (≥1024px, Tailwind's `lg` — same breakpoint the responsive
     // --radius-cards token uses) keeps the viewport exactly where it
     // was: the 3-column grid is short enough there that jumping to its
@@ -277,10 +286,41 @@ export function TrendFeed({
     // reload" flash. Mobile/tablet's single-column grid is tall enough
     // that the jump is still worth keeping.
     const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+
+    if (isDesktop) {
+      // Leaving window.scrollY untouched isn't actually enough on its
+      // own: a day/category combo whose last page has fewer than
+      // PAGE_SIZE cards (e.g. 8 results -> page 2 has only 2) makes the
+      // grid shorter, so everything below it — pagination, the next
+      // section — slides up into the still-unmoved viewport. That reads
+      // as "the screen changed" even though scrollY never did. Record
+      // where the pagination nav sits on screen now; the layout effect
+      // below restores that exact position after the new page's shorter
+      // (or taller) grid has reflowed it, so nothing visibly shifts.
+      pendingScrollAnchorRef.current =
+        paginationNavRef.current?.getBoundingClientRect().top ?? null;
+    }
+
+    setCurrentPage(nextPage);
+
     if (!isDesktop) {
       resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }
+
+  useLayoutEffect(() => {
+    const anchorTop = pendingScrollAnchorRef.current;
+    if (anchorTop === null) return;
+    pendingScrollAnchorRef.current = null;
+
+    const newTop = paginationNavRef.current?.getBoundingClientRect().top;
+    if (newTop === undefined) return;
+
+    const delta = newTop - anchorTop;
+    if (delta !== 0) {
+      window.scrollBy(0, delta);
+    }
+  }, [safePage]);
 
   return (
     <section className="mx-auto max-w-6xl px-5 pt-10 sm:px-8" aria-labelledby="trend-feed-heading">
@@ -352,7 +392,12 @@ export function TrendFeed({
       </div>
 
       {showPagination && (
-        <TrendFeedPagination page={safePage} totalPages={totalPages} onPageChange={changePage} />
+        <TrendFeedPagination
+          page={safePage}
+          totalPages={totalPages}
+          onPageChange={changePage}
+          navRef={paginationNavRef}
+        />
       )}
     </section>
   );
