@@ -3,19 +3,16 @@
 // src/app/page.tsx), so this only needs to convey what the service is.
 export function TrendHero() {
   return (
-    <section className="relative overflow-hidden bg-snow py-12 sm:py-16">
-      {/* Soft blue wash, white top through pale blue to a deliberately
-          solid blue at the bottom — bottom color (#DCE5FF) is distinct
-          from TrendFeed's cool-gray page background (--color-paper,
-          #F3F5F8) on purpose, so the hero reads as its own section
-          instead of blending into the feed below it. The pure-white
-          band at the top (85%+) keeps the blue contained to the lower
-          portion rather than spreading across the whole section. */}
+    <section className="relative overflow-hidden bg-snow pt-10 pb-8 sm:pt-16 sm:pb-10">
+      {/* Very pale cool-gray/blue wash — white top through #F8F9FC to
+          #F0F3FA at the bottom. Deliberately subtle (no saturated blue)
+          so the section boundary with TrendFeed below reads from the
+          color gap alone, not from a strong blue block. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
-          background: "linear-gradient(to top, #DCE5FF 0%, #F0F4FF 50%, #FFFFFF 85%)",
+          background: "linear-gradient(to top, #F0F3FA 0%, #F8F9FC 55%, #FFFFFF 100%)",
         }}
       />
 
@@ -25,7 +22,7 @@ export function TrendHero() {
             of wrapping inside its own line. */}
         <h1
           className="motion-safe:animate-hero-fade-up mx-auto max-w-[1040px] break-keep font-extrabold tracking-tight text-obsidian"
-          style={{ fontSize: "clamp(2.375rem, 1.1rem + 6vw, 5.5rem)", lineHeight: 1.08 }}
+          style={{ fontSize: "clamp(2rem, 0.72rem + 6vw, 5.5rem)", lineHeight: 1.1 }}
         >
           <span className="block">Catch the trend.</span>
           <span className="block sm:whitespace-nowrap">Catch the language.</span>

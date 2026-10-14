@@ -68,7 +68,7 @@ export function TrendFeed({
     : visibleItems;
 
   return (
-    <section className="mx-auto max-w-6xl px-5 pt-16 sm:px-8" aria-labelledby="trend-feed-heading">
+    <section className="mx-auto max-w-6xl px-5 pt-10 sm:px-8" aria-labelledby="trend-feed-heading">
       <div className="mb-6">
         <h2 id="trend-feed-heading" className="text-[32px] font-semibold leading-[1.5] text-obsidian">이번 주 트렌드</h2>
         <p className="mt-1 text-[13px] text-fog" role="status" aria-live="polite">
