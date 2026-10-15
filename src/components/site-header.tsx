@@ -43,7 +43,7 @@ export function SiteHeader() {
           <button
             type="button"
             onClick={openFeedback}
-            className="inline-flex h-9 shrink-0 cursor-pointer items-center justify-center rounded-[12px] border border-[#D1D5DB] bg-snow/90 backdrop-blur px-4 text-[13px] font-normal text-[#111111] transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-paper focus-visible:ring-obsidian sm:text-[14px] [@media(hover:hover)]:hover:border-[#111111] [@media(hover:hover)]:hover:bg-[#111111] [@media(hover:hover)]:hover:text-white"
+            className="inline-flex h-9 shrink-0 cursor-pointer items-center justify-center rounded-[12px] border border-[#D1D5DB] px-4 text-[13px] font-normal text-[#111111] transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-paper focus-visible:ring-obsidian sm:text-[14px] [@media(hover:hover)]:hover:border-[#111111] [@media(hover:hover)]:hover:bg-[#111111] [@media(hover:hover)]:hover:text-white"
           >
             Feedback
           </button>
