@@ -17,24 +17,8 @@ export function SiteHeader() {
   const { openFeedback } = useFeedback();
 
   return (
-    <header className="sticky top-0 z-50">
-      {/* Opaque, not bg-snow/90 — the real cause of the seam around just
-          the Feedback button: at 90% opacity, whatever's scrolled
-          behind the sticky header shows through faintly, so the header
-          itself ends up a hair different from pure white depending on
-          what's under it. The Bookmark link next to it has no
-          background of its own (so it was never visibly different),
-          but the Feedback button is a fully opaque bg-white — against
-          a translucent header, that's two different whites side by
-          side. Full opacity here makes the header exactly match the
-          button's white with nothing left to show through, so the
-          boundary disappears regardless of what's behind it (hero
-          gradient, photo, etc). backdrop-blur is kept for the brief
-          moment content is mid-transition under the sticky edge, even
-          though it's a no-op once nothing shows through a fully opaque
-          layer. */}
-      <div className="absolute inset-0 bg-snow backdrop-blur" aria-hidden />
-      <div className="relative mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
+    <header className="sticky top-0 z-50 bg-snow/90 backdrop-blur">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
         <div className="flex min-w-0 items-center gap-4 sm:gap-8">
           <Link
             href="/"
