@@ -92,6 +92,47 @@ export function trackExpressionSaved(props: {
   track("expression_saved", props);
 }
 
+// The three feedback events below are Amplitude-only, by design — the
+// feedback spec scopes analytics to Amplitude specifically (and the
+// free-text comment is never sent to any analytics vendor, only to
+// Supabase). They bypass the shared track() above on purpose so they
+// never fan out to Mixpanel.
+function trackAmplitudeOnly(event: string, properties: Record<string, unknown>): void {
+  if (!amplitudeReady) return;
+  try {
+    amplitude.track(event, properties);
+  } catch (error) {
+    console.error(`[amplitude] failed to track "${event}"`, error);
+  }
+}
+
+// Fired when the feedback modal (src/components/feedback-modal.tsx) is
+// actually displayed — once per open, whether auto-shown after 2+
+// distinct trends viewed + 50% scroll, or opened via the header
+// Feedback button.
+export function trackFeedbackModalViewed(props: { source: "auto" | "header" }): void {
+  trackAmplitudeOnly("Feedback Modal Viewed", props);
+}
+
+// Fired once feedback has actually saved to Supabase (never before —
+// see src/app/api/feedback/route.ts). comment text itself is never
+// included here.
+export function trackFeedbackSubmitted(props: {
+  rating: number;
+  source: "auto" | "header";
+}): void {
+  trackAmplitudeOnly("Feedback Submitted", props);
+}
+
+// Fired when the modal is closed without submitting — the X button,
+// "나중에 하기", an overlay click, or Escape.
+export function trackFeedbackModalDismissed(props: {
+  source: "auto" | "header";
+  dismiss_method: "close" | "maybe_later" | "overlay" | "escape";
+}): void {
+  trackAmplitudeOnly("Feedback Modal Dismissed", props);
+}
+
 // Fired once when a quiz's question UI actually mounts (src/app/quiz/
 // quiz-client.tsx) — not on a bare /quiz picker visit, which never
 // renders QuizClient.
