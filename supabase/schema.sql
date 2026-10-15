@@ -153,3 +153,45 @@ create policy "Expressions of published trends are publicly readable"
         and trends.status = 'published'
     )
   );
+
+-- User feedback (star rating + optional free-text comment) collected via
+-- the feedback modal (src/components/feedback-modal.tsx). `source`
+-- records whether the modal was auto-shown after 2+ distinct trends
+-- viewed + 50% scroll ("auto") or opened manually from the header
+-- Feedback button ("header"). Written server-side only, via the
+-- service-role client in src/app/api/feedback/route.ts, which already
+-- validates rating/comment/source before this table's own check
+-- constraints run.
+create table if not exists public.feedback (
+  id uuid primary key default gen_random_uuid(),
+  rating smallint not null check (rating >= 1 and rating <= 5),
+  comment text check (comment is null or char_length(comment) <= 500),
+  source text not null check (source in ('auto', 'header')),
+  created_at timestamptz not null default now()
+);
+
+grant select, insert, update, delete on public.feedback to service_role;
+-- Not currently used by the app (writes go through the service-role API
+-- route above, which bypasses RLS entirely) — granted anyway as
+-- defense-in-depth for if an anon key is ever used to submit feedback
+-- directly from the client. No select/update/delete grant for
+-- anon/authenticated, so reads stay admin-only (Table Editor / SQL
+-- Editor using the service role).
+grant insert on public.feedback to anon, authenticated;
+
+alter table public.feedback enable row level security;
+
+drop policy if exists "Anyone can submit feedback" on public.feedback;
+create policy "Anyone can submit feedback"
+  on public.feedback for insert
+  to anon, authenticated
+  with check (
+    rating between 1 and 5
+    and source in ('auto', 'header')
+    and (comment is null or char_length(comment) <= 500)
+  );
+
+-- No select/update/delete policy for anon/authenticated is intentional:
+-- with RLS enabled and no matching policy, those operations are denied
+-- by default, so anonymous users can submit feedback but never read,
+-- modify, or delete anyone's feedback (their own or others').

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import { AmplitudeInit } from "@/components/amplitude-init";
 import { BookmarksProvider } from "@/components/bookmarks-provider";
+import { FeedbackProvider } from "@/components/feedback-provider";
 import { MixpanelInit } from "@/components/mixpanel-init";
 
 import "./globals.css";
@@ -34,7 +35,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col font-sans">
         <AmplitudeInit />
         <MixpanelInit />
-        <BookmarksProvider>{children}</BookmarksProvider>
+        <BookmarksProvider>
+          <FeedbackProvider>{children}</FeedbackProvider>
+        </BookmarksProvider>
       </body>
     </html>
   );

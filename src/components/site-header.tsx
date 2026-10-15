@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { useBookmarks } from "@/components/bookmarks-provider";
+import { useFeedback } from "@/components/feedback-provider";
 import { BookmarkIcon } from "@/components/icons";
 
 const NAV_ITEMS = [
@@ -13,6 +14,7 @@ const NAV_ITEMS = [
 export function SiteHeader() {
   const { bookmarks } = useBookmarks();
   const bookmarkCount = bookmarks.length;
+  const { openFeedback } = useFeedback();
 
   return (
     <header className="sticky top-0 z-50 bg-snow/90 backdrop-blur">
@@ -38,6 +40,13 @@ export function SiteHeader() {
         </div>
 
         <div className="flex shrink-0 items-center gap-3">
+          <button
+            type="button"
+            onClick={openFeedback}
+            className="shrink-0 cursor-pointer rounded-[12px] border border-[#D1D5DB] bg-white px-4 py-2.5 text-[13px] font-normal text-[#111111] shadow-sm transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-paper focus-visible:ring-obsidian sm:text-[14px] [@media(hover:hover)]:hover:border-[#111111] [@media(hover:hover)]:hover:bg-[#111111] [@media(hover:hover)]:hover:text-white"
+          >
+            Feedback
+          </button>
           <Link
             href="/bookmarks"
             aria-label="저장한 표현 보기"

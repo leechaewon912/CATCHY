@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { EnglishSummary } from "@/components/english-summary";
 import { ExpressionDetailCard } from "@/components/expression-detail-card";
 import { ExpressionSectionTracker } from "@/components/expression-section-tracker";
+import { FeedbackAutoTrigger } from "@/components/feedback-auto-trigger";
 import {
   ArrowDownIcon,
   ArrowLeftIcon,
@@ -40,7 +41,7 @@ export default async function TrendDetailPage(
       <RecordTrendView trendId={trend.id} />
       <SiteHeader />
 
-      <main className="flex-1">
+      <FeedbackAutoTrigger trendId={trend.id}>
         <section className="mx-auto max-w-4xl px-5 pt-8 sm:px-8 sm:pt-12">
           <Link
             href="/"
@@ -218,7 +219,7 @@ export default async function TrendDetailPage(
             ))}
           </ul>
         </section>
-      </main>
+      </FeedbackAutoTrigger>
 
       <SiteFooter />
     </div>
