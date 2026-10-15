@@ -151,12 +151,12 @@ export function QuizClient({
               aria-pressed={isSelected}
               className={[
                 "flex cursor-pointer items-center justify-between gap-3 rounded-inputs border px-5 py-4 text-left text-[14px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian",
-                !showState && "border-cloud text-graphite hover:border-ash hover:bg-[#fafafa]",
-                showState && isCorrectOption && "border-emerald-200 bg-emerald-50 text-emerald-800",
+                !showState && "border-cloud text-graphite hover:border-ash hover:bg-paper",
+                showState && isCorrectOption && "border-ember/30 bg-ember/10 text-ember",
                 showState &&
                   isSelected &&
                   !isCorrectOption &&
-                  "border-rose-200 bg-rose-50 text-rose-800",
+                  "border-terracotta/30 bg-terracotta/10 text-terracotta",
                 showState && !isSelected && !isCorrectOption && "border-cloud text-ash",
               ]
                 .filter(Boolean)
@@ -164,13 +164,13 @@ export function QuizClient({
             >
               <span>{option}</span>
               {showState && isCorrectOption && (
-                <span className="flex shrink-0 items-center gap-1 text-[12px] font-medium text-emerald-700">
+                <span className="flex shrink-0 items-center gap-1 text-[12px] font-medium text-ember">
                   <CheckCircleIcon className="h-4 w-4" />
                   정답
                 </span>
               )}
               {showState && isSelected && !isCorrectOption && (
-                <span className="flex shrink-0 items-center gap-1 text-[12px] font-medium text-rose-700">
+                <span className="flex shrink-0 items-center gap-1 text-[12px] font-medium text-terracotta">
                   <XCircleIcon className="h-4 w-4" />
                   오답
                 </span>
@@ -183,9 +183,9 @@ export function QuizClient({
       {selectedOption && (
         <div
           aria-live="polite"
-          className="flex flex-col gap-4 rounded-cards border border-cloud bg-[#fafafa] p-5 text-[14px] leading-relaxed text-steel"
+          className="flex flex-col gap-4 rounded-cards border border-cloud bg-paper p-5 text-[14px] leading-relaxed text-steel"
         >
-          <p className={isAnswerCorrect ? "font-medium text-emerald-700" : "font-medium text-rose-700"}>
+          <p className={isAnswerCorrect ? "font-medium text-ember" : "font-medium text-terracotta"}>
             {isAnswerCorrect
               ? "정답이에요!"
               : `오답이에요 — 정답은 "${question.phrase}" (${question.correctMeaningKo})예요.`}

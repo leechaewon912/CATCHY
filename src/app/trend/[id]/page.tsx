@@ -86,7 +86,7 @@ export default async function TrendDetailPage(
             무슨 일이 있었나요?
           </h2>
           <p className="mt-2 mb-5 text-[14px] text-fog">
-            영어로 먼저 읽고, 한국어로 내용을 확인해 보세요. <span className="text-ember">주황색 밑줄</span>로
+            영어로 먼저 읽고, 한국어로 내용을 확인해 보세요. <span className="text-ember">초록색 밑줄</span>로
             표시된 부분을 누르면 아래에서 배우는 표현으로 바로 이동해요.
           </p>
           <div className="surface-card overflow-hidden">
@@ -101,7 +101,7 @@ export default async function TrendDetailPage(
                 category={trend.category}
               />
             </div>
-            <div className="border-t border-cloud bg-[#fafafa] p-6 sm:p-8">
+            <div className="border-t border-cloud bg-paper p-6 sm:p-8">
               <h3 className="mb-3 text-[13px] font-medium text-ember">
                 KO · 한국어 요약
               </h3>

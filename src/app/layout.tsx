@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DM_Sans } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 
 import { AmplitudeInit } from "@/components/amplitude-init";
 import { BookmarksProvider } from "@/components/bookmarks-provider";
@@ -7,14 +7,16 @@ import { MixpanelInit } from "@/components/mixpanel-init";
 
 import "./globals.css";
 
-// DESIGN.md specifies Cosmica with "Substitute: DM Sans" — Cosmica isn't
-// a real distributable font, so DM Sans is the actual typeface used
-// everywhere (single-font system, per DESIGN.md's "Don't break the
-// single-font rule").
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
+// Paper & Moss's type system (see root DESIGN.md): Geist Sans for every
+// UI role, Geist Mono reserved for the rare monospace/measurement case.
+const geistSans = Geist({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
@@ -25,7 +27,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ko" className={`${dmSans.variable} h-full antialiased`}>
+    <html
+      lang="ko"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+    >
       <body className="flex min-h-full flex-col font-sans">
         <AmplitudeInit />
         <MixpanelInit />

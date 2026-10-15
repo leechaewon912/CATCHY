@@ -7,7 +7,7 @@ import { QuizEntryClient, type QuizPickerTrend } from "@/app/quiz/quiz-entry-cli
 import { ArrowLeftIcon } from "@/components/icons";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { CATEGORY_BADGE_CLASS, type Trend } from "@/lib/mock-data";
+import type { Trend } from "@/lib/mock-data";
 import { buildQuizFromExpressions } from "@/lib/server/build-quiz";
 import { getHomeTrends, getTrendDetail, getTrendExpressions } from "@/lib/server/trend-repository";
 
@@ -27,6 +27,17 @@ const MIN_EXPRESSIONS_FOR_QUIZ = 2;
 // "direct" below.
 const QUIZ_ENTRY_POINTS = ["trend_detail", "quiz_picker"] as const;
 type QuizEntryPoint = (typeof QUIZ_ENTRY_POINTS)[number] | "direct";
+
+const SEOUL_DATE_FORMATTER = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Asia/Seoul",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+function seoulDate(value: string | Date): string {
+  return SEOUL_DATE_FORMATTER.format(new Date(value));
+}
 
 function resolveEntryPoint(entry: string | undefined): QuizEntryPoint {
   return (QUIZ_ENTRY_POINTS as readonly string[]).includes(entry ?? "")
@@ -78,8 +89,6 @@ export default async function QuizPage({
             트렌드로 돌아가기
           </Link>
 
-          <span className={CATEGORY_BADGE_CLASS}>{trend.category}</span>
-
           <h1 className="mt-2 text-[32px] font-semibold leading-tight text-obsidian sm:text-[40px]">
             {trend.title}
           </h1>
@@ -114,7 +123,9 @@ function QuizTrendPicker({ trends }: { trends: Trend[] }) {
   // Plain, serializable summaries only — the client component can't
   // import mock-data.ts's Trend value (it's "server-only"), and doesn't
   // need the full trend (sources, quiz, etc.) anyway.
+  const today = seoulDate(new Date());
   const quizzableTrends: QuizPickerTrend[] = trends
+    .filter((trend) => seoulDate(trend.generatedAt) === today)
     .filter((trend) => trend.expressions.length >= MIN_EXPRESSIONS_FOR_QUIZ)
     .map((trend) => ({
       id: trend.id,

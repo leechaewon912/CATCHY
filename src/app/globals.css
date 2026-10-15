@@ -1,26 +1,28 @@
 @import "tailwindcss";
 
 /*
- * Design tokens sourced from DESIGN.md ("Awesomic — Style Reference").
- * Cosmica isn't a real installed font, so per DESIGN.md's own
- * substitution note, DM Sans (loaded in layout.tsx) stands in for it —
- * everything else (colors, radii, spacing, component shapes) follows
- * DESIGN.md's documented values directly.
+ * Design tokens re-skinned to the "Paper & Moss" system (see root
+ * DESIGN.md) on 2026-10-14. Token NAMES are kept as-is on purpose —
+ * every component still references bg-obsidian / text-ember / etc.,
+ * so this file is the single place the whole app's palette lives.
+ * Only the values below changed; structure, radii, and spacing are
+ * untouched.
  */
 :root {
-  --color-obsidian: #09090b;
-  --color-graphite: #18181b;
-  --color-slate: #27272a;
-  --color-iron: #3f3f46;
-  --color-steel: #52525b;
-  --color-fog: #71717a;
-  --color-ash: #a1a1aa;
-  --color-mist: #d4d4d8;
-  --color-cloud: #ececee;
-  --color-paper: #f4f4f5;
-  --color-snow: #ffffff;
-  --color-ember: #ff5a00;
-  --color-magenta-spark: #fe45e2;
+  --color-obsidian: #17140f; /* Ink Black — headlines, primary buttons, dominant text */
+  --color-graphite: #211d14; /* body text / nav / badge ink — near-black, warm */
+  --color-slate: #332c1d; /* unused today; kept consistent with the ink family */
+  --color-iron: #5c584e; /* Soft Graphite — ghost-button text/border, filled-badge bg */
+  --color-steel: #6e6652; /* icon strokes / supporting metadata */
+  --color-fog: #8c8673; /* Warm Taupe — helper text, tertiary labels, meta */
+  --color-ash: #afa68f; /* lighter warm taupe — placeholders, disabled, hover-from */
+  --color-mist: #d6ccb0; /* light warm fog — secondary text on surface-dark, soft dividers */
+  --color-cloud: #e4dcc8; /* Hairline Taupe — the system's one border color */
+  --color-paper: #f8f3e8; /* Warm Ivory — page canvas */
+  --color-snow: #fffdf8; /* Paper (surface) — raised card/input backgrounds */
+  --color-ember: #5b6b3e; /* Moss Signal — the one reserved accent (The One Signal Rule) */
+  --color-magenta-spark: #c9a3a0; /* unused today; muted rose, kept thematically consistent */
+  --color-terracotta: #b6694f; /* Muted Terracotta — the one error/incorrect signal */
 
   --background: var(--color-paper);
   --foreground: var(--color-graphite);
@@ -46,9 +48,11 @@
   --color-snow: var(--color-snow);
   --color-ember: var(--color-ember);
   --color-magenta-spark: var(--color-magenta-spark);
+  --color-terracotta: var(--color-terracotta);
 
-  --font-sans: var(--font-dm-sans), "Apple SD Gothic Neo", "Malgun Gothic",
+  --font-sans: var(--font-geist-sans), "Apple SD Gothic Neo", "Malgun Gothic",
     sans-serif;
+  --font-mono: var(--font-geist-mono), "Apple SD Gothic Neo", monospace;
 
   /* Named radii from DESIGN.md's "Tokens — Spacing & Shapes" table.
      Additive next to Tailwind's default `rounded-*` scale — enables
@@ -87,12 +91,20 @@ body {
  * redefining card/button/badge styling per file.
  */
 @layer components {
+  /* Elevation follows Paper & Moss's "Paper Lift Rule": depth comes from
+     a soft, warm-toned, low-opacity shadow — never a hard or glossy
+     one — paired with the existing hairline border, not instead of it. */
   .surface-card {
-    @apply rounded-cards border border-cloud bg-snow;
+    @apply rounded-cards border border-cloud bg-snow transition-shadow;
+    box-shadow: 0 1px 2px rgba(23, 20, 15, 0.04), 0 8px 24px rgba(23, 20, 15, 0.05);
+  }
+
+  .surface-card:hover {
+    box-shadow: 0 14px 32px rgba(23, 20, 15, 0.1);
   }
 
   .surface-card-subtle {
-    @apply rounded-2xl border border-cloud bg-[#fafafa];
+    @apply rounded-2xl border border-cloud bg-paper;
   }
 
   .surface-dark {
@@ -101,12 +113,12 @@ body {
 
   /* "Primary Action Button (Dark Filled)" */
   .btn-primary {
-    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-buttons bg-obsidian px-4 py-3 text-[14px] font-normal text-snow transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-paper focus-visible:ring-obsidian disabled:cursor-not-allowed disabled:opacity-50;
-    box-shadow:
-      inset 0 0.5px 0 0 rgba(255, 255, 255, 0.5),
-      inset 0 9px 14px -5px rgba(117, 123, 133, 0.4),
-      0 0 0 1.5px rgb(44, 46, 52),
-      0 4px 6px 0 rgba(0, 0, 0, 0.14);
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-buttons bg-obsidian px-4 py-3 text-[14px] font-normal text-snow transition-[transform,box-shadow] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-paper focus-visible:ring-obsidian disabled:cursor-not-allowed disabled:opacity-50;
+    box-shadow: 0 1px 2px rgba(23, 20, 15, 0.04), 0 8px 24px rgba(23, 20, 15, 0.05);
+  }
+
+  .btn-primary:hover {
+    box-shadow: 0 14px 32px rgba(23, 20, 15, 0.1);
   }
 
   /* "Ghost Action Button (White)" */
@@ -116,7 +128,7 @@ body {
 
   /* "Neutral Pill Button (Light)" */
   .btn-neutral {
-    @apply inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-buttons bg-[#fafafa] px-4 py-3 text-[14px] font-normal text-graphite transition-colors hover:bg-cloud focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-paper focus-visible:ring-obsidian;
+    @apply inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-buttons bg-paper px-4 py-3 text-[14px] font-normal text-graphite transition-colors hover:bg-cloud focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-paper focus-visible:ring-obsidian;
   }
 
   /* "Tag Pill Badge" */
@@ -126,10 +138,10 @@ body {
 
   /* "Filled Tag Badge" */
   .badge-filled {
-    @apply inline-flex items-center gap-1 rounded-badges bg-iron px-2 py-1 text-[12px] font-normal text-[#fafafa];
+    @apply inline-flex items-center gap-1 rounded-badges bg-iron px-2 py-1 text-[12px] font-normal text-snow;
   }
 
-  /* "Orange Accent Badge" — reserved for sparse highlight/count chips only. */
+  /* "Moss Accent Badge" — reserved for sparse highlight/count chips only. */
   .badge-accent {
     @apply inline-flex items-center gap-1 rounded-badges bg-ember px-2 py-1 text-[12px] font-medium text-snow;
   }
