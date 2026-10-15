@@ -17,8 +17,20 @@ export function SiteHeader() {
   const { openFeedback } = useFeedback();
 
   return (
-    <header className="sticky top-0 z-50 bg-snow/90 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
+    <header className="sticky top-0 z-50">
+      {/* Backdrop lives on its own layer, behind every header child
+          (logo, nav links, Feedback button, Bookmark link) instead of
+          being painted directly on <header>. Safari composites
+          `backdrop-filter: blur()` per-layer, and a child that gets
+          promoted to its own layer (the Feedback button does, via its
+          `transition-colors` + border + radius) sitting *inside* a
+          blurred element can show a visible seam around just that
+          child on iOS — splitting the blur into this separate
+          aria-hidden div means no interactive child ever shares a
+          layer with the blur, so there's nothing for Safari to
+          composite inconsistently. */}
+      <div className="absolute inset-0 bg-snow/90 backdrop-blur" aria-hidden />
+      <div className="relative mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
         <div className="flex min-w-0 items-center gap-4 sm:gap-8">
           <Link
             href="/"
