@@ -20,7 +20,7 @@ export function TrendHero() {
       />
 
       <div className="relative mx-auto max-w-5xl px-5 text-center sm:px-8">
-        {/* Wider than the description below it so "Catch the language."
+        {/* Wider than the description below it so "Learn the language."
             has room to stay on one line at tablet/desktop sizes instead
             of wrapping inside its own line. */}
         <h1
@@ -28,7 +28,7 @@ export function TrendHero() {
           style={{ fontSize: "clamp(2rem, 0.72rem + 6vw, 5.5rem)", lineHeight: 1.1 }}
         >
           <span className="block">Catch the trend.</span>
-          <span className="block sm:whitespace-nowrap">Catch the language.</span>
+          <span className="block sm:whitespace-nowrap">Learn the language.</span>
         </h1>
 
         <p className="motion-safe:animate-hero-fade-up-delay mx-auto mt-6 max-w-[580px] break-keep text-[16px] font-normal leading-[1.6] text-[#6B7280] sm:mt-7 sm:text-[18px] md:text-[19px] lg:text-[20px]">
