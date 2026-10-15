@@ -5,11 +5,11 @@ import { notFound } from "next/navigation";
 import { EnglishSummary } from "@/components/english-summary";
 import { ExpressionDetailCard } from "@/components/expression-detail-card";
 import { ExpressionSectionTracker } from "@/components/expression-section-tracker";
+import { FeedbackAutoTrigger } from "@/components/feedback-auto-trigger";
 import {
   ArrowDownIcon,
   ArrowLeftIcon,
   ArrowUpRightIcon,
-  SparkleIcon,
 } from "@/components/icons";
 import { RecordTrendView } from "@/components/record-trend-view";
 import { SiteFooter } from "@/components/site-footer";
@@ -34,7 +34,7 @@ export default async function TrendDetailPage(
       <RecordTrendView trendId={trend.id} />
       <SiteHeader />
 
-      <main className="flex-1">
+      <FeedbackAutoTrigger trendId={trend.id}>
         <section className="mx-auto max-w-4xl px-5 pt-8 sm:px-8 sm:pt-12">
           <Link
             href="/"
@@ -67,23 +67,19 @@ export default async function TrendDetailPage(
             aria-hidden
           />
 
-          <div className="relative mx-auto flex min-h-[320px] max-w-4xl flex-col justify-end px-5 py-8 sm:min-h-[420px] sm:px-8 sm:py-12">
-            <div className="flex flex-col gap-5 sm:gap-6">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="badge-filled">{trend.category}</span>
-                <span className="flex items-center gap-1 text-[12px] text-mist">
-                  <SparkleIcon className="h-3.5 w-3.5" />
-                  AI 요약
-                </span>
+          <div className="relative mx-auto flex min-h-[260px] max-w-4xl flex-col justify-center px-5 py-6 sm:min-h-[340px] sm:px-8 sm:py-8">
+            <div className="flex flex-col gap-7 sm:gap-9">
+              <span className="badge-filled self-start">{trend.category}</span>
+
+              <div className="flex flex-col gap-2 sm:gap-3">
+                <h1 className="text-[32px] font-semibold leading-[1.28] text-snow sm:text-[40px]">
+                  {trend.title}
+                </h1>
+
+                <p className="max-w-2xl text-[15px] leading-relaxed text-mist sm:text-[18px]">
+                  {trend.summary}
+                </p>
               </div>
-
-              <h1 className="text-[32px] font-semibold leading-[1.28] text-snow sm:text-[40px]">
-                {trend.title}
-              </h1>
-
-              <p className="max-w-2xl text-[15px] leading-relaxed text-mist sm:text-[18px]">
-                {trend.summary}
-              </p>
             </div>
           </div>
         </section>
@@ -172,7 +168,7 @@ export default async function TrendDetailPage(
           {/* 6. 퀴즈 CTA */}
           <Link
             href={`/quiz?trend=${trend.id}&entry=trend_detail`}
-            className="btn-primary group mt-10 w-full sm:w-fit"
+            className="btn-solid-black group mt-10 w-full sm:w-fit"
           >
             이 표현들로 퀴즈 풀기
             <ArrowUpRightIcon className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
@@ -195,7 +191,7 @@ export default async function TrendDetailPage(
             {trend.sources.map((source) => (
               <li
                 key={source.originalUrl}
-                className="surface-card-subtle px-5 py-4"
+                className="surface-card-subtle bg-snow px-5 py-4"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
@@ -223,7 +219,7 @@ export default async function TrendDetailPage(
             ))}
           </ul>
         </section>
-      </main>
+      </FeedbackAutoTrigger>
 
       <SiteFooter />
     </div>
