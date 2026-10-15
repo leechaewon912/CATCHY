@@ -1,8 +1,14 @@
 import type { Category } from "@/lib/mock-data";
 
-// public/images/mock/<prefix>-0{1..4}.{png,...} — 4 Midjourney mock photos
-// per category, 28 files total. Not tracked by any DB column yet; this
-// is purely a client-side stand-in until trends have a real image field.
+// public/images/mock/<prefix>-0{1..4}.jpg — 4 Midjourney mock photos per
+// category, 28 files total. Not tracked by any DB column yet; this is
+// purely a client-side stand-in until trends have a real image field.
+// Originally shipped as PNG (68MB total, several over 6MB each at
+// 2544x1904) — that made Next's on-demand image optimization slow
+// enough on first request that thumbnails effectively never finished
+// loading in practice. Re-exported as resized (1600px long edge, sips
+// -Z) quality-82 JPEGs, ~10MB total, with no visible quality loss for
+// background/thumbnail use.
 const CATEGORY_IMAGE_PREFIX: Record<Category, string> = {
   "음악": "music",
   "영화·시리즈": "film",
@@ -47,5 +53,5 @@ export function resolveTrendImage(
   if (imageUrl) return imageUrl;
   const prefix = CATEGORY_IMAGE_PREFIX[trend.category];
   const index = hashToIndex(trend.id, IMAGES_PER_CATEGORY) + 1;
-  return `/images/mock/${prefix}-0${index}.png`;
+  return `/images/mock/${prefix}-0${index}.jpg`;
 }
