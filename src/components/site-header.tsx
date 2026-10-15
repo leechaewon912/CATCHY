@@ -50,7 +50,7 @@ export function SiteHeader() {
           <Link
             href="/bookmarks"
             aria-label="저장한 표현 보기"
-            className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-cloud text-fog transition-colors hover:border-ash hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
+            className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-cloud text-fog transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian [@media(hover:hover)]:hover:border-[#111111] [@media(hover:hover)]:hover:bg-[#111111] [@media(hover:hover)]:hover:text-white"
           >
             <BookmarkIcon className="h-4 w-4" />
             {bookmarkCount > 0 && (
