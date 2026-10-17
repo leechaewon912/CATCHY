@@ -101,12 +101,17 @@ export function QuizClient({
             {questions.length}문제 중 {score}개 정답
           </p>
         </div>
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <button type="button" onClick={handleRestart} className="btn-ghost">
+        <div className="flex w-full flex-col items-center justify-center gap-3 sm:flex-row">
+          <button
+            type="button"
+            onClick={handleRestart}
+            className="btn-outline-black w-full whitespace-nowrap sm:w-fit"
+          >
             다시 풀기
           </button>
-          <Link href={returnHref} className="btn-primary">
+          <Link href={returnHref} className="btn-solid-black group w-full whitespace-nowrap sm:w-fit">
             트렌드로 돌아가기
+            <ArrowUpRightIcon className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </Link>
         </div>
       </div>
