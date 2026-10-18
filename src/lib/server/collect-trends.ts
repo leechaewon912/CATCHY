@@ -10,6 +10,8 @@ import {
 } from "@/lib/server/gdelt";
 import { fetchRssArticlesForCategory } from "@/lib/server/rss-collect";
 import { CURATED_RSS_DOMAINS } from "@/lib/server/rss-sources";
+import { getSourcePolicy, isCommerciallyUsable } from "@/lib/server/rss-source-policy";
+import { euPressCornerAdapter } from "@/lib/server/sources/eu-presscorner-adapter";
 import { generateTrendDraft, type GenerateTrendDraftOutput } from "@/lib/server/generate-trend-draft";
 import { generateTrendDraftWithLlm } from "@/lib/server/generate-trend-with-llm";
 import {
@@ -30,6 +32,46 @@ const USAGE_NOTE_BY_SOURCE: Record<CollectionSource, string> = {
   rss: "언론사 공식 RSS로 발견된 출처 — 사실관계 교차 확인용으로만 참고하며, 원문 문장이나 이미지는 인용하지 않음.",
   gdelt: "GDELT로 발견된 출처 — 사실관계 교차 확인용으로만 참고하며, 원문 문장이나 이미지는 인용하지 않음.",
 };
+
+// Appended to a trend's sources only when it was collected via
+// source==="gdelt" (never the default path — see
+// parseCollectionOptionsFromRequest). This is a data-provider credit for
+// the GDELT Project itself (required by its license, see
+// rss-source-policy.ts's "gdelt-project" entry), not a corroborating
+// article — sourceType "reference" keeps it out of
+// hasOfficialOrPlatformSource's gate, and the trend detail page renders
+// sourceType "reference" separately from the "참고 출처" article list so
+// it never reads as "another original-article source".
+// Only "글로벌 이슈" gets this merged in (see the call site below) — the
+// EU Press Corner feed is EU policy press releases, which doesn't fit
+// any other category. Non-fatal: a failure here never aborts the
+// category or the run, same posture as a single RSS feed failing (see
+// rss-collect.ts's fetchFeed) — it just means zero EU articles get added
+// this run. Note this single-domain source can't clear
+// MIN_DISTINCT_DOMAINS on its own (see rss-source-policy.ts's
+// "eu-press-corner" entry) — it only ever helps corroborate alongside a
+// second independent domain, never carries a cluster alone.
+async function fetchSupplementaryGlobalIssuesArticles(): Promise<ClusterableArticle[]> {
+  try {
+    return await euPressCornerAdapter.fetchArticlesForCategory("글로벌 이슈");
+  } catch (error) {
+    console.error("[collect-trends] EU Press Corner fetch failed, continuing without it", error);
+    return [];
+  }
+}
+
+function buildGdeltAttributionSource(nowIso: string): TrendSource | null {
+  const policy = getSourcePolicy("gdelt-project");
+  if (!policy) return null;
+  return {
+    sourceName: "GDELT Project",
+    sourceType: "reference",
+    originalTitle: "GDELT Project",
+    originalUrl: policy.tosUrl,
+    publishedAt: nowIso,
+    usageNote: "트렌드 수집에 사용된 GDELT 데이터셋 출처 표시 — 원문 기사 출처가 아님.",
+  };
+}
 
 // Shared input shape for clustering — intentionally narrower than either
 // RssArticle or GdeltArticle so clusterArticles works with either source
@@ -60,9 +102,28 @@ const MAX_PUBLISHED_PER_CATEGORY = 6;
 // the next day's run — comparing against a short recent window (not
 // just today) catches both.
 const DUPLICATE_CHECK_WINDOW_DAYS = 3;
+// The quality/fact-check bar for ordinary press RSS: a single outlet's
+// framing of a story isn't enough on its own, so publishing requires
+// 2+ independently-domained sources agreeing on it. This is NOT a
+// license requirement (it predates and is unrelated to the commercial-
+// use audit in rss-source-policy.ts) — see SINGLE_SOURCE_OFFICIAL_ENABLED
+// below for the one deliberate exception to it.
 const MIN_DISTINCT_DOMAINS = 2;
 const CLUSTER_SIMILARITY_THRESHOLD = 0.3;
 const MAX_SOURCES_PER_TREND = 5;
+
+// Exception to MIN_DISTINCT_DOMAINS: a cluster backed by exactly one
+// source may still publish if that source is both (a) classified
+// "official" (classifySourceType below — a government/international
+// institution, not a press outlet) and (b) independently confirmed
+// commercially-usable in the license registry (rss-source-policy.ts's
+// isCommerciallyUsable). Unlike the 2+-domain bar, this one IS purely
+// about license confidence: a single authoritative institutional
+// source whose reuse terms are actually confirmed doesn't need a second
+// outlet's corroboration the way a random press RSS item does. Default
+// enabled; set RSS_ALLOW_SINGLE_SOURCE_OFFICIAL=false to turn it off
+// instead of changing code if this policy needs to be revisited.
+const SINGLE_SOURCE_OFFICIAL_ENABLED = process.env.RSS_ALLOW_SINGLE_SOURCE_OFFICIAL !== "false";
 
 const STOPWORDS = new Set([
   "about",
@@ -134,6 +195,12 @@ const OFFICIAL_DOMAINS = new Set([
   "nasa.gov",
   "whitehouse.gov",
   "europa.eu",
+  // ec.europa.eu, not europa.eu, is the actual domain on European
+  // Commission Press Corner article links (see
+  // sources/eu-presscorner-adapter.ts) — added alongside that adapter so
+  // its articles are correctly classified as official rather than
+  // falling through to "media".
+  "ec.europa.eu",
 ]);
 
 const PLATFORM_DOMAINS = new Set([
@@ -198,6 +265,11 @@ export type TrendCluster = {
   sources: Array<TrendSource & { domain: string }>;
   distinctDomainCount: number;
   hasOfficialOrPlatform: boolean;
+  // true only for a 1-domain cluster whose lone source is both
+  // classified "official" and independently license-confirmed (see
+  // SINGLE_SOURCE_OFFICIAL_ENABLED above) — the one case
+  // rankPublishableClusters lets through below MIN_DISTINCT_DOMAINS.
+  singleSourceEligible: boolean;
 };
 
 function clusterKeyFromTokens(tokens: Set<string>, fallbackTitle: string): string {
@@ -272,28 +344,40 @@ export function clusterArticles(
       }),
     );
 
+    const singleSourceEligible =
+      SINGLE_SOURCE_OFFICIAL_ENABLED &&
+      byDomain.size === 1 &&
+      sources.length === 1 &&
+      sources[0].sourceType === "official" &&
+      isCommerciallyUsable(sources[0].domain);
+
     return {
       category,
       clusterKey: clusterKeyFromTokens(cluster.anchorTokens, cluster.articles[0]?.title ?? "topic"),
       sources,
       distinctDomainCount: byDomain.size,
       hasOfficialOrPlatform: sources.some((source) => source.sourceType !== "media"),
+      singleSourceEligible,
     };
   });
 }
 
-// Only clusters confirmed by >=2 distinct domains are even candidates
-// for publishing — this is the code-enforced version of this project's
+// Only clusters confirmed by >=2 distinct domains — or, as a deliberate
+// exception, a single license-confirmed official-institution source
+// (singleSourceEligible, see clusterArticles above and
+// SINGLE_SOURCE_OFFICIAL_ENABLED) — are candidates for publishing. This
+// is the code-enforced version of this project's
 // hasEnoughSources/hasOfficialOrPlatformSource gate (see
-// src/lib/trend-validation.ts), applied before any content is written.
-// Official/platform-backed clusters are preferred; within that, bigger
-// clusters (more corroborating domains) win. Deliberately NOT sliced to
-// MAX_PUBLISHED_PER_CATEGORY here — the caller slices after filtering
-// out duplicates of already-published stories, so a duplicate doesn't
-// waste one of the category's publish slots.
+// src/lib/trend-validation.ts, which mirrors this same single-source
+// exception so a trend saved under it doesn't get filtered back out when
+// read). Official/platform-backed clusters are preferred; within that,
+// bigger clusters (more corroborating domains) win. Deliberately NOT
+// sliced to MAX_PUBLISHED_PER_CATEGORY here — the caller slices after
+// filtering out duplicates of already-published stories, so a duplicate
+// doesn't waste one of the category's publish slots.
 export function rankPublishableClusters(clusters: TrendCluster[]): TrendCluster[] {
   return clusters
-    .filter((cluster) => cluster.distinctDomainCount >= MIN_DISTINCT_DOMAINS)
+    .filter((cluster) => cluster.distinctDomainCount >= MIN_DISTINCT_DOMAINS || cluster.singleSourceEligible)
     .sort((a, b) => {
       const officialDiff = Number(b.hasOfficialOrPlatform) - Number(a.hasOfficialOrPlatform);
       if (officialDiff !== 0) return officialDiff;
@@ -454,6 +538,9 @@ export async function runDailyTrendCollection(
       }
     } else {
       articles = await fetchRssArticlesForCategory(category);
+      if (category === "글로벌 이슈") {
+        articles = [...articles, ...(await fetchSupplementaryGlobalIssuesArticles())];
+      }
     }
 
     const clusters = clusterArticles(category, articles, source);
@@ -518,6 +605,14 @@ export async function runDailyTrendCollection(
         publishedAt: source.publishedAt,
         usageNote: source.usageNote,
       }));
+
+      // Appended after the corroborating-article sources above (not
+      // counted against MAX_SOURCES_PER_TREND, which already ran inside
+      // clusterArticles) — only present for source==="gdelt" runs.
+      if (source === "gdelt") {
+        const attribution = buildGdeltAttributionSource(startedAt.toISOString());
+        if (attribution) sources.push(attribution);
+      }
 
       pendingSaves.push({ id, category, clusterKey: cluster.clusterKey, status: "published", content, sources });
       published.push(id);

@@ -3,7 +3,7 @@ import "server-only";
 import Parser from "rss-parser";
 
 import type { Category } from "@/lib/mock-data";
-import { CATEGORY_RSS_FEEDS } from "@/lib/server/rss-sources";
+import { getActiveRssFeedsForCategory } from "@/lib/server/rss-sources";
 
 const REQUEST_TIMEOUT_MS = 10_000;
 // A courtesy pause between feeds within one category — these are static,
@@ -58,7 +58,7 @@ async function fetchFeed(feedUrl: string): Promise<RssArticle[]> {
 }
 
 export async function fetchRssArticlesForCategory(category: Category): Promise<RssArticle[]> {
-  const feeds = CATEGORY_RSS_FEEDS[category];
+  const feeds = getActiveRssFeedsForCategory(category);
   const articles: RssArticle[] = [];
 
   for (let i = 0; i < feeds.length; i += 1) {

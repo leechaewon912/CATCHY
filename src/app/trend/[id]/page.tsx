@@ -28,6 +28,13 @@ export default async function TrendDetailPage(
   }
 
   const trendExpressions = await getTrendExpressions(trend.id);
+  // "reference" sources (e.g. a GDELT Project data-provider credit) are
+  // not corroborating articles — excluded here so the single-source
+  // label below reflects actual article sourcing, not an attribution
+  // line. See collect-trends.ts's singleSourceEligible gate for when a
+  // trend can legitimately have exactly one of these.
+  const articleSources = trend.sources.filter((source) => source.sourceType !== "reference");
+  const isSingleSource = articleSources.length === 1;
 
   return (
     <div className="flex min-h-full flex-col bg-paper">
@@ -175,20 +182,29 @@ export default async function TrendDetailPage(
           </Link>
         </section>
 
-        {/* 7. 참고 출처 — 페이지 맨 아래 */}
+        {/* 7. 참고 출처 — 페이지 맨 아래. "reference" 소스(예: GDELT Project
+            데이터 제공 표시)는 원문 기사 카드와 똑같이 "원문 보기" 버튼이
+            달린 카드로 보이면 교정용 출처인 것처럼 오인될 수 있어, 아래
+            "데이터 제공" 줄로 따로 분리해 보여준다. */}
         <section
           id="sources"
           className="mx-auto max-w-4xl scroll-mt-24 px-5 pt-14 pb-20 sm:px-8"
         >
-          <h2 className="mb-1 text-[20px] font-semibold text-obsidian">
-            참고 출처
-          </h2>
+          <div className="mb-1 flex items-center gap-2">
+            <h2 className="text-[20px] font-semibold text-obsidian">
+              참고 출처
+            </h2>
+            {isSingleSource && (
+              <span className="badge-filled">단일 출처</span>
+            )}
+          </div>
           <p className="mb-5 text-[14px] text-fog">
-            이 콘텐츠는 여러 공개 출처를 참고해 CATCHY가 영어 학습용으로 새로
-            작성한 콘텐츠입니다. 원문 전문은 각 출처 링크에서 확인해 주세요.
+            {isSingleSource
+              ? "이 콘텐츠는 라이선스가 확인된 공식 출처 1개를 참고해 CATCHY가 영어 학습용으로 새로 작성한 콘텐츠입니다. 원문 전문은 출처 링크에서 확인해 주세요."
+              : "이 콘텐츠는 여러 공개 출처를 참고해 CATCHY가 영어 학습용으로 새로 작성한 콘텐츠입니다. 원문 전문은 각 출처 링크에서 확인해 주세요."}
           </p>
           <ul className="flex flex-col gap-3">
-            {trend.sources.map((source) => (
+            {articleSources.map((source) => (
               <li
                 key={source.originalUrl}
                 className="surface-card-subtle bg-snow px-5 py-4"
@@ -218,6 +234,27 @@ export default async function TrendDetailPage(
               </li>
             ))}
           </ul>
+
+          {trend.sources.some((source) => source.sourceType === "reference") && (
+            <p className="mt-4 text-[12px] text-fog">
+              데이터 제공:{" "}
+              {trend.sources
+                .filter((source) => source.sourceType === "reference")
+                .map((source, index) => (
+                  <span key={source.originalUrl}>
+                    {index > 0 && ", "}
+                    <a
+                      href={source.originalUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline hover:text-graphite"
+                    >
+                      {source.sourceName}
+                    </a>
+                  </span>
+                ))}
+            </p>
+          )}
         </section>
       </FeedbackAutoTrigger>
 

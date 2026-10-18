@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { Category } from "@/lib/mock-data";
+import { isCommerciallyUsable } from "@/lib/server/rss-source-policy";
 
 // Curated, manually-vetted official/publisher RSS feeds per category —
 // the default trend collection source (see src/lib/server/rss-collect.ts).
@@ -87,6 +88,29 @@ export const CATEGORY_RSS_FEEDS: Record<Category, string[]> = {
     "https://restofworld.org/feed/latest/",
   ],
 };
+
+// true only outside production AND when explicitly opted into — set
+// RSS_DEV_INCLUDE_ALL_FEEDS=true in .env.local to exercise the full
+// curated list (including permission_required feeds) for local testing.
+// The NODE_ENV check is not just a default: it makes the override
+// physically inert in production even if the env var is ever set there
+// by mistake (e.g. a copy-pasted .env), so production always falls
+// through to the license-filtered path below regardless.
+const DEV_INCLUDE_ALL_FEEDS =
+  process.env.NODE_ENV !== "production" && process.env.RSS_DEV_INCLUDE_ALL_FEEDS === "true";
+
+// The actual feed list collection should fetch for a category — licensed
+// (src/lib/server/rss-source-policy.ts) feeds in production and by
+// default everywhere, or the full curated list when explicitly running
+// in dev-test mode (see DEV_INCLUDE_ALL_FEEDS above). A feed with no
+// registry entry at all is excluded, never included, the same as an
+// explicit "permission_required" verdict (see
+// rss-source-policy.ts#isCommerciallyUsable).
+export function getActiveRssFeedsForCategory(category: Category): string[] {
+  const feeds = CATEGORY_RSS_FEEDS[category];
+  if (DEV_INCLUDE_ALL_FEEDS) return feeds;
+  return feeds.filter((feedUrl) => isCommerciallyUsable(feedUrl));
+}
 
 // The article-page domain for every feed above (not always identical to
 // the feed URL's own host — e.g. BBC/NPR/Ars Technica serve their feed

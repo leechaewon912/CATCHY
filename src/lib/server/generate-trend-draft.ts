@@ -1053,6 +1053,16 @@ export async function generateTrendDraft(
   return generateTrendDraftStub(input);
 }
 
+// Most VARIANT_BANK entries' whyTrending line claims multiple
+// corroborating outlets ("여러 출처에서 동시에...") — true for every
+// cluster that reaches this function normally, since collect-trends.ts
+// only calls it after the MIN_DISTINCT_DOMAINS gate. The one exception is
+// collect-trends.ts's singleSourceEligible path (a license-confirmed
+// lone official source), which can have sourceCount === 1 — in that one
+// case, swap in a source-count-accurate line instead of letting the
+// variant's multi-source claim go out false.
+const SINGLE_SOURCE_WHY_TRENDING = "공식 기관이 직접 발표한 내용이에요.";
+
 function generateTrendDraftStub(input: GenerateTrendDraftInput): GenerateTrendDraftOutput {
   const variants = VARIANT_BANK[input.category];
   const variant = variants[input.variantIndex % variants.length];
@@ -1061,7 +1071,7 @@ function generateTrendDraftStub(input: GenerateTrendDraftInput): GenerateTrendDr
     summary: variant.summary,
     englishSummary: variant.englishSummary,
     koreanSummary: variant.koreanSummary,
-    whyTrending: variant.whyTrending,
+    whyTrending: input.sourceCount <= 1 ? SINGLE_SOURCE_WHY_TRENDING : variant.whyTrending,
     expressions: variant.expressions,
   };
 }
