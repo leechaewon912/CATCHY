@@ -1,8 +1,16 @@
 import "server-only";
 
 import { getTrendById as getMockTrendById, trends as mockTrends, type Expression, type Trend } from "@/lib/mock-data";
+import { getCultureEditorialTrends } from "@/lib/mock-data.culture-editorials";
 import { getPublishedTrendsFromDb, getTrendByIdFromDb } from "@/lib/server/db/read-trends";
 import { toExpressions } from "@/lib/server/to-expressions";
+
+// Portfolio/demo switch — see src/lib/mock-data.culture-editorials.ts for
+// the 7 hand-written culture editorials this swaps in. "true" (exact
+// string match) is the only way to opt in; unset or any other value keeps
+// the existing DB-first + mock-data.ts-fallback behavior completely
+// untouched. Never read anywhere except this file.
+export const MOCK_MODE = process.env.MOCK_MODE === "true";
 
 // Most "trending" first, for the home hero + feed. In priority order:
 // 1. trendScore/rank, once either is ever populated (DB column or mock
@@ -41,11 +49,13 @@ function rankTrends(trends: Trend[]): Trend[] {
 // untouched when it isn't (no Supabase configured, empty tables, or a
 // query error).
 export async function getHomeTrends(): Promise<Trend[]> {
+  if (MOCK_MODE) return rankTrends(getCultureEditorialTrends());
   const dbTrends = await getPublishedTrendsFromDb();
   return rankTrends(dbTrends ?? mockTrends);
 }
 
 export async function getTrendDetail(id: string): Promise<Trend | undefined> {
+  if (MOCK_MODE) return getCultureEditorialTrends().find((trend) => trend.id === id);
   const dbTrend = await getTrendByIdFromDb(id);
   return dbTrend ?? getMockTrendById(id);
 }

@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/icons";
 import { TrendCard } from "@/components/trend-card";
+import { CATEGORY_DISPLAY_LABELS } from "@/lib/category-display";
 import type { Category, Trend } from "@/lib/mock-data";
 
 // Every filter combination (day × category) paginates the same way once
@@ -78,7 +79,7 @@ export function resolveTrendFeedEmptyState({
     if (selectedIndex > todayIndex) {
       // Case 2 — a day later this week than today.
       return {
-        title: `${selectedDay}요일의 트렌드를 준비하고 있어요.`,
+        title: `${selectedDay}요일의 이야기를 준비하고 있어요.`,
         description: `새로운 콘텐츠는 ${selectedDay}요일 오전 9시에 공개돼요.`,
       };
     }
@@ -86,7 +87,7 @@ export function resolveTrendFeedEmptyState({
     if (selectedIndex === todayIndex && kstHour(now) < RELEASE_HOUR_KST) {
       // Case 1 — today, before the daily 9am KST release.
       return {
-        title: "오늘의 트렌드를 준비하고 있어요.",
+        title: "오늘의 이야기를 준비하고 있어요.",
         description: "새로운 콘텐츠는 오전 9시에 공개돼요.",
       };
     }
@@ -96,7 +97,7 @@ export function resolveTrendFeedEmptyState({
   // running late or failed), a past day that never got content, or
   // "전체" with nothing at all this week.
   return {
-    title: "아직 새로운 트렌드가 없어요.",
+    title: "아직 새로운 이야기가 없어요.",
     description: "새로운 콘텐츠가 준비되면 이곳에서 확인할 수 있어요.",
   };
 }
@@ -325,9 +326,11 @@ export function TrendFeed({
   return (
     <section className="mx-auto max-w-6xl px-5 pt-10 sm:px-8" aria-labelledby="trend-feed-heading">
       <div className="mb-6">
-        <h2 id="trend-feed-heading" className="text-[32px] font-semibold leading-[1.5] text-obsidian">이번 주 트렌드</h2>
+        <h2 id="trend-feed-heading" className="text-[32px] font-semibold leading-[1.5] text-obsidian">일상에 영감을 주는 이야기</h2>
         <p className="mt-1 text-[13px] text-fog" role="status" aria-live="polite">
-          {selectedDay} · {selectedCategory} · {visibleItems.length}개 트렌드
+          {selectedDay} ·{" "}
+          {selectedCategory === "전체" ? selectedCategory : CATEGORY_DISPLAY_LABELS[selectedCategory]} ·{" "}
+          {visibleItems.length}개 트렌드
         </p>
       </div>
 
@@ -366,7 +369,7 @@ export function TrendFeed({
               setCurrentPage(1);
             }}
             className={`shrink-0 cursor-pointer rounded-pills border px-4 py-2.5 text-[14px] font-normal transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian focus-visible:ring-offset-2 focus-visible:ring-offset-paper ${selectedCategory === category ? "border-obsidian bg-obsidian text-snow" : "border-cloud bg-snow text-iron hover:border-ash hover:text-graphite"}`}>
-            {category}
+            {category === "전체" ? category : CATEGORY_DISPLAY_LABELS[category]}
           </button>
         ))}
       </div>

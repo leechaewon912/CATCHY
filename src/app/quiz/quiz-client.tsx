@@ -196,10 +196,12 @@ export function QuizClient({
               : `오답이에요 — 정답은 "${question.phrase}" (${question.correctMeaningKo})예요.`}
           </p>
 
-          <p>
-            <span className="mr-2 text-[12px] text-fog">뉘앙스</span>
-            {question.expression.nuance}
-          </p>
+          {question.expression.nuance && (
+            <p>
+              <span className="mr-2 text-[12px] text-fog">뉘앙스</span>
+              {question.expression.nuance}
+            </p>
+          )}
 
           {question.expression.comparison && (
             <div className="surface-card-subtle p-4">
@@ -222,7 +224,7 @@ export function QuizClient({
       )}
 
       {selectedOption && (
-        <button type="button" onClick={handleNext} className="btn-primary group self-end">
+        <button type="button" onClick={handleNext} className="btn-solid-black group self-end">
           {isLastQuestion ? "결과 보기" : "다음 문제"}
           <ArrowUpRightIcon className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
         </button>

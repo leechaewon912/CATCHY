@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { ArrowUpRightIcon } from "@/components/icons";
+import { CATEGORY_DISPLAY_LABELS } from "@/lib/category-display";
 import { trackTrendClicked } from "@/lib/mixpanel-client";
 import type { Trend } from "@/lib/mock-data";
 import { resolveTrendImage } from "@/lib/trend-image";
@@ -47,14 +48,14 @@ export function TrendCard({ trend, position }: { trend: Trend; position: number 
           className="object-cover"
         />
         <span className={`${CATEGORY_BADGE_CLASS} absolute left-3 top-3 bg-snow/90`}>
-          {trend.category}
+          {CATEGORY_DISPLAY_LABELS[trend.category]}
         </span>
       </div>
 
       <div className="flex flex-1 flex-col gap-3 p-5">
         <div>
           <h3 className="text-[18px] font-semibold leading-snug text-obsidian transition-colors group-hover:text-graphite">
-            {trend.title}
+            {trend.englishTitle ?? trend.title}
           </h3>
           <p className="mt-1 line-clamp-1 text-[13px] text-fog">{trend.englishSummary}</p>
         </div>
@@ -62,7 +63,7 @@ export function TrendCard({ trend, position }: { trend: Trend; position: number 
         <p className="line-clamp-2 text-[14px] leading-relaxed text-fog">{trend.summary}</p>
 
         <span className="mt-auto inline-flex items-center gap-1 text-[13px] font-medium text-obsidian">
-          트렌드 읽기
+          이야기 읽기
           <ArrowUpRightIcon className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
         </span>
       </div>

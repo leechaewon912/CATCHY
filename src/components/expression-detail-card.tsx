@@ -47,10 +47,12 @@ export function ExpressionDetailCard({
       <div className="my-5 h-px bg-cloud" />
 
       <div className="flex flex-col gap-4 text-[14px] leading-relaxed text-steel">
-        <p>
-          <span className="mr-2 text-[12px] text-fog">뉘앙스</span>
-          {expression.nuance}
-        </p>
+        {expression.nuance && (
+          <p>
+            <span className="mr-2 text-[12px] text-fog">뉘앙스</span>
+            {expression.nuance}
+          </p>
+        )}
         {expression.comparison && (
           <div className="surface-card-subtle p-4">
             <span className="mb-2 block text-[12px] text-fog">비슷하지만 다른 표현</span>

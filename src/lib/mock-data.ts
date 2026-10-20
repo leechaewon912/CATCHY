@@ -46,8 +46,16 @@ export type ExpressionComparison = {
 export type ExpressionSeed = {
   phrase: string;
   meaningKo: string;
-  nuance: string;
-  usageSituation: string;
+  // 선택 필드. GDELT/RSS 파이프라인이 생성하는 콘텐츠는 항상 값을 채우지만,
+  // 자체 제작 에디토리얼(예: src/lib/mock-data.culture-editorials.ts)처럼
+  // 별도의 뉘앙스 설명이 제공되지 않는 콘텐츠도 안전하게 담을 수 있도록
+  // 선택 필드로 둔다 — 없으면 UI가 "뉘앙스" 블록 자체를 생략한다
+  // (expression-card.tsx / expression-detail-card.tsx / quiz-client.tsx).
+  nuance?: string;
+  // 어떤 UI에도 실제로 노출되지 않는 내부 분류용 메모 — DB 저장용 컬럼과
+  // LLM 생성 파이프라인에서만 쓰인다. 노출되지 않으므로 값이 없는 콘텐츠도
+  // 안전하게 생략할 수 있다.
+  usageSituation?: string;
   exampleEn: string;
   exampleKo: string;
   // 트렌드 요약 속 예문과는 별개로, 일상 대화에서 쓸 수 있는 두 번째 예문.
@@ -76,6 +84,10 @@ export type QuizQuestionSeed = {
 export type Trend = {
   id: string;
   title: string;
+  // 선택 필드. 영어 원문 제목이 있는 콘텐츠(예: 컬처 에디토리얼)를 위해
+  // 추가됨 — 없으면 기존처럼 title(한국어 제목) 하나만 노출한다
+  // (trend-card.tsx, trend/[id]/page.tsx).
+  englishTitle?: string;
   category: Category;
   // 카드/히어로에 쓰는 짧은 한 줄 요약.
   summary: string;
@@ -84,7 +96,10 @@ export type Trend = {
   englishSummary: string;
   // 상세 페이지 "한국어 요약" 섹션에 쓰는 조금 더 긴 한국어 설명.
   koreanSummary: string;
-  whyTrending: string;
+  // 선택 필드. 뉴스·트렌드 기반 콘텐츠의 "왜 지금 화제일까요?" 설명용 —
+  // 특정 사건을 다루지 않는 자체 제작 에디토리얼에는 해당되지 않을 수
+  // 있어, 없으면 상세 페이지가 그 섹션 자체를 생략한다.
+  whyTrending?: string;
   sources: TrendSource[];
   expressions: ExpressionSeed[];
   quiz: QuizQuestionSeed[];

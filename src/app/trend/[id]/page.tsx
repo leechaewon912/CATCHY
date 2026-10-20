@@ -14,6 +14,7 @@ import {
 import { RecordTrendView } from "@/components/record-trend-view";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { CATEGORY_DISPLAY_LABELS } from "@/lib/category-display";
 import { getTrendDetail, getTrendExpressions } from "@/lib/server/trend-repository";
 import { resolveTrendImage } from "@/lib/trend-image";
 
@@ -76,12 +77,18 @@ export default async function TrendDetailPage(
 
           <div className="relative mx-auto flex min-h-[260px] max-w-4xl flex-col justify-center px-5 py-6 sm:min-h-[340px] sm:px-8 sm:py-8">
             <div className="flex flex-col gap-7 sm:gap-9">
-              <span className="badge-filled self-start">{trend.category}</span>
+              <span className="badge-filled self-start">{CATEGORY_DISPLAY_LABELS[trend.category]}</span>
 
               <div className="flex flex-col gap-2 sm:gap-3">
                 <h1 className="text-[32px] font-semibold leading-[1.28] text-snow sm:text-[40px]">
-                  {trend.title}
+                  {trend.englishTitle ?? trend.title}
                 </h1>
+
+                {trend.englishTitle && (
+                  <p className="text-[16px] font-medium text-mist sm:text-[20px]">
+                    {trend.title}
+                  </p>
+                )}
 
                 <p className="max-w-2xl text-[15px] leading-relaxed text-mist sm:text-[18px]">
                   {trend.summary}
@@ -96,7 +103,7 @@ export default async function TrendDetailPage(
           aria-labelledby="event-summary-heading"
         >
           <h2 id="event-summary-heading" className="text-[32px] font-semibold leading-[1.5] text-obsidian">
-            무슨 일이 있었나요?
+            어떤 이야기인가요?
           </h2>
           <p className="mt-2 mb-5 text-[14px] text-fog">
             영어로 먼저 읽고, 한국어로 내용을 확인해 보세요. <span className="text-ember">주황색 밑줄</span>로
@@ -105,7 +112,7 @@ export default async function TrendDetailPage(
           <div className="surface-card overflow-hidden">
             <div className="p-6 sm:p-8">
               <h3 className="mb-3 text-[13px] font-medium text-ember">
-                EN · 영어 요약
+                Read in English
               </h3>
               <EnglishSummary
                 text={trend.englishSummary}
@@ -124,29 +131,42 @@ export default async function TrendDetailPage(
             </div>
           </div>
 
-          <a
-            href="#sources"
-            className="mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded text-[14px] font-medium text-graphite transition-colors hover:text-obsidian focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
-          >
-            출처 {trend.sources.length}개 보기
-            <ArrowDownIcon className="h-3.5 w-3.5" />
-          </a>
+          {trend.sources.length > 0 && (
+            <a
+              href="#sources"
+              className="mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded text-[14px] font-medium text-graphite transition-colors hover:text-obsidian focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
+            >
+              출처 {trend.sources.length}개 보기
+              <ArrowDownIcon className="h-3.5 w-3.5" />
+            </a>
+          )}
         </section>
 
-        {/* 2. 왜 화제인지 */}
-        <section className="mx-auto max-w-4xl px-5 pt-10 sm:px-8">
-          <div className="surface-card p-6 sm:p-8">
-            <h2 className="mb-3 text-[13px] font-medium text-fog">
-              왜 지금 화제일까요?
-            </h2>
-            <p className="text-[15px] leading-relaxed text-steel">
-              {trend.whyTrending}
-            </p>
-          </div>
-        </section>
+        {/* 2. 왜 화제인지 — 특정 사건의 화제성을 설명하는 섹션이라, 자체
+            제작 에디토리얼처럼 whyTrending이 없는 콘텐츠는 섹션 자체를
+            생략한다 (허위로 "화제성"을 지어내지 않기 위함). */}
+        {trend.whyTrending && (
+          <section className="mx-auto max-w-4xl px-5 pt-10 sm:px-8">
+            <div className="surface-card p-6 sm:p-8">
+              <h2 className="mb-3 text-[13px] font-medium text-fog">
+                왜 지금 화제일까요?
+              </h2>
+              <p className="text-[15px] leading-relaxed text-steel">
+                {trend.whyTrending}
+              </p>
+            </div>
+          </section>
+        )}
 
-        {/* 3-5. 표현 3개 + 의미/뉘앙스/비슷한 표현/예문 + 저장 버튼 */}
-        <section className="mx-auto max-w-4xl px-5 pt-14 sm:px-8">
+        {/* 3-5. 표현 3개 + 의미/뉘앙스/비슷한 표현/예문 + 저장 버튼.
+            참고 출처 섹션(아래)이 숨겨질 때(trend.sources가 비어 있을 때)는
+            이 섹션이 사실상 페이지의 마지막 콘텐츠가 되는데, 원래 하단
+            여백은 참고 출처 섹션의 pb-20이 담당하고 있었다 — 그게 없으면
+            "이 표현들로 퀴즈 풀기" 버튼이 푸터 상단 테두리선에 바로
+            붙어버리므로, 그 경우에만 이 섹션에 같은 pb-20을 직접 준다. */}
+        <section
+          className={`mx-auto max-w-4xl px-5 pt-14 sm:px-8 ${trend.sources.length === 0 ? "pb-20" : ""}`}
+        >
           {/* expression_viewed fires once this heading block scrolls
               >=50% into view — tracking the whole section (including
               all expression cards below) would rarely cross 50% of its
@@ -154,7 +174,7 @@ export default async function TrendDetailPage(
               taller than most viewports once 3 cards are stacked. */}
           <ExpressionSectionTracker trendId={trend.id} category={trend.category}>
             <h2 className="mb-2 text-[32px] font-semibold leading-[1.5] text-obsidian">
-              이 트렌드에서 배우는 표현
+              이 이야기에서 배우는 표현
             </h2>
             <p className="mb-8 text-[14px] text-fog">
               AI가 이 트렌드 콘텐츠에서 실제로 쓰인 표현을 선별해 뜻·뉘앙스·비슷한
@@ -185,11 +205,16 @@ export default async function TrendDetailPage(
         {/* 7. 참고 출처 — 페이지 맨 아래. "reference" 소스(예: GDELT Project
             데이터 제공 표시)는 원문 기사 카드와 똑같이 "원문 보기" 버튼이
             달린 카드로 보이면 교정용 출처인 것처럼 오인될 수 있어, 아래
-            "데이터 제공" 줄로 따로 분리해 보여준다. */}
-        <section
-          id="sources"
-          className="mx-auto max-w-4xl scroll-mt-24 px-5 pt-14 pb-20 sm:px-8"
-        >
+            "데이터 제공" 줄로 따로 분리해 보여준다.
+
+            sources가 비어 있는 경우(자체 제작 에디토리얼처럼 실제 기사
+            출처가 없는 콘텐츠)는 섹션 자체를 생략한다 — 실제 출처가 없는데
+            "여러 공개 출처를 참고해..." 같은 문구를 보여주지 않기 위함. */}
+        {trend.sources.length > 0 && (
+          <section
+            id="sources"
+            className="mx-auto max-w-4xl scroll-mt-24 px-5 pt-14 pb-20 sm:px-8"
+          >
           <div className="mb-1 flex items-center gap-2">
             <h2 className="text-[20px] font-semibold text-obsidian">
               참고 출처
@@ -256,6 +281,7 @@ export default async function TrendDetailPage(
             </p>
           )}
         </section>
+        )}
       </FeedbackAutoTrigger>
 
       <SiteFooter />

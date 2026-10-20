@@ -99,7 +99,7 @@ export default async function Home() {
 
         <section className="mx-auto max-w-6xl px-5 pt-16 sm:px-8">
           <FeaturedExpressionsCarousel
-            title="트렌드 속 진짜 표현"
+            title="이야기로 만나는 진짜 영어 표현"
             description="뉴스와 SNS에서 실제로 쓰인 표현을 의미·상황·맥락과 함께 배워보세요."
           >
             {featuredExpressions.map(({ expression, trendTitle }) => (

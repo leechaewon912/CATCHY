@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { CATEGORY_DISPLAY_LABELS } from "@/lib/category-display";
 import type { Category } from "@/lib/mock-data";
 import { readRecentTrendIds } from "@/lib/recent-trends";
 
@@ -82,7 +83,7 @@ export function QuizEntryClient({ trends }: { trends: QuizPickerTrend[] }) {
           href={`/quiz?trend=${featuredTrend.id}&entry=quiz_picker`}
           className="surface-dark group flex cursor-pointer flex-col gap-3 p-6 transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-paper focus-visible:ring-snow sm:p-8"
         >
-          <span className="badge-filled self-start">{featuredTrend.category}</span>
+          <span className="badge-filled self-start">{CATEGORY_DISPLAY_LABELS[featuredTrend.category]}</span>
           <h2 className="text-[24px] font-semibold leading-snug text-snow sm:text-[28px]">
             {featuredTrend.title}
           </h2>
@@ -95,7 +96,7 @@ export function QuizEntryClient({ trends }: { trends: QuizPickerTrend[] }) {
         <div className="flex flex-col gap-8">
           {otherTrendsByCategory.map(({ category, trends: categoryTrends }) => (
             <div key={category}>
-              <p className="mb-3 text-[13px] font-medium text-fog">{category}</p>
+              <p className="mb-3 text-[13px] font-medium text-fog">{CATEGORY_DISPLAY_LABELS[category]}</p>
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {categoryTrends.map((trend) => (
                   <Link
@@ -104,7 +105,7 @@ export function QuizEntryClient({ trends }: { trends: QuizPickerTrend[] }) {
                     className="surface-card group flex cursor-pointer flex-col transition-colors hover:border-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
                   >
                     <div className="p-5 pb-0">
-                      <span className={CATEGORY_BADGE_CLASS}>{trend.category}</span>
+                      <span className={CATEGORY_BADGE_CLASS}>{CATEGORY_DISPLAY_LABELS[trend.category]}</span>
                     </div>
 
                     <div className="flex flex-1 flex-col gap-3 p-5">

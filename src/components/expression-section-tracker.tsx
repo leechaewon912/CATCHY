@@ -5,7 +5,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { trackExpressionViewed } from "@/lib/mixpanel-client";
 import type { Category } from "@/lib/mock-data";
 
-// Wraps the trend detail page's "이 트렌드에서 배우는 표현" heading
+// Wraps the trend detail page's "이 이야기에서 배우는 표현" heading
 // block (not the full card list below it — see the comment at its call
 // site in src/app/trend/[id]/page.tsx for why) with an invisible ref
 // target, purely so an IntersectionObserver can fire expression_viewed

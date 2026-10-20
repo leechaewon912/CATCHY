@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { SaveExpressionButton } from "@/components/save-expression-button";
+import { CATEGORY_DISPLAY_LABELS } from "@/lib/category-display";
 import { highlightPhraseInText } from "@/lib/highlight-expressions";
 import { trackExpressionClicked } from "@/lib/mixpanel-client";
 import type { Expression } from "@/lib/mock-data";
@@ -36,7 +37,7 @@ export function ExpressionCard({
       className="surface-card group flex w-72 shrink-0 cursor-pointer snap-start flex-col gap-4 p-5 transition-colors hover:border-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
     >
       <div className="flex items-center justify-between gap-2">
-        <span className={CATEGORY_BADGE_CLASS}>{expression.category}</span>
+        <span className={CATEGORY_BADGE_CLASS}>{CATEGORY_DISPLAY_LABELS[expression.category]}</span>
         <SaveExpressionButton expression={expression} trendTitle={trendTitle} variant="icon" />
       </div>
 
@@ -50,9 +51,11 @@ export function ExpressionCard({
 
       <div className="h-px bg-cloud" />
 
-      <div className="flex flex-col gap-2 text-[13px] leading-relaxed text-steel">
-        <p className="line-clamp-2 min-h-[43px]">{expression.nuance}</p>
-      </div>
+      {expression.nuance && (
+        <div className="flex flex-col gap-2 text-[13px] leading-relaxed text-steel">
+          <p className="line-clamp-2 min-h-[43px]">{expression.nuance}</p>
+        </div>
+      )}
 
       <div className="flex flex-col gap-1">
         <span className="text-[12px] text-fog">예문</span>
