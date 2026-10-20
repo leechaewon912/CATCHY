@@ -17,7 +17,6 @@ export function SiteFooter() {
             </>
           )}
         </p>
-        <p>© 2026 CATCHY. Source discovery via curated publisher RSS feeds.</p>
       </div>
     </footer>
   );

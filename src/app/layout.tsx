@@ -18,10 +18,36 @@ const dmSans = DM_Sans({
   weight: ["400", "500", "600", "700"],
 });
 
+const SITE_TITLE = "CATCHY — 문화를 읽다, 영어를 발견하다.";
+const SITE_DESCRIPTION =
+  "음악부터 영화, 밈까지. 글로벌 컬처를 읽으며 살아있는 영어 표현을 만나보세요.";
+
 export const metadata: Metadata = {
-  title: "CATCHY — 트렌드로 배우는 진짜 영어",
-  description:
-    "관심 있는 글로벌 트렌드를 따라가며 실제로 쓰이는 영어 표현과 문화적 맥락을 익히는 AI 영어 학습 서비스",
+  // Base for every relative URL below (including the opengraph-image.tsx/
+  // twitter-image.tsx file-convention images) — required for Next to
+  // emit absolute og:image/twitter:image URLs instead of failing the
+  // build. No custom domain is configured on Vercel yet (checked via
+  // `vercel domains ls`), so this points at the stable production alias.
+  metadataBase: new URL("https://catchy-three.vercel.app"),
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    siteName: "CATCHY",
+    locale: "ko_KR",
+    type: "website",
+    // No `images` here on purpose — src/app/opengraph-image.tsx already
+    // supplies og:image/width/height/type automatically; redeclaring it
+    // here would just be a second, easy-to-drift source of truth.
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    // Same reasoning as openGraph.images above — src/app/twitter-image.tsx
+    // supplies this.
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
