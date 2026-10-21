@@ -13,6 +13,12 @@ const PAGE_SIZE = 6;
 
 // mock-data.ts는 "server-only"라 클라이언트 컴포넌트에서 값을 import할 수
 // 없다. 카테고리 목록은 Category 타입과 나란히 여기서도 직접 유지한다.
+//
+// "글로벌 이슈"("문화" 카테고리)는 라이프스타일로 통합해 필터 칩 목록에서
+// 뺐다 — canonical 값 자체는 바뀌지 않았으니(category-display.ts 참고),
+// "글로벌 이슈"로 저장된 기존 콘텐츠(Mock·Supabase 전부)는 아래
+// categoryMatchesFilter()를 통해 "라이프스타일" 칩을 눌렀을 때 함께
+// 보인다 — 칩만 하나로 줄었을 뿐 콘텐츠가 사라지지 않는다.
 const CATEGORY_FILTERS: (Category | "전체")[] = [
   "전체",
   "음악",
@@ -21,8 +27,14 @@ const CATEGORY_FILTERS: (Category | "전체")[] = [
   "라이프스타일",
   "테크·게임",
   "스포츠",
-  "글로벌 이슈",
 ];
+
+function categoryMatchesFilter(itemCategory: Category, selectedCategory: Category | "전체"): boolean {
+  if (selectedCategory === "전체") return true;
+  if (itemCategory === selectedCategory) return true;
+  if (selectedCategory === "라이프스타일" && itemCategory === "글로벌 이슈") return true;
+  return false;
+}
 
 const DAY_FILTERS = ["전체", "월", "화", "수", "목", "금", "토", "일"] as const;
 export type DayFilter = (typeof DAY_FILTERS)[number];
@@ -100,6 +112,18 @@ export function resolveTrendFeedEmptyState({
     title: "아직 새로운 이야기가 없어요.",
     description: "새로운 콘텐츠가 준비되면 이곳에서 확인할 수 있어요.",
   };
+}
+
+// Shared by every "no results" branch below (day not live yet, and the
+// category-caused empty fallback) so they render with identical
+// spacing/typography instead of each branch hand-rolling its own markup.
+function TrendFeedEmptyStateBlock({ title, description }: TrendFeedEmptyState) {
+  return (
+    <div className="col-span-full flex flex-col items-center gap-1 py-12 text-center">
+      <p className="text-[16px] font-semibold text-obsidian">{title}</p>
+      <p className="text-[14px] text-fog">{description}</p>
+    </div>
+  );
 }
 
 type PageItem = number | "ellipsis-start" | "ellipsis-end";
@@ -251,7 +275,7 @@ export function TrendFeed({
 
   const visibleItems = items.filter((item) => {
     if (item.dayOfWeek === null) return false;
-    const categoryMatches = selectedCategory === "전체" || item.trend.category === selectedCategory;
+    const categoryMatches = categoryMatchesFilter(item.trend.category, selectedCategory);
     const dayMatches = selectedDay === "전체" || item.dayOfWeek === selectedDay;
     return categoryMatches && dayMatches;
   });
@@ -385,12 +409,12 @@ export function TrendFeed({
         ))}
         {visibleItems.length === 0 &&
           (emptyState ? (
-            <div className="col-span-full flex flex-col items-center gap-1 py-12 text-center">
-              <p className="text-[16px] font-semibold text-obsidian">{emptyState.title}</p>
-              <p className="text-[14px] text-fog">{emptyState.description}</p>
-            </div>
+            <TrendFeedEmptyStateBlock title={emptyState.title} description={emptyState.description} />
           ) : (
-            <p className="col-span-full py-12 text-center text-fog">아직 이 조건에 맞는 트렌드가 없어요.</p>
+            <TrendFeedEmptyStateBlock
+              title="아직 해당하는 이야기가 없어요."
+              description="다른 카테고리나 요일을 선택해 보세요."
+            />
           ))}
       </div>
 

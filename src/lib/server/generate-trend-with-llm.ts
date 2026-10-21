@@ -37,7 +37,11 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
 
-async function callOpenAi(systemPrompt: string, userPrompt: string): Promise<string | null> {
+// Exported so generate-culture-editorial-with-llm.ts can reuse this exact
+// call/retry-friendly HTTP shape instead of duplicating it — this function
+// carries no news-specific prompt or input type, so sharing it doesn't
+// touch this file's news-only behavior.
+export async function callOpenAi(systemPrompt: string, userPrompt: string): Promise<string | null> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
 

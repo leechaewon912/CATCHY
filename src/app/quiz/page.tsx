@@ -73,7 +73,7 @@ export default async function QuizPage({
   }
 
   const expressions = await getTrendExpressions(trend.id);
-  const backHref = `/trend/${trend.id}`;
+  const backHref = "/";
 
   const quizSeeds = buildQuizFromExpressions(expressions);
   const questions: QuizQuestionWithExpression[] = quizSeeds.map((seed, index) => ({
@@ -95,7 +95,7 @@ export default async function QuizPage({
             className="mb-6 inline-flex cursor-pointer items-center gap-1.5 rounded text-[14px] font-normal text-fog transition-colors hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
           >
             <ArrowLeftIcon className="h-4 w-4" />
-            트렌드로 돌아가기
+            홈으로 돌아가기
           </Link>
 
           {/* Category chip intentionally omitted here — the quiz-solving
@@ -135,8 +135,13 @@ function QuizTrendPicker({ trends }: { trends: Trend[] }) {
   // Plain, serializable summaries only — the client component can't
   // import mock-data.ts's Trend value (it's "server-only"), and doesn't
   // need the full trend (sources, quiz, etc.) anyway.
+  //
+  // Every trend generated today shows here now, not just ones with
+  // enough expressions for a quiz — picking one with fewer than
+  // MIN_EXPRESSIONS_FOR_QUIZ falls through to the existing "이 트렌드는
+  // 아직 표현이 부족해서 퀴즈를 만들 수 없어요" message above (the
+  // non-picker, direct-?trend= path already handles this).
   const quizzableTrends: QuizPickerTrend[] = trends
-    .filter((trend) => trend.expressions.length >= MIN_EXPRESSIONS_FOR_QUIZ)
     .map((trend) => ({
       id: trend.id,
       title: trend.title,

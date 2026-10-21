@@ -620,7 +620,7 @@ const ALL_TRENDS: Trend[] = [
   makeTrend({
     id: "global-west-africa-youth-political-participation",
     title: "투표는 못 해도 거리로 나온 서아프리카 청년들",
-    category: "글로벌 이슈",
+    category: "라이프스타일", // 구 "글로벌 이슈"(문화) — 카테고리 통합으로 라이프스타일에 편입
     summary:
       "서아프리카 여러 나라에서 청년들은 피선거권 연령 제한 때문에 출마할 수 없지만 시위에는 적극적으로 참여하고 있어요.",
     englishSummary:

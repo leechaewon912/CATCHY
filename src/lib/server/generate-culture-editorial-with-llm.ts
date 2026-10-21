@@ -1,0 +1,597 @@
+import "server-only";
+
+import type { Category, ExpressionSeed } from "@/lib/mock-data";
+import { textContainsPhrase } from "@/lib/highlight-expressions";
+import { callOpenAi } from "@/lib/server/generate-trend-with-llm";
+
+// ============================================================================
+// GPT-4o-mini 기반 "컬처 에디토리얼" 생성기 — RSS/GDELT 뉴스 수집과는 완전히
+// 분리된 별도 경로다. generate-trend-with-llm.ts의 callOpenAi()(HTTP 호출
+// 껍데기, 뉴스 프롬프트/입력 타입과 무관)만 재사용하고, 이 파일의 시스템
+// 프롬프트·입력 타입·검증 기준은 전부 새로 작성했다 — 뉴스 전용 프롬프트
+// (기사 메타데이터 그라운딩, 고유명사 요구 등)는 에디토리얼과 전제가
+// 반대라 그대로 재사용할 수 없었다(자세한 이유는 대화 기록 참고).
+//
+// 호출부(아직 미구현 — 향후 정기 자동화 단계에서 작성)는 이 함수가 null을
+// 반환하면 "생성 실패"로 처리해야 한다. generate-trend-draft.ts의 뉴스용
+// 스텁 템플릿(VARIANT_BANK)으로 대체하면 안 된다 — 그 템플릿은 "오늘 여러
+// 매체에서 다뤄진 이슈" 같은 뉴스 말투라 에디토리얼 톤과 맞지 않는다.
+// ============================================================================
+
+export type CultureEditorialTopic = {
+  category: Category;
+  englishTitle: string;
+  koreanTitle: string;
+  // 모델이 주제를 벗어나지 않도록 잡아주는 한 줄 소재 설명 — "이미 제안된
+  // 7개 주제"처럼 주제 선정을 사람이 먼저 확정해둔 경우를 위한 것이다.
+  topicBrief: string;
+  // 이 주제에서 우선적으로 활용했으면 하는 관용구/구어체 후보 — 본문에
+  // 자연스럽게 녹아들 때만 쓰도록 안내할 뿐, 억지로 끼워 넣게 강제하지는
+  // 않는다("요청하신 '억지로 끼워 넣지 않기' 원칙" 때문에 프로그램 차원의
+  // 필수 검증은 걸지 않고, 프롬프트 안내로만 유도한다).
+  preferredExpressions?: string[];
+  // 문체·구성에 대한 주제별 추가 지시 — 공통 규칙만으로는 부족한, 이
+  // 주제에만 해당하는 요구사항(예: JOMO/FOMO 대비 설명, 구체적 생활 장면
+  // 중심 서술)을 담는다.
+  styleNote?: string;
+};
+
+export type GenerateCultureEditorialOutput = {
+  title: string;
+  englishTitle: string;
+  summary: string;
+  englishSummary: string;
+  koreanSummary: string;
+  expressions: ExpressionSeed[];
+};
+
+const EXPECTED_EXPRESSION_COUNT = 3;
+const MIN_ENGLISH_SUMMARY_WORDS = 130;
+const MAX_ENGLISH_SUMMARY_WORDS = 160;
+const MAX_ATTEMPTS = 3;
+
+// 호출 횟수/대략적인 토큰 사용량 계측 — callOpenAi() 자체(뉴스 파이프라인과
+// 공유)는 건드리지 않고, 이 파일에서 callOpenAi를 호출하는 지점만 감싸서
+// 집계한다. 정확한 토큰 수는 OpenAI 응답의 usage 필드를 받아야 알 수 있는데,
+// callOpenAi가 content 문자열만 반환하므로 여기서는 프롬프트/응답 문자 수
+// 기반 근사치(영어 기준 약 4자≈1토큰)만 제공한다 — 콘솔/보고용 추정치이지
+// 정확한 과금 수치가 아니다.
+let callCount = 0;
+let promptCharsTotal = 0;
+let responseCharsTotal = 0;
+
+export function getEditorialLlmUsageStats() {
+  return {
+    callCount,
+    estimatedPromptTokens: Math.ceil(promptCharsTotal / 4),
+    estimatedCompletionTokens: Math.ceil(responseCharsTotal / 4),
+  };
+}
+
+export function resetEditorialLlmUsageStats(): void {
+  callCount = 0;
+  promptCharsTotal = 0;
+  responseCharsTotal = 0;
+}
+
+async function trackedCallOpenAi(systemPrompt: string, userPrompt: string): Promise<string | null> {
+  callCount += 1;
+  promptCharsTotal += systemPrompt.length + userPrompt.length;
+  const content = await callOpenAi(systemPrompt, userPrompt);
+  if (content) responseCharsTotal += content.length;
+  return content;
+}
+
+function countWords(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+// 기존 표현/제목과의 중복 여부를 비교할 때 쓰는 느슨한 정규화 — 대소문자
+// 차이와 "[something]"류 플레이스홀더 차이만으로 서로 다른 표현처럼
+// 보이는 걸 막는다. highlight-expressions.tsx의 하이라이팅 매칭과는
+// 목적이 달라(이쪽은 "같은 표현인가" 판별용) 별도로 둔다.
+function normalizePhrase(phrase: string): string {
+  return phrase
+    .toLowerCase()
+    .replace(/\[[a-z]+\]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// 기존 7개 컬처 에디토리얼의 제목 — mock-data.culture-editorials.ts를
+// import하지 않고 여기 직접 적어둔다. 그 파일은 손으로 쓴 7개 콘텐츠를
+// "보존"해야 하는 대상이라, 이 생성기 쪽에서 실수로 건드리거나 의존성을
+// 만들지 않도록 완전히 분리해 둔 것 — 제목 목록이 바뀌면 여기도 함께
+// 손으로 갱신해야 한다.
+const EXISTING_EDITORIAL_TITLES: { englishTitle: string; koreanTitle: string }[] = [
+  { englishTitle: "Your Playlist Is Your Personality Now", koreanTitle: "이제 플레이리스트가 나를 소개하는 방법이 됐다" },
+  { englishTitle: "Why We Keep Rewatching the Same Shows", koreanTitle: "결말을 아는데도 같은 작품을 다시 보는 이유" },
+  { englishTitle: "It's Giving: The Internet's Favorite Way to Describe a Vibe", koreanTitle: "설명보다 느낌이 중요한 인터넷 언어, It's giving" },
+  { englishTitle: "The Joy of Being Offline for a While", koreanTitle: "잠시 연결을 끊는 것만으로 달라지는 하루" },
+  { englishTitle: "What If You Could Build an App Just by Describing It?", koreanTitle: "말로 설명한 아이디어가 실제 앱이 된다면?" },
+  { englishTitle: "More Than a Game: Why Being a Fan Feels Personal", koreanTitle: "스포츠 팬이 된다는 건 단순히 승리를 응원하는 일이 아니다" },
+  { englishTitle: "Can Small Everyday Choices Really Make a Difference?", koreanTitle: "일상 속 작은 선택이 정말 세상을 바꿀 수 있을까?" },
+];
+
+// 기존 7개가 이미 쓴 표현 21개 — 새로 생성되는 표현이 이것들과 겹치지
+// 않게 하는 용도. 위와 같은 이유로 import 대신 직접 나열한다.
+const EXISTING_EDITORIAL_PHRASES: string[] = [
+  "On repeat", "My kind of vibe", "Do the talking",
+  "Comfort watch", "Know [something] by heart", "At our fingertips",
+  "[something] giving", "Main character energy", "Straight out of",
+  "Unplug", "Slow down", "Recharge",
+  "Bring [something] to life", "Game changer", "From scratch",
+  "Root for", "Die-hard fan", "Stay loyal to",
+  "Make a difference", "Small steps", "Think twice",
+];
+
+// 아래 2건은 실제 생성 호출이 쓸, 사람이 먼저 확정해둔 7개 주제(테크·게임
+// 제목은 사용자가 지정한 대로 반영) — 아직 어디서도 호출하지 않는다
+// (지금 단계는 생성 함수/프롬프트 구현까지만).
+export const CULTURE_EDITORIAL_CANDIDATE_TOPICS: CultureEditorialTopic[] = [
+  {
+    category: "음악",
+    englishTitle: "Why Is This Song Stuck in My Head?",
+    koreanTitle: "귀에서 맴도는 노래, 이어웜의 정체",
+    topicBrief: "한 번 들으면 멜로디가 계속 머릿속에서 맴도는 '이어웜(earworm)' 현상",
+    preferredExpressions: ["earworm"],
+    styleNote: "이전 생성에서 earworm이 잘 작동했으니 이번에도 표현 3개 중 하나로 유지하세요.",
+  },
+  {
+    category: "영화·시리즈",
+    englishTitle: "The Race to Watch It Before You Get Spoiled",
+    koreanTitle: "스포일러 전에 봐야 한다는 압박",
+    topicBrief: "SNS에서 스포일러를 보기 전에 서둘러 작품을 챙겨 보는 문화",
+    preferredExpressions: ["No spoilers!", "Binge-watch", "Go in blind"],
+    styleNote:
+      "이 세 표현이 모두 본문 흐름에 자연스럽게 등장하도록 글을 구성하고, 가능하면 표현 3개로 그대로 선택하세요 — 단, 억지로 끼워 넣지 말고 자연스러울 때만.",
+  },
+  {
+    category: "밈·인터넷",
+    englishTitle: "Sending Memes Is How We Say \"I Thought of You\"",
+    koreanTitle: "밈을 보내는 것, 애정을 표현하는 방식",
+    topicBrief: "친구에게 밈을 보내는 것이 요즘 애정과 유대감을 표현하는 방식이 된 인터넷 문화",
+    preferredExpressions: ["This is so you", "I thought of you", "Tag someone"],
+    styleNote:
+      "이 세 표현이 모두 본문 흐름에 자연스럽게 등장하도록 글을 구성하고, 가능하면 표현 3개로 그대로 선택하세요 — 단, 억지로 끼워 넣지 말고 자연스러울 때만.",
+  },
+  {
+    category: "라이프스타일",
+    englishTitle: "Why Staying In Feels Like Winning",
+    koreanTitle: "약속 대신 집을 선택하는 게 승리처럼 느껴지는 이유",
+    topicBrief: "JOMO(joy of missing out) — 약속을 거절하고 집에 머무는 선택에 죄책감을 느끼지 않는 문화",
+    preferredExpressions: ["JOMO"],
+    styleNote:
+      "JOMO를 표현 3개 중 하나로 선택하고, 그 비교 표현(comparisonPhrase)은 반드시 FOMO로 쓰세요. 뉘앙스 설명(comparisonNuanceDiff)에 'FOMO는 놓치는 것에 대한 불안, JOMO는 놓치는 것을 오히려 즐기는 마음'이라는 차이를 분명히 담으세요.",
+  },
+  {
+    category: "테크·게임",
+    englishTitle: "The Appeal of Cozy Games: Playing Without Pressure",
+    koreanTitle: "경쟁하지 않아도 괜찮아, 코지 게임의 매력",
+    topicBrief: "승패나 경쟁 없이 편안하게 즐기는 '코지 게임(cozy game)' 장르의 인기",
+  },
+  {
+    category: "스포츠",
+    englishTitle: "The Friendly Rivalry of Fantasy Sports Leagues",
+    koreanTitle: "친구들과의 판타지 스포츠, 우정 섞인 경쟁",
+    topicBrief: "친구들끼리 팀을 꾸려 즐기는 판타지 스포츠 리그의 우호적인 경쟁 문화",
+    preferredExpressions: ["what a game", "down to the wire", "bragging rights"],
+    styleNote:
+      "'sense of camaraderie', 'lasting memories' 같은 사전적 명사구 대신, 실제 스포츠 팬들이 경기를 보면서 쓰는 감탄사·구어체 표현을 우선 고려하세요 (옆의 preferredExpressions는 예시일 뿐 — 본문 흐름에 더 자연스러운 다른 구어체 표현이 있다면 그것으로 대체해도 됩니다).",
+  },
+  {
+    // 구 "글로벌 이슈"(문화) — 카테고리 통합으로 라이프스타일에 편입.
+    // 이미 생성 완료된 과거 실행 기록이라 이 항목의 토픽 내용(아래
+    // topicBrief/styleNote)은 그대로 두고 category만 갱신했다 — 앞으로
+    // 이 배열을 다시 쓸 때도 더 이상 "글로벌 이슈"를 생성 대상으로
+    // 쓰지 않기 위함.
+    category: "라이프스타일",
+    englishTitle: "Why \"Where You Work\" No Longer Means \"Where You Live\"",
+    koreanTitle: "일하는 곳과 사는 곳이 분리되는 시대",
+    topicBrief: "디지털 노마드처럼 일하는 장소와 생활 근거지가 분리되는 삶의 방식",
+    styleNote:
+      "'new cultural landscape', 'work-life balance' 같은 포괄적 개념어로 설명을 끝내지 말고, 노트북 하나로 카페를 옮겨 다니거나 시차 때문에 새벽에 화상회의를 하는 등 구체적인 하루 장면을 중심으로 본문을 구성하세요.",
+  },
+];
+
+// ---------------------------------------------------------------------
+// Step 1: 본문 생성 (뉴스 그라운딩 없음 — 주어진 topic만으로 작성).
+// ---------------------------------------------------------------------
+
+type EditorialSummaryOutput = {
+  title: string;
+  englishTitle: string;
+  summary: string;
+  englishSummary: string;
+  koreanSummary: string;
+};
+
+type EditorialSummaryJson = {
+  title?: unknown;
+  englishTitle?: unknown;
+  summary?: unknown;
+  englishSummary?: unknown;
+  koreanSummary?: unknown;
+};
+
+// 문체 참고용 예시 2개(기존 에디토리얼의 축약 발췌, 오프닝 패턴을 다르게
+// 가져감 — 상황 묘사형 하나, "Imagine" 장면형 하나) — 톤과 분량만
+// 참고하게 하고, 그대로 베끼지 말라고 규칙에서 명시한다.
+const STYLE_REFERENCE_EXAMPLES = `예시 1 (상황 묘사로 시작 — 문체·분량 참고용, 내용 베끼지 말 것):
+영문 제목: Why We Keep Rewatching the Same Shows
+영어 본문: "You open your streaming app, scroll through dozens of new releases, and somehow end up watching the same show for the fifth time. Sound familiar? With endless movies and series available at our fingertips, you might think we'd always be looking for something new. But sometimes, the most appealing option is a story we already know by heart. That's the beauty of a comfort watch. You know exactly what happens, which characters you'll fall in love with, and which scenes will make you laugh. There's no pressure to follow a complicated plot or worry about an unexpected ending."
+
+예시 2 ("Imagine" 장면으로 시작 — 문체·분량 참고용, 내용 베끼지 말 것):
+영문 제목: It's Giving: The Internet's Favorite Way to Describe a Vibe
+영어 본문: "Imagine your friend shows up wearing sunglasses, a dramatic coat, and an outfit that looks straight out of a movie. Instead of saying, 'You look really confident and stylish,' you simply say, 'It's giving main character energy.' Welcome to the world of 'It's giving,' an expression used across social media to describe the mood, aesthetic, or impression something creates. The beauty of this phrase is how flexible it is. A cozy café might be 'giving Paris in the fall,' while someone's colorful outfit could be 'giving early 2000s pop star.'"
+
+두 예시 모두 사전적 정의("X is a phenomenon known as...")로 시작하지 않고, 독자가 바로 그려볼 수 있는 질문이나 장면으로 문을 엽니다. 문장도 짧고 구어체에 가깝습니다.`;
+
+const EDITORIAL_SUMMARY_SYSTEM_PROMPT = `당신은 CATCHY라는 한국어-영어 학습 서비스의 콘텐츠 작가입니다.
+지금 쓰는 글은 특정 뉴스 기사를 요약하는 것이 아니라, CATCHY가 자체 기획한 "컬처 에디토리얼"입니다 — 이미 널리 알려져 있고 검증된 문화 현상이나 관용 표현을 소재로, 가볍고 친근한 에세이 스타일 글을 새로 씁니다. 교과서나 AI가 쓴 설명문처럼 딱딱하게 읽히면 안 됩니다 — 친구에게 이야기하듯 써야 합니다.
+
+반드시 지켜야 할 규칙:
+1. 아래 "작성할 주제"에서 벗어나지 말고, 그 주제에 대해서만 쓰세요. 주제를 임의로 바꾸거나 다른 소재를 섞지 마세요.
+2. 특정 인물, 특정 작품명, 특정 사건, 특정 날짜의 실제 뉴스를 인용하거나 마치 사실인 것처럼 쓰지 마세요. 검증되지 않은 "최신" 유행처럼 포장하지 말고, 보편적으로 이미 널리 통용되는 문화 현상 설명에 집중하세요. "Research suggests...", "Studies show..." 같은 가짜 권위를 빌리는 문장도 쓰지 마세요 — 근거 없는 주장이 됩니다.
+3. 외부 뉴스 기사를 그대로 복제하거나 요약한 것처럼 보이면 안 됩니다 — 완전히 새로 쓴 문장이어야 합니다.
+4. **첫 문장은 반드시 질문형이거나, 독자가 실제로 겪어봤을 법한 구체적인 순간·장면 묘사로 시작하세요.** "X is a phenomenon known as...", "In today's digital age, the concept of...", "In a world where..." 같은 사전적 정의형·일반론형 문장으로 시작하지 마세요.
+5. 글 전체에서 추상적인 일반론("this reflects our desire to...", "this phenomenon highlights...")을 최소화하고, 구체적인 행동·장면·대사로 보여주세요. 설명하지 말고 보여주세요.
+6. englishSummary는 **정확히 130~160단어** 분량의 영어 단락이어야 합니다. 130단어보다 적거나 160단어보다 많으면 안 됩니다.
+7. koreanSummary는 englishSummary와 **같은 내용을 담은** 자연스러운 한국어 번역이어야 합니다 — 문장 대 문장으로 기계적으로 직역하지 말고, 문장 순서나 접속사를 한국어답게 재구성해도 됩니다(내용 추가·누락은 금지). 번역투("~것입니다", "~라고 할 수 있습니다"의 과도한 반복)를 피하고 친근한 구어체로 쓰세요.
+8. title/summary/koreanSummary는 한국어로, englishTitle/englishSummary는 영어로 쓰세요. 섞어 쓰지 마세요.
+9. 아래 "이미 존재하는 기존 제목들"과 주제·소재가 겹치면 안 됩니다.
+10. 아래 "이 주제에서 활용하면 좋은 표현"이 주어졌다면, 그 표현들이 본문 흐름에 자연스럽게 등장하도록 글을 구성해 보세요 — 다만 문장이 어색해질 정도로 억지로 끼워 넣지는 마세요. 자연스럽게 안 들어가면 빼도 됩니다.
+11. ${STYLE_REFERENCE_EXAMPLES}
+12. 다른 설명 없이, 아래 JSON 스키마와 정확히 일치하는 JSON 객체만 출력하세요.
+
+JSON 스키마:
+{
+  "title": "한국어 제목",
+  "englishTitle": "English title",
+  "summary": "한국어 한 줄 요약 (카드에 쓰이는 짧은 문장)",
+  "englishSummary": "English paragraph, 130-160 words",
+  "koreanSummary": "englishSummary를 자연스럽게 옮긴 한국어 전체 번역"
+}`;
+
+function buildEditorialSummaryUserPrompt(
+  topic: CultureEditorialTopic,
+  existingTitles: { englishTitle: string; koreanTitle: string }[],
+  priorFailureReason?: string,
+): string {
+  const existingTitleLines = existingTitles
+    .map((t) => `- ${t.englishTitle} / ${t.koreanTitle}`)
+    .join("\n");
+
+  const preferredExpressionsLine = topic.preferredExpressions?.length
+    ? `\n이 주제에서 활용하면 좋은 표현 (자연스러울 때만 — 억지로 끼워 넣지 마세요): ${topic.preferredExpressions.join(", ")}`
+    : "";
+
+  const styleNoteLine = topic.styleNote ? `\n추가 지시: ${topic.styleNote}` : "";
+
+  const retryNote = priorFailureReason
+    ? `\n\n[이전 시도 실패 — 다시 작성]\n바로 전 시도는 다음 이유로 거부되었습니다: ${priorFailureReason}\n같은 문제가 반복되지 않게 다시 쓰세요.`
+    : "";
+
+  return `카테고리: ${topic.category}
+
+작성할 주제:
+- 영문 제목(참고용 — 그대로 쓰거나 자연스럽게 다듬어도 됨): ${topic.englishTitle}
+- 한글 제목(참고용 — 그대로 쓰거나 자연스럽게 다듬어도 됨): ${topic.koreanTitle}
+- 소재 설명: ${topic.topicBrief}${preferredExpressionsLine}${styleNoteLine}
+
+이미 존재하는 기존 제목들 (주제가 겹치면 안 됩니다):
+${existingTitleLines}
+
+위 규칙을 지켜 JSON 객체 하나만 출력하세요.${retryNote}`;
+}
+
+function parseEditorialSummary(raw: EditorialSummaryJson): EditorialSummaryOutput | null {
+  if (
+    !isNonEmptyString(raw.title) ||
+    !isNonEmptyString(raw.englishTitle) ||
+    !isNonEmptyString(raw.summary) ||
+    !isNonEmptyString(raw.englishSummary) ||
+    !isNonEmptyString(raw.koreanSummary)
+  ) {
+    return null;
+  }
+
+  return {
+    title: raw.title,
+    englishTitle: raw.englishTitle,
+    summary: raw.summary,
+    englishSummary: raw.englishSummary,
+    koreanSummary: raw.koreanSummary,
+  };
+}
+
+type EditorialSummaryAttemptResult =
+  | { ok: true; summary: EditorialSummaryOutput }
+  | { ok: false; reason: string };
+
+async function attemptEditorialSummaryGeneration(
+  topic: CultureEditorialTopic,
+  existingTitles: { englishTitle: string; koreanTitle: string }[],
+  attempt: number,
+  priorFailureReason: string | undefined,
+): Promise<EditorialSummaryAttemptResult> {
+  const content = await trackedCallOpenAi(
+    EDITORIAL_SUMMARY_SYSTEM_PROMPT,
+    buildEditorialSummaryUserPrompt(topic, existingTitles, priorFailureReason),
+  );
+  if (!content) {
+    console.error(`[llm/editorial] ${topic.category}/"${topic.englishTitle}": summary attempt ${attempt} got no completion`);
+    return { ok: false, reason: "응답을 받지 못했습니다" };
+  }
+
+  let raw: EditorialSummaryJson;
+  try {
+    raw = JSON.parse(content) as EditorialSummaryJson;
+  } catch {
+    console.error(`[llm/editorial] ${topic.category}/"${topic.englishTitle}": summary attempt ${attempt} invalid JSON`);
+    return { ok: false, reason: "응답이 유효한 JSON이 아니었습니다" };
+  }
+
+  const summary = parseEditorialSummary(raw);
+  if (!summary) {
+    console.error(`[llm/editorial] ${topic.category}/"${topic.englishTitle}": summary attempt ${attempt} didn't match the expected shape`);
+    return { ok: false, reason: "JSON 스키마와 맞지 않았습니다 (필드 누락 또는 빈 문자열)" };
+  }
+
+  const wordCount = countWords(summary.englishSummary);
+  if (wordCount < MIN_ENGLISH_SUMMARY_WORDS || wordCount > MAX_ENGLISH_SUMMARY_WORDS) {
+    console.error(`[llm/editorial] ${topic.category}/"${topic.englishTitle}": summary attempt ${attempt} word count ${wordCount} out of range`);
+    return {
+      ok: false,
+      reason: `englishSummary가 ${wordCount}단어였습니다 — ${MIN_ENGLISH_SUMMARY_WORDS}~${MAX_ENGLISH_SUMMARY_WORDS}단어 범위에 맞게 다시 쓰세요`,
+    };
+  }
+
+  return { ok: true, summary };
+}
+
+// ---------------------------------------------------------------------
+// Step 2: 표현 추출. generate-trend-with-llm.ts와 같은 "이미 쓰여진 본문
+// 에서 그대로 골라내기" 방식을 그대로 따르되, 비교 표현(comparison)을
+// 필수로 바꾸고 usageSituation은 뺐다 — 기존 7개 에디토리얼의 구성과
+// 동일하게 맞추기 위함.
+// ---------------------------------------------------------------------
+
+type EditorialExpressionJson = {
+  phrase?: unknown;
+  meaningKo?: unknown;
+  nuance?: unknown;
+  exampleEn?: unknown;
+  exampleKo?: unknown;
+  comparisonPhrase?: unknown;
+  comparisonNuanceDiff?: unknown;
+};
+
+type EditorialExpressionsJson = {
+  expressions?: unknown;
+};
+
+const EDITORIAL_EXPRESSIONS_SYSTEM_PROMPT = `당신은 CATCHY라는 한국어-영어 학습 서비스의 콘텐츠 작가입니다.
+주어진 영어 단락(englishSummary) 안에서 실제로 쓰이는 자연스러운 영어 표현 정확히 3개를 "그 단락에 있는 그대로" 찾아내서 학습 콘텐츠로 만듭니다.
+
+반드시 지켜야 할 규칙:
+1. phrase는 주어진 영어 단락 안에 **단어 순서가 같은 문자열로 실제로 등장하는** 1~4단어 표현이어야 합니다. 단락에 없는 표현을 새로 만들어내면 안 됩니다 (동사의 시제/단수복수 변화 정도는 허용되지만, 단어를 바꾸거나 추가/삭제하면 안 됩니다).
+2. 세 표현은 서로 겹치지 않는 별개의 구간에서 골라야 합니다.
+3. 아래 "이미 사용 중인 기존 표현" 목록과 같거나 사실상 같은 표현은 고르지 마세요.
+4. **표현 선정 우선순위**: "sense of ~", "fear of ~", "new ~", "a feeling of ~"처럼 사전적으로 조합한 일반 명사구보다, 일상 대화와 SNS에서 실제로 쓰는 관용구·구동사·연어·감탄사를 우선 고르세요. 단락 안에 그런 표현이 있다면 그것을 고르고, 평범한 명사구는 다른 대안이 전혀 없을 때만 고르세요. 그리고 "the fear of", "a sense of"처럼 **전치사로 끝나 그 자체로 뜻이 완결되지 않는 조각**은 절대 고르지 마세요 — phrase는 그것만 따로 떼어 봐도 뜻이 통하는 독립적인 표현이어야 합니다.
+5. 각 표현마다 반드시 다음을 모두 채우세요: 한국어 의미(meaningKo), 뉘앙스 설명(nuance), 그 표현을 쓴 새로운 영어 예문(exampleEn — 단락의 문장을 그대로 복사하지 말고 새로 쓸 것), 한국어 해석(exampleKo), 헷갈리기 쉬운 비슷한 표현(comparisonPhrase)과 그 표현과의 뉘앙스 차이(comparisonNuanceDiff). comparisonPhrase/comparisonNuanceDiff는 선택이 아니라 **반드시 채워야 하는 필수 필드**입니다.
+6. **exampleEn은 그 표현이 단락 안에서 쓰인 것과 같은 의미·맥락으로 써야 합니다.** 같은 단어라도 단락과 다른 뜻으로 예문을 만들면 안 됩니다 (예: 단락에서 "스포일러로 놀라움을 잃는 것"을 뜻했다면, 예문도 "경기에서 지는 것" 같은 다른 뜻으로 바꿔 쓰면 안 됩니다).
+7. 언어는 필드마다 반드시 다음과 같이 쓰세요 — 섞어 쓰지 마세요:
+   - 한국어로 쓸 것: meaningKo, nuance, exampleKo, comparisonNuanceDiff
+   - 영어로 쓸 것: phrase, exampleEn, comparisonPhrase
+8. 다른 설명 없이, 아래 JSON 스키마와 정확히 일치하는 JSON 객체만 출력하세요.
+
+JSON 스키마:
+{
+  "expressions": [
+    {
+      "phrase": "주어진 단락에 그대로 등장하는 English word/phrase",
+      "meaningKo": "한국어 (영어 아님)",
+      "nuance": "한국어 (영어 아님)",
+      "exampleEn": "English sentence",
+      "exampleKo": "한국어 (영어 아님)",
+      "comparisonPhrase": "English word/phrase",
+      "comparisonNuanceDiff": "한국어 (영어 아님)"
+    }
+  ]
+}`;
+
+function buildEditorialExpressionsUserPrompt(
+  englishSummary: string,
+  topic: CultureEditorialTopic,
+  existingPhrases: string[],
+  priorFailureReason?: string,
+): string {
+  const preferredExpressionsLine = topic.preferredExpressions?.length
+    ? `\n이 단락에 등장했다면 우선적으로 선택할 후보 표현: ${topic.preferredExpressions.join(", ")}`
+    : "";
+
+  const styleNoteLine = topic.styleNote ? `\n추가 지시: ${topic.styleNote}` : "";
+
+  const retryNote = priorFailureReason
+    ? `\n\n[이전 시도 실패 — 다시 선택]\n바로 전 시도는 다음 이유로 거부되었습니다: ${priorFailureReason}\n아래 단락 안에 실제로 등장하는 단어들만 그대로 사용해서, 기존 표현과 겹치지 않게 다시 고르세요.`
+    : "";
+
+  return `카테고리: ${topic.category}
+
+이미 사용 중인 기존 표현 (이것들과 같거나 거의 같은 표현은 고르지 마세요):
+${existingPhrases.join(", ")}${preferredExpressionsLine}${styleNoteLine}
+
+아래 영어 단락에서 표현 3개를 골라 JSON 객체 하나만 출력하세요:
+"${englishSummary}"${retryNote}`;
+}
+
+function parseEditorialExpression(raw: EditorialExpressionJson): ExpressionSeed | null {
+  if (
+    !isNonEmptyString(raw.phrase) ||
+    !isNonEmptyString(raw.meaningKo) ||
+    !isNonEmptyString(raw.nuance) ||
+    !isNonEmptyString(raw.exampleEn) ||
+    !isNonEmptyString(raw.exampleKo) ||
+    !isNonEmptyString(raw.comparisonPhrase) ||
+    !isNonEmptyString(raw.comparisonNuanceDiff)
+  ) {
+    return null;
+  }
+
+  return {
+    phrase: raw.phrase,
+    meaningKo: raw.meaningKo,
+    nuance: raw.nuance,
+    exampleEn: raw.exampleEn,
+    exampleKo: raw.exampleKo,
+    comparison: {
+      phrase: raw.comparisonPhrase,
+      nuanceDiff: raw.comparisonNuanceDiff,
+    },
+  };
+}
+
+function parseEditorialExpressions(raw: EditorialExpressionsJson): ExpressionSeed[] | null {
+  if (!Array.isArray(raw.expressions) || raw.expressions.length !== EXPECTED_EXPRESSION_COUNT) {
+    return null;
+  }
+
+  const expressions: ExpressionSeed[] = [];
+  for (const rawExpression of raw.expressions) {
+    const parsed = parseEditorialExpression(rawExpression as EditorialExpressionJson);
+    if (!parsed) return null;
+    expressions.push(parsed);
+  }
+
+  return expressions;
+}
+
+type EditorialExpressionsAttemptResult =
+  | { ok: true; expressions: ExpressionSeed[] }
+  | { ok: false; reason: string };
+
+async function attemptEditorialExpressionsGeneration(
+  topic: CultureEditorialTopic,
+  englishSummary: string,
+  existingPhrases: string[],
+  attempt: number,
+  priorFailureReason: string | undefined,
+): Promise<EditorialExpressionsAttemptResult> {
+  const content = await trackedCallOpenAi(
+    EDITORIAL_EXPRESSIONS_SYSTEM_PROMPT,
+    buildEditorialExpressionsUserPrompt(englishSummary, topic, existingPhrases, priorFailureReason),
+  );
+  if (!content) {
+    console.error(`[llm/editorial] ${topic.category}/"${topic.englishTitle}": expressions attempt ${attempt} got no completion`);
+    return { ok: false, reason: "응답을 받지 못했습니다" };
+  }
+
+  let raw: EditorialExpressionsJson;
+  try {
+    raw = JSON.parse(content) as EditorialExpressionsJson;
+  } catch {
+    console.error(`[llm/editorial] ${topic.category}/"${topic.englishTitle}": expressions attempt ${attempt} invalid JSON`);
+    return { ok: false, reason: "응답이 유효한 JSON이 아니었습니다" };
+  }
+
+  const expressions = parseEditorialExpressions(raw);
+  if (!expressions) {
+    console.error(`[llm/editorial] ${topic.category}/"${topic.englishTitle}": expressions attempt ${attempt} didn't match the expected shape`);
+    return {
+      ok: false,
+      reason: "JSON 스키마와 맞지 않았습니다 (필드 누락, 빈 문자열, comparison 누락, 또는 expressions가 정확히 3개가 아님)",
+    };
+  }
+
+  // 1) 본문에 실제로 등장하는지 — 하이라이터와 동일한 매처로 검증.
+  for (const expression of expressions) {
+    if (!textContainsPhrase(englishSummary, expression.phrase)) {
+      console.error(
+        `[llm/editorial] ${topic.category}/"${topic.englishTitle}": expressions attempt ${attempt} phrase "${expression.phrase}" not found in englishSummary — rejecting`,
+      );
+      return {
+        ok: false,
+        reason: `선택한 표현 "${expression.phrase}"가 주어진 단락 안에 그대로 없었습니다`,
+      };
+    }
+  }
+
+  // 2) 기존 21개 표현 및 같은 호출 안 3개 서로 간의 중복 여부.
+  const normalizedExisting = new Set(existingPhrases.map(normalizePhrase));
+  const seenInThisBatch = new Set<string>();
+  for (const expression of expressions) {
+    const normalized = normalizePhrase(expression.phrase);
+    if (normalizedExisting.has(normalized) || seenInThisBatch.has(normalized)) {
+      console.error(
+        `[llm/editorial] ${topic.category}/"${topic.englishTitle}": expressions attempt ${attempt} phrase "${expression.phrase}" duplicates an existing/already-picked expression — rejecting`,
+      );
+      return {
+        ok: false,
+        reason: `선택한 표현 "${expression.phrase}"가 기존 표현 또는 이번에 이미 고른 다른 표현과 겹쳤습니다`,
+      };
+    }
+    seenInThisBatch.add(normalized);
+  }
+
+  return { ok: true, expressions };
+}
+
+// ---------------------------------------------------------------------
+// 공개 진입점
+// ---------------------------------------------------------------------
+
+// 재시도를 모두 소진하면 null을 반환한다 — 절대 throw하지 않는다(호출부가
+// "생성 실패"를 명확한 값으로 처리할 수 있도록). null을 받은 호출부는
+// 뉴스용 스텁 템플릿으로 대체하지 말 것 — 파일 상단 설명 참고.
+export async function generateCultureEditorialWithLlm(
+  topic: CultureEditorialTopic,
+  options: {
+    existingTitles?: { englishTitle: string; koreanTitle: string }[];
+    existingPhrases?: string[];
+  } = {},
+): Promise<GenerateCultureEditorialOutput | null> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+
+  const existingTitles = [...EXISTING_EDITORIAL_TITLES, ...(options.existingTitles ?? [])];
+  const existingPhrases = [...EXISTING_EDITORIAL_PHRASES, ...(options.existingPhrases ?? [])];
+
+  let summary: EditorialSummaryOutput | null = null;
+  let summaryFailureReason: string | undefined;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const result = await attemptEditorialSummaryGeneration(topic, existingTitles, attempt, summaryFailureReason);
+    if (result.ok) {
+      summary = result.summary;
+      break;
+    }
+    summaryFailureReason = result.reason;
+  }
+  if (!summary) return null;
+
+  let expressions: ExpressionSeed[] | null = null;
+  let expressionsFailureReason: string | undefined;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const result = await attemptEditorialExpressionsGeneration(
+      topic,
+      summary.englishSummary,
+      existingPhrases,
+      attempt,
+      expressionsFailureReason,
+    );
+    if (result.ok) {
+      expressions = result.expressions;
+      break;
+    }
+    expressionsFailureReason = result.reason;
+  }
+  if (!expressions) return null;
+
+  return { ...summary, expressions };
+}

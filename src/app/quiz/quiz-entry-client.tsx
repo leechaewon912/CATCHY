@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { ArrowUpRightIcon } from "@/components/icons";
 import { CATEGORY_DISPLAY_LABELS } from "@/lib/category-display";
 import type { Category } from "@/lib/mock-data";
 import { readRecentTrendIds } from "@/lib/recent-trends";
@@ -53,20 +54,26 @@ export function QuizEntryClient({ trends }: { trends: QuizPickerTrend[] }) {
 
   return (
     <div className="mt-8 flex flex-col gap-10">
-      <div>
-        <p className="mb-3 text-[13px] font-medium text-ember">
-          {featuredIsRecent ? "최근 본 이야기로 퀴즈 풀기" : "오늘의 주요 트렌드로 퀴즈 풀기"}
-        </p>
-        <Link
-          href={`/quiz?trend=${featuredTrend.id}&entry=quiz_picker`}
-          className="surface-dark group flex cursor-pointer flex-col gap-3 p-6 transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-paper focus-visible:ring-snow sm:p-8"
-        >
-          <span className="badge-filled self-start">{CATEGORY_DISPLAY_LABELS[featuredTrend.category]}</span>
-          <h2 className="text-[24px] font-semibold leading-snug text-snow sm:text-[28px]">
+      {/* src/components/quiz-banner.tsx(홈 화면 "방금 배운 표현, 기억하고
+          있나요?" 배너)와 동일한 UI — surface-card, eyebrow, 제목/설명,
+          btn-solid-black CTA. 이전엔 surface-dark(어두운 배경) 카드였다. */}
+      <div className="surface-card flex flex-col items-start justify-between gap-6 p-6 sm:flex-row sm:items-center sm:p-10">
+        <div className="flex flex-col gap-3">
+          <span className="text-[12px] font-medium text-ember">
+            {featuredIsRecent ? "최근 본 이야기로 퀴즈 풀기" : "오늘의 주요 트렌드로 퀴즈 풀기"}
+          </span>
+          <h2 className="max-w-md break-keep text-[24px] font-semibold leading-snug text-obsidian sm:text-[32px] sm:leading-tight">
             {featuredTrend.title}
           </h2>
-          <p className="text-kr-body text-[14px] text-mist">{featuredTrend.summary}</p>
-          <span className="mt-2 text-[12px] text-ash">표현 {featuredTrend.expressionCount}개</span>
+          <p className="text-kr-body max-w-md break-keep text-[14px] text-fog">{featuredTrend.summary}</p>
+        </div>
+
+        <Link
+          href={`/quiz?trend=${featuredTrend.id}&entry=quiz_picker`}
+          className="btn-solid-black group shrink-0"
+        >
+          퀴즈 풀기
+          <ArrowUpRightIcon className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
         </Link>
       </div>
 

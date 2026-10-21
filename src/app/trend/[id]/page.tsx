@@ -49,7 +49,7 @@ export default async function TrendDetailPage(
             className="mb-6 inline-flex cursor-pointer items-center gap-1.5 rounded text-[14px] font-normal text-fog transition-colors hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
           >
             <ArrowLeftIcon className="h-4 w-4" />
-            트렌드 피드로 돌아가기
+            홈으로 돌아가기
           </Link>
         </section>
 
@@ -206,8 +206,7 @@ export default async function TrendDetailPage(
               이 이야기에서 배우는 표현
             </h2>
             <p className="text-kr-body mb-8 text-[14px] text-fog">
-              AI가 이 트렌드 콘텐츠에서 실제로 쓰인 표현을 선별해 뜻·뉘앙스·비슷한
-              표현·예문과 함께 정리했어요.
+              표현의 의미와 쓰임을 예문과 함께 알아보세요.
             </p>
           </ExpressionSectionTracker>
 

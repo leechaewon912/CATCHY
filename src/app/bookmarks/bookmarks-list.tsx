@@ -28,11 +28,10 @@ export function BookmarksList() {
           아직 저장한 표현이 없어요
         </p>
         <p className="text-kr-body max-w-sm text-[14px] text-fog">
-          트렌드 상세 페이지에서 마음에 드는 영어 표현의 저장 버튼을 눌러
-          여기에 모아보세요.
+          기억하고 싶은 영어 표현들을 이곳에 모아보세요.
         </p>
-        <Link href="/" className="btn-primary mt-2">
-          트렌드 피드로 가기
+        <Link href="/" className="btn-solid-black mt-2">
+          이야기 둘러보기
         </Link>
       </div>
     );

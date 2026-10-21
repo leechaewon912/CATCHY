@@ -19,15 +19,22 @@ const dmSans = DM_Sans({
   weight: ["400", "500", "600", "700"],
 });
 
-// Korean-only typography (see "Catchy 한국어 타이포그래피 개선") — exposed as
-// its own --font-pretendard variable rather than folded into --font-sans,
-// so it only applies where explicitly opted into via .text-kr-body /
-// .text-kr-subtitle (globals.css), never to DM Sans's English text. Self-
-// hosted from the installed `pretendard` package (not next/font/google —
-// Pretendard isn't on Google Fonts) so next/font still handles
-// subsetting/preloading/font-display and reserves layout space via a
-// size-adjusted fallback, avoiding CLS on load. Only the two weights this
-// task actually specifies (400/500) are loaded, not the full family.
+// Korean typography — self-hosted from the installed `pretendard` package
+// (not next/font/google — Pretendard isn't on Google Fonts) so next/font
+// still handles subsetting/preloading/font-display and reserves layout
+// space via a size-adjusted fallback, avoiding CLS on load.
+//
+// Sits in globals.css's --font-sans fallback chain (after DM Sans) as of
+// "Catchy 푸터 문구 변경 및 전체 서체 일관성 점검" — applies to Korean text
+// site-wide now, not just the home/detail pages' opted-in .text-kr-body/
+// .text-kr-subtitle classes (which still exist for their weight/line-
+// height/letter-spacing rules, just no longer the only place Pretendard
+// loads). 400/500/600 are loaded — 600 (SemiBold) was added alongside this
+// because font-semibold Korean headings are used throughout the app (quiz,
+// feedback modal, bookmarks, trend feed, and even the previously-themed
+// detail page itself); without it those would've silently fallen back to
+// a synthesized/mismatched weight instead of true Pretendard SemiBold. No
+// weight 700 is loaded — nothing in the app uses font-bold on Korean text.
 const pretendard = localFont({
   variable: "--font-pretendard",
   src: [
@@ -39,6 +46,11 @@ const pretendard = localFont({
     {
       path: "../../node_modules/pretendard/dist/web/static/woff2/Pretendard-Medium.woff2",
       weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../../node_modules/pretendard/dist/web/static/woff2/Pretendard-SemiBold.woff2",
+      weight: "600",
       style: "normal",
     },
   ],

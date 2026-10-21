@@ -120,7 +120,7 @@ Maybe the next time someone asks you to introduce yourself, all you need to do i
       "스트리밍 앱을 열고 수십 개의 신작을 둘러보다가 결국 다섯 번째로 같은 드라마를 재생한 적 있나요?",
     englishSummary: `You open your streaming app, scroll through dozens of new releases, and somehow end up watching the same show for the fifth time. Sound familiar?
 
-With endless movies and series available at our fingertips, you might think we'd always be looking for something new. But sometimes, the most appealing option is a story we already know by heart.
+With endless movies and series available at our fingertips, you might think we'd always be looking for something new. But sometimes, the most appealing option is one where you already know the story by heart.
 
 That's the beauty of a comfort watch. You know exactly what happens, which characters you'll fall in love with, and which scenes will make you laugh. There's no pressure to follow a complicated plot or worry about an unexpected ending.
 
@@ -458,7 +458,7 @@ But perhaps that's what makes the good moments feel so special. When you've supp
     id: "culture-global-everyday-choices",
     title: "일상 속 작은 선택이 정말 세상을 바꿀 수 있을까?",
     englishTitle: "Can Small Everyday Choices Really Make a Difference?",
-    category: "글로벌 이슈",
+    category: "라이프스타일", // 구 "글로벌 이슈"(문화) — 카테고리 통합으로 라이프스타일에 편입
     summary:
       "개인 컵을 챙기고, 물건을 새로 사는 대신 수리하고, 옷을 하나 더 구매하기 전에 다시 생각해 보는 것.",
     englishSummary: `Bring your own coffee cup. Repair something instead of replacing it. Think twice before buying another piece of clothing.
@@ -530,35 +530,427 @@ Sometimes, taking small steps is a meaningful place to start.`,
     ],
     status: "published",
   },
+  // ────────────────────────────────────────────────────────────────────
+  // 아래 7개는 GPT-4o-mini로 생성한 두 번째 배치 — 위 7개(손으로 쓴 원본)는
+  // 건드리지 않고 그대로 두고, 카테고리당 1개씩 추가해 카테고리별 2개
+  // 구성을 만든다. 생성·검증 과정(주제/표현 중복 검사, 번역 일치 검사,
+  // 하이라이트 검증)은 대화 기록 참고.
+  // ────────────────────────────────────────────────────────────────────
+  {
+    id: "culture-music-earworm",
+    title: `귀에서 맴도는 노래, 이어웜의 정체`,
+    englishTitle: `Why Is This Song Stuck in My Head?`,
+    category: "음악",
+    summary: `귀에서 맴도는 노래, 이어웜의 정체를 알아보자.`,
+    englishSummary: `You hear a catchy tune on the radio, and suddenly, it’s like a switch has flipped in your brain. Hours later, you find yourself humming that same melody, unable to shake it off. This phenomenon is known as an earworm, a song that burrows into your mind and plays on repeat. You might be in the shower, washing your hair, and there it is again, looping endlessly. It’s frustrating but also oddly comforting. These tunes often have simple, repetitive hooks that make them easy to remember. So, what makes some songs stick while others fade away? It’s a blend of melody, rhythm, and emotional resonance that keeps us coming back for more, even when we want to let go. The next time a song gets stuck in your head, just know you’re not alone!`,
+    koreanSummary: `라디오에서 귀에 쏙 들어오는 멜로디를 듣고 나면, 갑자기 머릿속에서 스위치가 켜진 듯해요. 몇 시간 후, 그 멜로디를 계속 흥얼거리며 지우려 해도 지워지지 않죠. 이런 현상을 우리는 이어웜이라고 부르는데, 머릿속에 파고들어 반복 재생되는 노래를 의미해요. 샤워를 하면서도 반복적으로 그 노래가 떠오르고, 계속해서 맴돌죠. 짜증나기도 하지만, 이상하게도 위안이 되기도 해요. 이런 노래들은 간단하고 반복적인 후렴이 특징이어서 기억하기 쉽죠. 어떤 노래는 쉽게 잊혀지는데, 어떤 노래는 계속 남는 이유는 멜로디와 리듬, 그리고 감정적 공명이 뒤섞여 있기 때문이에요. 다음에 어떤 노래가 머릿속에 맴돈다면, 당신만 그런 게 아니라는 걸 기억하세요!`,
+    sources: [],
+    expressions: [
+      {
+        phrase: `earworm`,
+        meaningKo: `중독성 있는 노래`,
+        nuance: `귀에 맴도는, 쉽게 잊혀지지 않는 멜로디를 가진 곡을 표현하는 용어`,
+        comparison: {
+          phrase: `catchy tune`,
+          nuanceDiff:
+            `catchy tune은 멜로디가 매력적이고 기억하기 쉬운 노래를 의미하지만, earworm은 특히 머리에 계속 맴도는 곡을 강조한다.`,
+        },
+        exampleEn: `That song is such an earworm; I can't get it out of my head!`,
+        exampleKo: `그 노래는 정말 중독성 있어; 머리에서 도저히 빠져나오지 않아!`,
+      },
+      {
+        phrase: `shake it off`,
+        meaningKo: `떨쳐내다, 털어버리다`,
+        nuance: `원치 않는 생각이나 기분을 억지로 떨쳐내려 할 때 쓰는 표현이에요.`,
+        comparison: {
+          phrase: `let it go`,
+          nuanceDiff:
+            `let it go는 어떤 일이나 감정에 더 이상 집착하지 않고 놓아준다는 더 넓은 의미이고, shake it off는 특히 성가시거나 거슬리는 것을 즉각적으로 떨쳐낸다는 느낌이 강해요.`,
+        },
+        exampleEn: `I tried to shake it off, but the song kept playing in my head.`,
+        exampleKo: `떨쳐내려고 했지만, 그 노래는 계속 머릿속에서 맴돌았다.`,
+      },
+      {
+        phrase: `humming that same melody`,
+        meaningKo: `같은 멜로디를 흥얼거리다`,
+        nuance: `특정한 멜로디를 입으로 소리 내지 않고 조용히 흥얼거리는 상황을 설명`,
+        comparison: {
+          phrase: `singing along`,
+          nuanceDiff:
+            `humming은 조용히 흥얼거리는 것이고, singing along은 곡에 맞춰 노래하는 것으로 더 큰 소리를 내는 것을 의미한다.`,
+        },
+        exampleEn: `I found myself humming that same melody all week long.`,
+        exampleKo: `나는 일주일 내내 같은 멜로디를 흥얼거리고 있었다.`,
+      },
+    ],
+    status: "published",
+  },
+  {
+    id: "culture-film-spoiler-race",
+    title: `스포일러 전에 봐야 한다는 압박`,
+    englishTitle: `The Race to Watch It Before You Get Spoiled`,
+    category: "영화·시리즈",
+    summary: `SNS에서 스포일러를 보기 전에 작품을 챙겨 보는 문화에 대한 이야기.`,
+    englishSummary: `You’re scrolling through your social media feed, and suddenly, there it is: a huge spoiler for the show you’ve been meaning to watch. Sound familiar? In a world where everyone is binge-watching the latest series, the pressure to finish before getting spoiled is real. The thrill of going in blind has faded as spoilers can ruin the experience. Friends are constantly asking if you’ve seen the latest episode, and the fear of being left out drives you to watch it ASAP. You find yourself racing against time, pausing to avoid any posts that could reveal the twists. It’s a wild ride, filled with excitement and anxiety, as you aim to join the conversation without revealing your own spoilers. So, how do you navigate this race? It’s all about timing and a bit of luck!`,
+    koreanSummary: `당신은 소셜 미디어 피드를 스크롤하다가 갑자기 큰 스포일러를 마주하게 됩니다. 이런 경험, 익숙하시죠? 모두가 최신 시리즈를 몰아보는 시대에 스포일러를 피하려는 압박은 정말 큽니다. 아무런 정보 없이 보는 재미가 사라지는 요즘, 주변 친구들이 최신 에피소드를 봤는지 끊임없이 물어보니, 대화에 끼지 못할까봐 조급해지죠. 그래서 당신은 최대한 빨리 작품을 챙겨 보려 하게 되고, 스포일러가 있을 법한 포스트는 피하며 시간을 쏟습니다. 이렇게 흥미진진하고도 긴장감 넘치는 레이스에서 대화에 끼기 위한 시간 관리와 약간의 행운이 필요하죠!`,
+    sources: [],
+    expressions: [
+      {
+        phrase: `binge-watching`,
+        meaningKo: `몰아보기`,
+        nuance: `최근 유행하는 시리즈를 한꺼번에 보는 것을 의미하며, 시간이 없거나 기다릴 수 없는 사람들에게 흔히 사용되는 표현입니다.`,
+        comparison: {
+          phrase: `watching in one sitting`,
+          nuanceDiff:
+            `‘watching in one sitting’은 한 번에 끝까지 보는 것을 의미하지만, ‘binge-watching’은 여러 에피소드를 한꺼번에 보는 느낌을 강조합니다.`,
+        },
+        exampleEn: `Many people enjoy binge-watching their favorite shows over the weekend.`,
+        exampleKo: `많은 사람들은 주말에 좋아하는 프로그램을 몰아보는 것을 즐깁니다.`,
+      },
+      {
+        phrase: `go in blind`,
+        meaningKo: `사전 정보 없이 시작하다`,
+        nuance: `무언가를 시작할 때 미리 정보를 알지 못하고 시작하는 것을 강조하는 표현입니다.`,
+        comparison: {
+          phrase: `know beforehand`,
+          nuanceDiff:
+            `‘know beforehand’는 미리 알고 있는 것을 의미하는 반면, ‘go in blind’는 전혀 모르고 시작하는 것을 강조합니다.`,
+        },
+        exampleEn: `I like to go in blind when it comes to new movies; it makes the experience more exciting.`,
+        exampleKo: `새로운 영화에 대해서는 사전 정보 없이 시작하는 것을 좋아합니다; 그게 경험을 더 흥미롭게 만듭니다.`,
+      },
+      {
+        phrase: `racing against time`,
+        meaningKo: `시간과 싸우다, 시간에 쫓기다`,
+        nuance: `정해진 시간 안에 뭔가를 끝내려고 서두르며 긴박하게 움직일 때 쓰는 표현이에요.`,
+        comparison: {
+          phrase: `running out of time`,
+          nuanceDiff:
+            `running out of time은 남은 시간이 거의 없다는 상태 자체를 가리키고, racing against time은 그 제한된 시간 안에 끝내려고 적극적으로 서두르는 행동에 초점을 맞춰요.`,
+        },
+        exampleEn: `I was racing against time to finish the series before someone spoiled the ending.`,
+        exampleKo: `누군가 결말을 스포일러하기 전에 시리즈를 다 보려고 시간과 싸우고 있었다.`,
+      },
+    ],
+    status: "published",
+  },
+  {
+    id: "culture-meme-thought-of-you",
+    title: `밈을 보내는 것, 애정을 표현하는 방식`,
+    englishTitle: `Sending Memes Is How We Say 'I Thought of You'`,
+    category: "밈·인터넷",
+    summary: `밈을 통해 친구에게 애정과 유대감을 표현하는 방법.`,
+    englishSummary: `Have you ever found yourself scrolling through memes and suddenly thinking of a friend? You quickly send it off with a simple 'This is so you!' It's a modern way of showing you care, and it’s become a universal language among friends. Memes capture shared experiences, inside jokes, and relatable moments, making them perfect for expressing affection. When you tag someone in a funny meme, it’s like saying, 'I thought of you!' without needing to write a long message. This quick exchange can brighten someone’s day and strengthen your bond. In a world where communication can sometimes feel distant, sending a meme feels personal and intimate. It’s a reminder that you’re thinking of them, even if it's just for a laugh. So next time you see a meme that screams your friend's name, don’t hesitate to share it!`,
+    koreanSummary: `친구를 생각하며 밈을 스크롤하다가 갑자기 떠오른 적이 있나요? '이거 당신 같아!'라는 메시지와 함께 빠르게 보내는 그 순간. 요즘 이렇게 보내는 밈이 서로의 애정을 표현하는 현대적인 방법이 되었죠. 밈은 공유된 경험과 속마음을 담고 있어, 애정을 전하기에 딱 맞습니다. 친구에게 웃긴 밈을 태그하면, '당신을 생각했어요!'라고 말하는 것과 같아요. 이런 짧은 교환이 누군가의 하루를 밝게 하고, 유대감을 강화할 수 있습니다. 소통이 가끔은 멀게 느껴질 때, 밈을 보내는 건 개인적이고 친밀한 느낌을 줍니다. 다음에 친구의 이름이 떠오르는 밈을 본다면 주저하지 말고 공유해보세요!`,
+    sources: [],
+    expressions: [
+      {
+        phrase: `This is so you!`,
+        meaningKo: `너를 위한 거야!`,
+        nuance: `친구에게 맞춤형으로 생각하고 있다는 것을 표현하는 친근한 말.`,
+        comparison: {
+          phrase: `This is perfect for you!`,
+          nuanceDiff:
+            `'This is perfect for you!'는 더 공식적이고 칭찬하는 느낌이 강한 반면, 'This is so you!'는 더 친근하고 개인적인 느낌을 준다.`,
+        },
+        exampleEn: `When I saw that meme about cats, I immediately thought of you and said, 'This is so you!'`,
+        exampleKo: `고양이에 관한 그 밈을 보자마자 네가 떠올라서 '이건 너를 위한 거야!'라고 말했어.`,
+      },
+      {
+        phrase: `I thought of you!`,
+        meaningKo: `너를 생각했어!`,
+        nuance: `특별한 순간이나 기억을 공유하며 상대방을 떠올리게 했다는 감정을 표현하는 말.`,
+        comparison: {
+          phrase: `You came to my mind!`,
+          nuanceDiff:
+            `'You came to my mind!'는 좀 더 순간적인 생각을 강조하지만, 'I thought of you!'는 보다 깊은 감정과 연결된 느낌을 준다.`,
+        },
+        exampleEn: `When I came across that hilarious video, I couldn't help but say, 'I thought of you!'`,
+        exampleKo: `그 웃긴 영상을 보자마자 '너를 생각했어!'라고 말할 수밖에 없었어.`,
+      },
+      {
+        phrase: `Tag someone`,
+        meaningKo: `누군가를 태그하다`,
+        nuance: `소셜 미디어에서 친구를 언급하거나 연결짓는 행위를 강조하는 표현.`,
+        comparison: {
+          phrase: `Mention someone`,
+          nuanceDiff:
+            `'Mention someone'은 단순히 이름을 언급하는 것에 집중하지만, 'Tag someone'은 소셜 미디어에서의 상호작용을 강조한다.`,
+        },
+        exampleEn: `When you see a funny post, don't forget to tag someone who would appreciate it!`,
+        exampleKo: `재미있는 게시물을 보게 되면, 그것을 좋아할 사람을 태그하는 것을 잊지 마세요!`,
+      },
+    ],
+    status: "published",
+  },
+  {
+    id: "culture-lifestyle-jomo",
+    title: `약속 대신 집을 선택하는 게 승리처럼 느껴지는 이유`,
+    englishTitle: `Why Staying In Feels Like Winning`,
+    category: "라이프스타일",
+    summary: `JOMO를 즐기는 현대인들의 집콕 문화에 대해 이야기해요.`,
+    englishSummary: `Picture this: it's a Saturday night, and your friends are gearing up for a big party. As the invitations roll in, you find yourself scrolling through your favorite streaming service, ready to binge-watch that new series. Sound familiar? This feeling, known as JOMO (Joy of Missing Out), is sweeping through our culture. Unlike FOMO (Fear of Missing Out), which makes us anxious about what we might miss, JOMO embraces the joy of staying in. It’s about relishing the cozy comfort of your couch, wearing your comfiest pajamas, and enjoying your own company. Sure, you might ponder if you should go out, but then you remember the bliss of a quiet night, free from social obligations. It's a victory, really — choosing self-care over the pressure to socialize. In a world that often pushes us to be constantly outgoing, finding joy in staying in is truly winning.`,
+    koreanSummary: `상상해보세요: 토요일 밤, 친구들이 큰 파티를 준비하고 있어요. 초대장이 쏟아지는 그 순간, 당신은 좋아하는 스트리밍 서비스에서 새로운 시리즈를 몰아보려고 스크롤하고 있습니다. 익숙하죠? 이런 기분이 바로 JOMO(놓치는 것에 대한 즐거움)입니다. FOMO(놓치는 것에 대한 두려움)가 놓칠까 봐 불안하게 만든다면, JOMO는 집에 머무는 즐거움을 만끽하게 해줍니다. 소파의 아늑한 편안함을 느끼고, 가장 편한 잠옷을 입고, 혼자만의 시간을 즐기는 거죠. 나가야 할지 고민할 수 있지만, 조용한 밤의 행복을 떠올리면 결국 자기 돌봄을 선택하게 됩니다. 사회적 의무에서 벗어나 JOMO를 즐기는 것은 진정한 승리입니다.`,
+    sources: [],
+    expressions: [
+      {
+        phrase: `Joy of Missing Out`,
+        meaningKo: `놓치는 것의 기쁨`,
+        nuance: `사회적 압박 없이 혼자 있는 것을 즐기는 마음을 나타냄`,
+        comparison: {
+          phrase: `Fear of Missing Out`,
+          nuanceDiff:
+            `FOMO는 놓치는 것에 대한 불안, JOMO는 놓치는 것을 오히려 즐기는 마음`,
+        },
+        exampleEn: `Many people are starting to embrace the Joy of Missing Out.`,
+        exampleKo: `많은 사람들이 놓치는 것의 기쁨을 받아들이기 시작하고 있다.`,
+      },
+      {
+        phrase: `cozy comfort`,
+        meaningKo: `아늑한 편안함`,
+        nuance: `안락하고 따뜻한 느낌을 강조`,
+        comparison: {
+          phrase: `homey feel`,
+          nuanceDiff:
+            `cozy comfort는 더 따뜻하고 아늑한 느낌을 주는 반면, homey feel은 단순히 집 같은 편안함을 의미함`,
+        },
+        exampleEn: `There's nothing like the cozy comfort of a warm blanket on a cold night.`,
+        exampleKo: `추운 밤에 따뜻한 담요의 아늑한 편안함보다 좋은 것은 없다.`,
+      },
+      {
+        phrase: `social obligations`,
+        meaningKo: `사회적 의무`,
+        nuance: `타인과의 관계에서 느끼는 의무감이나 부담을 나타냄`,
+        comparison: {
+          phrase: `social commitments`,
+          nuanceDiff:
+            `social obligations는 더 강한 의무감을 의미하며, social commitments는 약간의 선택적 성향을 내포할 수 있음`,
+        },
+        exampleEn: `Sometimes, we need to take a break from our social obligations.`,
+        exampleKo: `때때로 우리는 사회적 의무에서 벗어날 필요가 있다.`,
+      },
+    ],
+    status: "published",
+  },
+  {
+    id: "culture-tech-cozy-games",
+    title: `경쟁하지 않아도 괜찮아, 코지 게임의 매력`,
+    englishTitle: `The Appeal of Cozy Games: Playing Without Pressure`,
+    category: "테크·게임",
+    summary: `승패 없이 편안하게 즐길 수 있는 코지 게임의 매력.`,
+    englishSummary: `Have you ever found yourself sinking into a game where the stakes are low and the vibes are just right? Cozy games are all about that: no pressure, no competition, just pure enjoyment. Picture yourself tending to a virtual garden, crafting handmade items, or exploring a charming village filled with friendly characters. These games invite you to take your time, savor the experience, and escape from the hustle and bustle of everyday life. You don’t have to worry about leveling up or beating a high score; instead, you can relax and let your creativity flow. Whether it’s building a cozy home or helping adorable animals, cozy games provide a soothing retreat that feels like a warm hug after a long day. It's this sense of comfort and simplicity that draws players in, making them a beloved escape in the gaming world.`,
+    koreanSummary: `낮은 경쟁률과 편안한 분위기를 가진 게임에 깊이 빠져본 적이 있나요? 코지 게임은 그런 게임입니다. 승부도 없고, 경쟁도 없는 순수한 즐거움이 가득하죠. 가상의 정원을 가꾸거나, 수공예 아이템을 만들거나, 친근한 캐릭터가 가득한 작은 마을을 탐험하는 모습을 상상해 보세요. 이러한 게임은 시간을 충분히 갖고, 경험을 음미하며, 일상의 복잡함에서 벗어날 수 있도록 초대합니다. 레벨을 올리거나 높은 점수를 따야 할 걱정은 없고, 대신 편안하게 창의력을 발휘할 수 있습니다. 아늑한 집을 짓거나 귀여운 동물들을 도와주는 것처럼 코지 게임은 긴 하루를 보낸 후 따뜻한 포옹처럼 느껴지는 편안한 피난처를 제공합니다. 이러한 편안함과 단순함이 플레이어들을 끌어들이고, 게임 세계에서 사랑받는 이유입니다.`,
+    sources: [],
+    expressions: [
+      {
+        phrase: `just right`,
+        meaningKo: `딱 맞는`,
+        nuance: `어떤 상황이나 조건이 완벽하게 맞아떨어지는 느낌을 전달합니다.`,
+        comparison: {
+          phrase: `perfectly suited`,
+          nuanceDiff:
+            `perfectly suited는 적합성에 초점을 맞추지만, just right는 더 자연스럽고 편안한 느낌을 줍니다.`,
+        },
+        exampleEn: `The weather was just right for a picnic.`,
+        exampleKo: `소풍 가기에 날씨가 딱 맞았다.`,
+      },
+      {
+        phrase: `take your time`,
+        meaningKo: `천천히 해도 괜찮다`,
+        nuance: `급하지 않으니 여유를 가지고 행동하라는 의미를 전달합니다.`,
+        comparison: {
+          phrase: `rush through`,
+          nuanceDiff:
+            `rush through는 서두르라는 의미로, 여유를 가지라는 take your time과 정반대의 뉘앙스를 가집니다.`,
+        },
+        exampleEn: `You can take your time to finish the project.`,
+        exampleKo: `프로젝트를 끝내는 데 천천히 해도 괜찮아.`,
+      },
+      {
+        phrase: `hustle and bustle`,
+        meaningKo: `분주함, 북적거림`,
+        nuance: `바쁘고 정신없이 돌아가는 일상의 소란스러움을 가리키는 표현이에요.`,
+        comparison: {
+          phrase: `busy schedule`,
+          nuanceDiff:
+            `busy schedule은 개인의 바쁜 일정 자체를 가리키고, hustle and bustle은 주변 환경 전체가 분주하고 소란스러운 분위기를 묘사해요.`,
+        },
+        exampleEn: `Cozy games let you escape the hustle and bustle of everyday life for a while.`,
+        exampleKo: `코지 게임은 잠시나마 일상의 분주함에서 벗어나게 해준다.`,
+      },
+    ],
+    status: "published",
+  },
+  {
+    id: "culture-sports-fantasy-league",
+    title: `친구들과의 판타지 스포츠, 우정 섞인 경쟁`,
+    englishTitle: `The Friendly Rivalry of Fantasy Sports Leagues`,
+    category: "스포츠",
+    summary: `판타지 스포츠 리그에서 친구들과의 경쟁은 즐거운 경험이다.`,
+    englishSummary: `Picture this: it's a Sunday afternoon, and your group chat is buzzing with excitement. You and your friends have created fantasy sports teams, and the stakes are high. Each touchdown or home run sends notifications flying, and suddenly, it's not just a game — it's bragging rights on the line! The thrill of watching your players perform brings everyone together, even as you engage in some friendly trash talk. 'Did you see that catch?' or 'What a game!' becomes the norm. As the season unfolds, you find yourself cheering for your friends' players too, sharing laughs and creating lasting memories. It’s a rollercoaster ride, especially when it comes down to the wire in the final week. In the end, it's not just about winning; it’s the camaraderie and the joy of sharing the experience that makes fantasy sports leagues so special.`,
+    koreanSummary: `상상해보세요: 일요일 오후, 친구들 사이에서 흥분이 가득한 그룹 채팅이 울려 퍼집니다. 여러분은 판타지 스포츠 팀을 꾸렸고, 이제 승부는 한층 치열해졌죠. 각 터치다운이나 홈런이 알림을 날리며, 갑자기 이건 단순한 게임이 아니에요 — 자존심을 걸고 싸우는 거죠! 선수들이 활약하는 모습을 지켜보는 스릴이 모두를 하나로 묶어주고, 서로 농담을 주고받는 것도 잊지 않아요. '그 캐치 보셨어요?' 혹은 '정말 멋진 경기였어요!' 같은 말들이 난무하죠. 시즌이 진행될수록 친구들의 선수들도 응원하게 되고, 웃음을 나누며 잊지 못할 추억을 만들게 됩니다. 마지막 주에 승부가 엎치락뒤치락할 때의 긴장감은 정말 짜릿하죠. 결국, 이긴다는 것만이 중요한 게 아니라 함께 경험을 나누는 우정이 판타지 스포츠 리그의 특별함을 만들어준답니다.`,
+    sources: [],
+    expressions: [
+      {
+        phrase: `what a game!`,
+        meaningKo: `정말 멋진 경기!`,
+        nuance: `스포츠 경기의 흥미롭고 놀라운 순간을 강조하는 감탄사로, 감정이 고조된 상황에서 사용된다.`,
+        comparison: {
+          phrase: `what a match!`,
+          nuanceDiff:
+            `'what a match!'는 경기를 좀 더 공식적으로 칭찬하는 표현으로, 보통 경쟁의 수준이나 기술적인 면을 강조할 때 사용된다.`,
+        },
+        exampleEn: `After watching the final minutes of the match, I turned to my friend and said, 'What a game!'`,
+        exampleKo: `경기 마지막 몇 분을 보고 난 후, 나는 친구에게 '정말 멋진 경기였어!'라고 말했다.`,
+      },
+      {
+        phrase: `down to the wire`,
+        meaningKo: `마지막 순간까지`,
+        nuance: `경기의 결과가 마지막 순간까지 결정되지 않는 긴장감 있는 상황을 묘사할 때 사용된다.`,
+        comparison: {
+          phrase: `close call`,
+          nuanceDiff:
+            `'close call'은 결과가 아슬아슬하게 결정된 상황을 나타내지만, 'down to the wire'는 경기가 끝날 때까지 긴장감이 유지되는 상황을 강조한다.`,
+        },
+        exampleEn: `The championship game was so intense, going down to the wire with both teams tied.`,
+        exampleKo: `챔피언십 경기는 너무 치열해서 양 팀이 동점인 채로 마지막 순간까지 갔다.`,
+      },
+      {
+        phrase: `bragging rights`,
+        meaningKo: `자랑할 권리`,
+        nuance: `경기에서 이긴 사람이나 팀이 다른 사람에게 자랑할 수 있는 권리를 의미하며, 경쟁의 재미를 더하는 요소로 사용된다.`,
+        comparison: {
+          phrase: `victory lap`,
+          nuanceDiff:
+            `'victory lap'는 승리 후의 기분 좋은 순간이나 이를 즐기는 과정을 나타내는 표현으로, 자랑할 권리보다 더 행동적인 측면에 초점을 맞춘다.`,
+        },
+        exampleEn: `Winning the league gives you bragging rights over your friends for the whole year.`,
+        exampleKo: `리그에서 이기는 것은 친구들 앞에서 1년 내내 자랑할 권리를 준다.`,
+      },
+    ],
+    status: "published",
+  },
+  {
+    id: "culture-global-digital-nomad",
+    title: `일하는 곳과 사는 곳이 분리되는 시대`,
+    englishTitle: `Why 'Where You Work' No Longer Means 'Where You Live'`,
+    category: "라이프스타일", // 구 "글로벌 이슈"(문화) — 카테고리 통합으로 라이프스타일에 편입
+    summary: `디지털 노마드 시대, 일과 삶의 경계가 허물어지는 이야기`,
+    englishSummary: `Picture this: It’s 7 AM and you’re sipping your coffee in a quaint café in Lisbon, while the sun rises over the cobblestone streets. You open your laptop, logging into a video call with your team back home, adjusting for the time difference. As they wrap up their day, you’re just getting started, ready to tackle your tasks with the vibrant city as your backdrop. This is the life of a digital nomad, where 'where you work' is not confined to a cubicle but can be anywhere with Wi-Fi. After the meeting, you stroll through the streets, with your laptop in your bag, ready to set up shop at another café, blending work and exploration seamlessly. It’s not just about work anymore; it’s about crafting a lifestyle that balances productivity and adventure.`,
+    koreanSummary: `상상해보세요: 아침 7시, 리스본의 아담한 카페에서 커피를 홀짝이며, 해가 떠오르는 조약돌 거리를 바라보고 있어요. 노트북을 열고 고국 팀과 화상회의를 시작하는데, 시차를 고려해야 합니다. 팀원들이 하루를 마무리할 때, 당신은 이제 막 일을 시작하며 활기찬 도시 풍경을 배경으로 업무에 몰두할 준비가 되어 있죠. 이게 바로 디지털 노마드의 삶입니다. '일하는 곳'이 사무실에 한정되지 않고, Wi-Fi만 있으면 어디서든 가능하니까요. 회의가 끝난 후, 노트북을 가방에 챙겨 다른 카페로 이동하며 일과 탐험을 자연스럽게 조화시키는 거죠. 이제 일은 단순한 일이 아니라, 생산성과 모험이 어우러진 라이프스타일을 만들어가는 과정입니다.`,
+    sources: [],
+    expressions: [
+      {
+        phrase: `set up shop`,
+        meaningKo: `가게를 차리다, 사업을 시작하다`,
+        nuance: `어떤 장소에 자리를 잡고 활동을 시작하는 느낌을 준다.`,
+        comparison: {
+          phrase: `establish a presence`,
+          nuanceDiff:
+            `‘set up shop’는 특정 장소에서 활동을 시작하는 느낌이 강한 반면, ‘establish a presence’는 단순히 존재를 알리는 행위를 더 강조한다.`,
+        },
+        exampleEn: `I decided to set up shop at the park to enjoy the fresh air while working.`,
+        exampleKo: `신선한 공기를 즐기기 위해 공원에 자리를 잡기로 했다.`,
+      },
+      {
+        phrase: `time difference`,
+        meaningKo: `시차`,
+        nuance: `두 지역 간의 시간 차이를 나타내며, 주로 국제적인 상황에서 사용된다.`,
+        comparison: {
+          phrase: `timezone`,
+          nuanceDiff:
+            `‘time difference’는 두 지역 간의 시차를 강조하지만, ‘timezone’은 특정 지역의 시간대를 지칭한다.`,
+        },
+        exampleEn: `Adjusting for the time difference can be challenging for remote workers.`,
+        exampleKo: `시차에 맞춰 조정하는 것은 원격 근무자에게 어려울 수 있다.`,
+      },
+      {
+        phrase: `blend work and exploration`,
+        meaningKo: `일과 탐험을 혼합하다`,
+        nuance: `일상적인 업무와 새로운 경험을 조화롭게 연결하는 느낌을 준다.`,
+        comparison: {
+          phrase: `mix business and pleasure`,
+          nuanceDiff:
+            `‘blend work and exploration’은 일과 새로운 경험을 조화롭게 연결하는 데 초점을 맞추고, ‘mix business and pleasure’는 일과 여가를 섞는 일반적인 개념을 강조한다.`,
+        },
+        exampleEn: `Many travelers strive to blend work and exploration while on the road.`,
+        exampleKo: `많은 여행자들이 여행 중에 일과 탐험을 혼합하려고 노력한다.`,
+      },
+    ],
+    status: "published",
+  },
 ];
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
 
-// 7개 중 처음 4개(음악/영화·시리즈/밈·인터넷/라이프스타일)는 오늘,
-// 나머지 3개(테크·게임/스포츠/글로벌 이슈)는 어제 생성된 것으로 둔다 —
-// 하루에 여러 건이 올라오는 실제 발행 패턴처럼 보이도록 "오늘·어제" 두
-// 날짜에 적절히 나눠 배치한다. 인덱스(오프셋, "며칠 전"인지)별 개수.
-const GENERATED_AT_DAY_OFFSETS = [0, 0, 0, 0, 1, 1, 1];
+// "이번 주 월요일 0시(KST)"의 실제(true) UTC ms. 같은 "+9h 보정 후 UTC
+// getter로 읽기" 트릭을 src/app/page.tsx(toKstWallClock/startOfKstDayMs)
+// 와 동일하게 쓰되, 그 결과(보정된 "가짜 UTC" ms)를 다시 -9h 해서 진짜
+// UTC ms로 되돌린다 — 이 함수가 만드는 타임스탬프는 실제로 저장되는
+// generatedAt(ISO, true UTC)이어야 하기 때문.
+function kstThisMondayStartRealUtcMs(now: Date): number {
+  const kst = new Date(now.getTime() + KST_OFFSET_MS);
+  const kstMidnightFakeUtcMs = Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate());
+  const todayStartRealUtcMs = kstMidnightFakeUtcMs - KST_OFFSET_MS;
+  const daysSinceMonday = (kst.getUTCDay() + 6) % 7; // 0=월 .. 6=일
+  return todayStartRealUtcMs - daysSinceMonday * DAY_MS;
+}
+
+// CULTURE_EDITORIAL_SEEDS의 인덱스별 요일(0=월, 1=화, 2=수) — 14개(카테고리당
+// 2개: 0~6은 기존 7개, 7~13은 같은 카테고리 순서로 이어지는 신규 7개)를
+// 월5·화5·수4로 고정 배치한다. 같은 카테고리의 두 콘텐츠는 항상 서로
+// 다른 요일에 오도록 짝지어 뒀다 — 예: 음악(기존, idx0)은 월, 음악(신규,
+// idx7)은 수.
+//
+// 이 배열은 "요일" 자체가 아니라 배열 위치(인덱스)로만 동작해서, 아래
+// 카테고리 이름은 전부 배치 당시(통합 전) 이름을 남겨둔 주석일 뿐이다 —
+// "글로벌 이슈"로 표시된 idx6/idx13 두 자리는 카테고리 통합 이후 실제
+// seed.category 값이 "라이프스타일"로 바뀌었지만, 배치 로직 자체는
+// 영향받지 않는다(index 기반이라 category 필드를 읽지 않음).
+//
+//   월(5): 음악·영화·시리즈·밈·인터넷(기존 3개) + 라이프스타일·테크·게임(신규 2개)
+//   화(5): 라이프스타일·테크·게임(기존 2개) + 밈·인터넷·스포츠·글로벌 이슈(신규 3개)
+//   수(4): 스포츠·글로벌 이슈(기존 2개) + 음악·영화·시리즈(신규 2개)
+const SEED_DAY_INDEX: number[] = [
+  0, 0, 0, // 음악-기존, 영화·시리즈-기존, 밈·인터넷-기존 → 월
+  1, 1, //    라이프스타일-기존, 테크·게임-기존 → 화
+  2, 2, //    스포츠-기존, 글로벌 이슈-기존 → 수
+  2, 2, //    음악-신규, 영화·시리즈-신규 → 수
+  1, //       밈·인터넷-신규 → 화
+  0, 0, //    라이프스타일-신규, 테크·게임-신규 → 월
+  1, 1, //    스포츠-신규, 글로벌 이슈-신규 → 화
+];
+
+// 고정 날짜가 아니라 매 요청마다 `now` 기준 "이번 주 월요일"을 새로
+// 계산하므로, 몇 주가 지나도 요일 배치가 과거로 밀려나 사라지지 않는다.
+//
+// 전부 월/화/수에만 배치하므로(요청된 5/5/4 합계가 정확히 14), 퀴즈
+// 피커(src/app/quiz/page.tsx의 isGeneratedToday, "오늘 생성"만 보여줌)는
+// 오늘이 월~수가 아닌 날(목~일)엔 고를 거리가 하나도 없다 — 그 경우
+// QuizEntryClient가 이미 가지고 있는 "오늘 생성된 트렌드가 아직 없어요"
+// 빈 화면 문구가 그대로 뜬다(화면이 깨지지 않음, 별도 처리 불필요).
+function resolveDayAssignments(now: Date): number[] {
+  const mondayStartMs = kstThisMondayStartRealUtcMs(now);
+  const dayStartMsByIndex = [mondayStartMs, mondayStartMs + DAY_MS, mondayStartMs + 2 * DAY_MS];
+  return SEED_DAY_INDEX.map((dayIndex) => dayStartMsByIndex[dayIndex]);
+}
 
 // MOCK_MODE 하에서 getHomeTrends()/getTrendDetail()가 매 요청마다 호출한다.
 // generatedAt/reviewedAt을 고정 날짜로 박아두지 않고 호출 시점의 `now`
-// 기준 "오늘/어제"로 매번 새로 계산하므로, 시간이 지나도 "오늘·어제"라는
-// 상대적 위치 자체는 계속 유지된다 (콘텐츠가 과거로 밀려나 사라지지
-// 않음). 다만 이 날짜는 실제 발행 시각이 아니라 샘플 타임스탬프다 —
-// 실제 발행 날짜로 오인하지 않도록 홈/상세 페이지의 샘플 모드 안내
-// 배너(MOCK_MODE일 때만 노출)가 이 점을 명시한다.
-//
-// 홈 피드의 요일 필터(src/app/page.tsx)와 퀴즈 피커(src/app/quiz/page.tsx)
-// 는 각각 "이번 주(월~일)"/"오늘 생성"만 보여주는 원래 로직을 그대로
-// 쓴다 — 콘텐츠를 오늘·어제에만 두면 자연히 그 범위 안에 들어오므로
-// (주가 시작되는 월요일 자정 직후처럼 "어제"가 지난주로 넘어가는 극히
-// 짧은 예외적인 순간은 실제 데이터와 동일하게 자연스러운 동작으로 둔다),
-// 더 이상 MOCK_MODE 전용 예외 처리가 필요 없다. 수~일(아직 안 지난
-// 요일)은 원래 설계대로 "그날 오전 9시에 공개돼요" 안내만 보여준다.
+// 기준으로 매번 새로 계산하므로, 시간이 지나도 월/화/수 배치 자체는
+// 계속 유지된다 (콘텐츠가 과거로 밀려나 사라지지 않음). 다만 이 날짜는
+// 실제 발행 시각이 아니라 샘플 타임스탬프다 — 실제 발행 날짜로 오인하지
+// 않도록 홈/상세 페이지의 샘플 모드 안내 배너(MOCK_MODE일 때만 노출)가
+// 이 점을 명시한다.
 export function getCultureEditorialTrends(now: Date = new Date()): Trend[] {
+  const dayMsPerSeed = resolveDayAssignments(now);
   return CULTURE_EDITORIAL_SEEDS.map((seed, index) => {
-    const dayOffset = GENERATED_AT_DAY_OFFSETS[index];
-    const timestamp = new Date(now.getTime() - dayOffset * DAY_MS).toISOString();
+    // 09:00 KST(+ 인덱스별 1분씩) — 실제 데이터 쪽의 "오전 9시 공개"
+    // 감각과 맞추고, 같은 날 항목끼리 생성 시각이 겹치지 않게 한다.
+    const timestamp = new Date(
+      dayMsPerSeed[index] + 9 * 60 * 60 * 1000 + index * 60 * 1000,
+    ).toISOString();
     return {
       ...seed,
       quiz: buildQuizFromExpressions(seed.expressions),

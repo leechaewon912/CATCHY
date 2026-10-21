@@ -7,7 +7,7 @@ import { useFeedback } from "@/components/feedback-provider";
 import { BookmarkIcon } from "@/components/icons";
 
 const NAV_ITEMS = [
-  { label: "트렌드 피드", href: "/" },
+  { label: "홈", href: "/" },
   { label: "퀴즈", href: "/quiz" },
 ];
 
