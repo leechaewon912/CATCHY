@@ -73,6 +73,18 @@
   --font-sans: var(--font-dm-sans), "Apple SD Gothic Neo", "Malgun Gothic",
     sans-serif;
 
+  /* Korean-only — see .text-kr-body/.text-kr-subtitle below. Wraps the
+     raw --font-pretendard variable next/font/local injects (layout.tsx)
+     under a differently-named token, same as --font-sans wraps
+     --font-dm-sans — a theme token can't reference a runtime variable of
+     the exact same name without becoming circular. Never folded into
+     --font-sans itself: that would make Pretendard, which also covers
+     Latin glyphs, win for English text too and silently replace DM Sans.
+     Same system-font fallback tail as --font-sans in case the
+     self-hosted file ever fails to load. */
+  --font-kr: var(--font-pretendard), "Apple SD Gothic Neo", "Malgun Gothic",
+    sans-serif;
+
   /* Named radii from DESIGN.md's "Tokens — Spacing & Shapes" table.
      Additive next to Tailwind's default `rounded-*` scale — enables
      rounded-buttons / etc. --radius-cards is deliberately NOT declared
@@ -140,6 +152,66 @@ body {
 
   .surface-card-subtle {
     @apply rounded-2xl border border-cloud bg-[#fafafa];
+  }
+
+  /* "Expression Info Box" — the small nested boxes inside an English
+     expression display ("비슷하지만 다른 표현" / "예문" / "일상 속 예문"),
+     wherever that expression-card pattern appears (trend detail page,
+     quiz answer feedback, bookmarks list). Deliberately kept separate
+     from .surface-card-subtle above rather than just recoloring it —
+     that class is also used by the unrelated "참고 출처" source-list item
+     on the trend detail page, which must stay on the original #fafafa.
+     Same border/radius as .surface-card-subtle; only the fill differs
+     (cooler, brighter gray per design request). */
+  .surface-info-box {
+    @apply rounded-2xl bg-[#F7F9FB];
+  }
+
+  /*
+   * Korean typography ("Catchy 한국어 타이포그래피 개선") — Pretendard,
+   * applied only where opted into via these two classes, never globally.
+   * Both set color last-in-source but at @layer components' lower
+   * cascade priority than Tailwind's own `text-*` utilities (@layer
+   * utilities loads after components) — same pattern .surface-card-subtle
+   * already relies on elsewhere (e.g. `surface-card-subtle bg-snow`
+   * overriding its own bg-[#fafafa]). So any element that already
+   * carries an explicit text-* color (hero text on a dark photo, muted
+   * secondary text, etc.) keeps that color untouched automatically;
+   * .text-kr-body's #374151 only applies where nothing else claimed the
+   * color already.
+   */
+  .text-kr-body {
+    font-family: var(--font-kr);
+    font-weight: 400;
+    line-height: 1.75;
+    letter-spacing: -0.015em;
+    color: #374151;
+  }
+
+  .text-kr-subtitle {
+    font-family: var(--font-kr);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.45;
+  }
+
+  /* Fluid font-size for the trend detail page's Korean article body only
+     ("Catchy 한국어 본문 반응형 폰트 크기 조정" / 이후 축소 조정) — composes
+     with .text-kr-body above (weight/letter-spacing/color unchanged)
+     rather than duplicating it, since .text-kr-body itself sets no
+     font-size and is also used elsewhere (home descriptions, expression
+     cards, quiz, bookmarks) at their own fixed per-usage sizes that must
+     stay as-is. 15px at ~390px viewport width up to 18px at ~1440px,
+     linearly interpolated in between (so tablet widths land smoothly
+     between the two) and clamped flat outside that range.
+     line-height: 1.7 here deliberately overrides .text-kr-body's own 1.75
+     — this rule is declared after .text-kr-body in source order, so at
+     equal specificity it wins wherever both classes are applied together
+     (i.e. only on this fluid article-body text), leaving every other
+     .text-kr-body-only usage elsewhere at 1.75, untouched. */
+  .text-kr-body-fluid {
+    font-size: clamp(0.9375rem, calc(0.87rem + 0.29vw), 1.125rem);
+    line-height: 1.7;
   }
 
   .surface-dark {

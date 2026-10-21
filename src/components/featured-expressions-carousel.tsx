@@ -104,7 +104,7 @@ export function FeaturedExpressionsCarousel({
           <h2 className="text-[32px] font-semibold leading-[1.5] text-obsidian">
             {title}
           </h2>
-          <p className="mt-1 text-[14px] text-fog">{description}</p>
+          <p className="text-kr-body mt-1 text-[14px] text-fog">{description}</p>
         </div>
 
         <div className="flex items-center gap-2">

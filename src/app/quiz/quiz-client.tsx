@@ -131,7 +131,7 @@ export function QuizClient({
         <div>
           <p className="text-[12px] text-fog">이 표현은 무슨 뜻일까요?</p>
           <p className="mt-3 text-[32px] font-semibold leading-tight text-obsidian sm:text-[40px]">
-            &ldquo;{question.phrase}&rdquo;
+            {question.phrase}
           </p>
         </div>
         <SaveExpressionButton
@@ -197,28 +197,28 @@ export function QuizClient({
           </p>
 
           {question.expression.nuance && (
-            <p>
+            <p className="text-kr-body">
               <span className="mr-2 text-[12px] text-fog">뉘앙스</span>
               {question.expression.nuance}
             </p>
           )}
 
           {question.expression.comparison && (
-            <div className="surface-card-subtle p-4">
+            <div className="surface-info-box p-4">
               <span className="mb-2 block text-[12px] text-fog">비슷하지만 다른 표현</span>
               <p className="font-medium text-graphite">
                 &ldquo;{question.expression.comparison.phrase}&rdquo;
               </p>
-              <p className="mt-1 text-fog">{question.expression.comparison.nuanceDiff}</p>
+              <p className="text-kr-body mt-1 text-fog">{question.expression.comparison.nuanceDiff}</p>
             </div>
           )}
 
-          <div className="surface-card-subtle p-4">
+          <div className="surface-info-box p-4">
             <span className="mb-2 block text-[12px] text-fog">예문</span>
             <p className="font-medium text-graphite">
               {highlightPhraseInText(question.expression.exampleEn, question.expression.phrase)}
             </p>
-            <p className="mt-1 text-fog">{question.expression.exampleKo}</p>
+            <p className="text-kr-body mt-1 text-fog">{question.expression.exampleKo}</p>
           </div>
         </div>
       )}

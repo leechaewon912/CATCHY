@@ -151,7 +151,7 @@ Maybe entertainment doesn't always have to surprise us. Sometimes, we just want 
         exampleKo: "이 시트콤은 긴 하루를 보낸 뒤 내가 즐겨 보는 힐링 작품이야.",
       },
       {
-        phrase: "Know by heart",
+        phrase: "Know [something] by heart",
         meaningKo: "완전히 외우다, 속속들이 알다",
         nuance: "너무 많이 보거나 들어서 대사나 내용을 토씨 하나까지 기억할 정도로 잘 알고 있을 때 쓰는 표현이에요.",
         comparison: {
@@ -204,7 +204,7 @@ But "It's giving" shows something interesting about online communication: someti
     sources: [],
     expressions: [
       {
-        phrase: "It's giving",
+        phrase: "[something] giving",
         meaningKo: "~한 느낌이 나, ~한 분위기야",
         nuance: "구체적으로 설명하기보다 전체적인 분위기나 인상을 직관적으로 전달할 때 쓰는 인터넷 표현이에요.",
         comparison: {

@@ -116,7 +116,7 @@ export default async function QuizPage({
               />
             ) : (
               <div className="surface-card flex flex-col items-start gap-4 p-8 text-[14px] text-fog">
-                <p>이 트렌드는 아직 표현이 부족해서 퀴즈를 만들 수 없어요.</p>
+                <p className="text-kr-body">이 트렌드는 아직 표현이 부족해서 퀴즈를 만들 수 없어요.</p>
                 <Link href="/quiz" className="btn-ghost">
                   다른 트렌드 선택하기
                 </Link>
@@ -161,9 +161,9 @@ function QuizTrendPicker({ trends }: { trends: Trend[] }) {
 
           <p className="text-[12px] font-medium text-ember">오늘의 퀵 퀴즈</p>
           <h1 className="mt-2 text-[32px] font-semibold leading-tight text-obsidian sm:text-[40px]">
-            퀴즈 풀 트렌드를 선택해주세요
+            퀴즈 풀 이야기를 선택해주세요
           </h1>
-          <p className="mt-2 text-[14px] text-fog">
+          <p className="text-kr-body mt-2 text-[14px] text-fog">
             트렌드별로 배운 표현만 모아서 짧게 복습할 수 있어요.
           </p>
 

@@ -77,20 +77,49 @@ export default async function TrendDetailPage(
 
           <div className="relative mx-auto flex min-h-[260px] max-w-4xl flex-col justify-center px-5 py-6 sm:min-h-[340px] sm:px-8 sm:py-8">
             <div className="flex flex-col gap-7 sm:gap-9">
-              <span className="badge-filled self-start">{CATEGORY_DISPLAY_LABELS[trend.category]}</span>
+              {/* Hero-only translucent variant of .badge-filled (globals.css) —
+                  kept as its own inline class list rather than editing
+                  .badge-filled itself, since that shared class is also used
+                  by the "단일 출처" badge further down this same page and by
+                  the quiz picker's featured-trend card
+                  (src/app/quiz/quiz-entry-client.tsx), neither of which
+                  should change. Same size/padding/radius as .badge-filled,
+                  just swapped to translucent white so the hero photo shows
+                  through instead of a solid fill. No blur — a faint white
+                  border carries the legibility work on brighter photos. */}
+              <span className="inline-flex items-center gap-1 self-start rounded-badges border border-white/25 bg-white/[0.18] px-2 py-1 text-[12px] font-normal text-white">
+                {CATEGORY_DISPLAY_LABELS[trend.category]}
+              </span>
 
-              <div className="flex flex-col gap-2 sm:gap-3">
-                <h1 className="text-[32px] font-semibold leading-[1.28] text-snow sm:text-[40px]">
-                  {trend.englishTitle ?? trend.title}
-                </h1>
+              {/* English title + Korean subtitle read as one title group
+                  (20px gap); the Korean summary sentence below is set off
+                  from that group by a much larger gap (36px) so it reads as
+                  a separate line of description, not part of the title. */}
+              <div className="flex flex-col">
+                <div className="flex flex-col gap-5">
+                  <h1 className="text-[32px] font-semibold leading-[1.28] text-snow sm:text-[40px]">
+                    {trend.englishTitle ?? trend.title}
+                  </h1>
 
-                {trend.englishTitle && (
-                  <p className="text-[16px] font-medium text-mist sm:text-[20px]">
-                    {trend.title}
-                  </p>
-                )}
+                  {trend.englishTitle && (
+                    <p className="text-kr-subtitle truncate text-[20px] text-mist sm:text-[24px]">
+                      {trend.title}
+                    </p>
+                  )}
+                </div>
 
-                <p className="max-w-2xl text-[15px] leading-relaxed text-mist sm:text-[18px]">
+                {/* No max-w-* here on purpose — this stretches to the exact
+                    same effective width as the h1/subtitle above it (both
+                    are plain flex-col children of the same parent, so they
+                    already share that width via align-items: stretch).
+                    Previously capped at max-w-2xl (672px), narrower than
+                    that shared ~832px column, which wrapped some summaries
+                    to a second line even though the wider column had room
+                    for them on one. break-keep (word-break: keep-all) keeps
+                    Korean line breaks landing between words instead of
+                    mid-syllable, same as src/components/trend-hero.tsx's
+                    subtitle. */}
+                <p className="text-kr-body text-kr-body-fluid mt-9 break-keep text-ash">
                   {trend.summary}
                 </p>
               </div>
@@ -105,7 +134,7 @@ export default async function TrendDetailPage(
           <h2 id="event-summary-heading" className="text-[32px] font-semibold leading-[1.5] text-obsidian">
             어떤 이야기인가요?
           </h2>
-          <p className="mt-2 mb-5 text-[14px] text-fog">
+          <p className="text-kr-body mt-2 mb-5 text-[14px] text-fog">
             영어로 먼저 읽고, 한국어로 내용을 확인해 보세요. <span className="text-ember">주황색 밑줄</span>로
             표시된 부분을 누르면 아래에서 배우는 표현으로 바로 이동해요.
           </p>
@@ -121,11 +150,11 @@ export default async function TrendDetailPage(
                 category={trend.category}
               />
             </div>
-            <div className="border-t border-cloud bg-[#fafafa] p-6 sm:p-8">
+            <div className="border-t border-cloud p-6 sm:p-8">
               <h3 className="mb-3 text-[13px] font-medium text-ember">
-                KO · 한국어 요약
+                한국어로 읽기
               </h3>
-              <p lang="ko" className="text-[15px] leading-8 text-steel">
+              <p lang="ko" className="text-kr-body text-kr-body-fluid">
                 {trend.koreanSummary}
               </p>
             </div>
@@ -151,7 +180,7 @@ export default async function TrendDetailPage(
               <h2 className="mb-3 text-[13px] font-medium text-fog">
                 왜 지금 화제일까요?
               </h2>
-              <p className="text-[15px] leading-relaxed text-steel">
+              <p className="text-kr-body text-kr-body-fluid text-steel">
                 {trend.whyTrending}
               </p>
             </div>
@@ -176,7 +205,7 @@ export default async function TrendDetailPage(
             <h2 className="mb-2 text-[32px] font-semibold leading-[1.5] text-obsidian">
               이 이야기에서 배우는 표현
             </h2>
-            <p className="mb-8 text-[14px] text-fog">
+            <p className="text-kr-body mb-8 text-[14px] text-fog">
               AI가 이 트렌드 콘텐츠에서 실제로 쓰인 표현을 선별해 뜻·뉘앙스·비슷한
               표현·예문과 함께 정리했어요.
             </p>

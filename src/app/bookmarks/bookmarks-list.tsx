@@ -27,7 +27,7 @@ export function BookmarksList() {
         <p className="text-[18px] font-semibold text-obsidian">
           아직 저장한 표현이 없어요
         </p>
-        <p className="max-w-sm text-[14px] leading-relaxed text-fog">
+        <p className="text-kr-body max-w-sm text-[14px] text-fog">
           트렌드 상세 페이지에서 마음에 드는 영어 표현의 저장 버튼을 눌러
           여기에 모아보세요.
         </p>
@@ -48,9 +48,9 @@ export function BookmarksList() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-[32px] font-semibold leading-tight text-obsidian">
-                &ldquo;{bookmark.phrase}&rdquo;
+                {bookmark.phrase}
               </p>
-              <p className="mt-2 text-[16px] font-medium text-graphite">
+              <p className="text-kr-body mt-2 text-[16px] text-graphite">
                 {bookmark.meaning}
               </p>
             </div>
@@ -65,14 +65,14 @@ export function BookmarksList() {
 
           <div className="my-5 h-px bg-cloud" />
 
-          <div className="surface-card-subtle p-4">
+          <div className="surface-info-box p-4">
             <span className="mb-2 block text-[12px] text-fog">
               예문
             </span>
             <p className="font-medium text-graphite">
               {highlightPhraseInText(bookmark.example, bookmark.phrase)}
             </p>
-            <p className="mt-1 text-fog">{bookmark.exampleTranslation}</p>
+            <p className="text-kr-body mt-1 text-fog">{bookmark.exampleTranslation}</p>
           </div>
 
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-[12px] text-fog">

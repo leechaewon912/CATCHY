@@ -60,7 +60,7 @@ export function TrendCard({ trend, position }: { trend: Trend; position: number 
           <p className="mt-1 line-clamp-1 text-[13px] text-fog">{trend.englishSummary}</p>
         </div>
 
-        <p className="line-clamp-2 text-[14px] leading-relaxed text-fog">{trend.summary}</p>
+        <p className="text-kr-body line-clamp-2 text-[14px] text-fog">{trend.summary}</p>
 
         <span className="mt-auto inline-flex items-center gap-1 text-[13px] font-medium text-obsidian">
           이야기 읽기

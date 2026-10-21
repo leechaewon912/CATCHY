@@ -42,17 +42,17 @@ export function ExpressionCard({
       </div>
 
       <p className="line-clamp-2 min-h-[50px] text-[20px] font-semibold leading-tight text-obsidian transition-colors group-hover:text-graphite">
-        &ldquo;{expression.phrase}&rdquo;
+        {expression.phrase}
       </p>
 
-      <p className="line-clamp-2 min-h-10 text-[14px] font-medium leading-snug text-graphite">
+      <p className="text-kr-body line-clamp-2 min-h-10 text-[14px] text-graphite">
         {expression.meaningKo}
       </p>
 
       <div className="h-px bg-cloud" />
 
       {expression.nuance && (
-        <div className="flex flex-col gap-2 text-[13px] leading-relaxed text-steel">
+        <div className="text-kr-body flex flex-col gap-2 text-[13px] text-steel">
           <p className="line-clamp-2 min-h-[43px]">{expression.nuance}</p>
         </div>
       )}
@@ -66,7 +66,7 @@ export function ExpressionCard({
             "bg-transparent font-semibold text-ember",
           )}
         </p>
-        <p className="line-clamp-2 min-h-10 text-[12px] leading-relaxed text-fog">
+        <p className="text-kr-body line-clamp-2 min-h-10 text-[12px] text-fog">
           {expression.exampleKo}
         </p>
       </div>
