@@ -1,7 +1,7 @@
 {
   "crons": [
     {
-      "path": "/api/cron/daily-trends",
+      "path": "/api/cron/daily-editorial",
       "schedule": "0 0 * * *"
     }
   ]

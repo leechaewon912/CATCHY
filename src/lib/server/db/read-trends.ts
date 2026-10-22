@@ -21,6 +21,12 @@ type TrendRow = {
   status: Trend["status"];
   generated_at: string;
   reviewed_at: string | null;
+  // Added for the GPT self-generated editorial pipeline — absent
+  // (undefined) on rows read before these columns existed, defaulted
+  // ('rss') or nullable on new ones. See trend-validation.ts for how
+  // content_origin is used.
+  content_origin?: Trend["contentOrigin"] | null;
+  english_title?: string | null;
 };
 
 type TrendSourceRow = {
@@ -50,7 +56,7 @@ type ExpressionRow = {
 };
 
 const TREND_COLUMNS =
-  "id, title, category, summary, english_summary, korean_summary, why_trending, status, generated_at, reviewed_at";
+  "id, title, category, summary, english_summary, korean_summary, why_trending, status, generated_at, reviewed_at, content_origin, english_title";
 
 function bySortOrder<T extends { sort_order: number }>(rows: T[]): T[] {
   return [...rows].sort((a, b) => a.sort_order - b.sort_order);
@@ -85,17 +91,22 @@ function mapTrend(row: TrendRow, sourceRows: TrendSourceRow[], expressionRows: E
   return {
     id: row.id,
     title: row.title,
+    englishTitle: row.english_title ?? undefined,
     category: row.category,
     summary: row.summary,
     englishSummary: row.english_summary,
     koreanSummary: row.korean_summary,
-    whyTrending: row.why_trending,
+    // RSS 콘텐츠는 why_trending이 항상 non-empty — GPT 에디토리얼처럼
+    // 빈 문자열로 저장된 경우만 undefined로 바꿔 상세 페이지가 그 섹션을
+    // 생략하게 한다(whyTrending이 optional인 이유와 동일한 처리).
+    whyTrending: row.why_trending || undefined,
     sources,
     expressions,
     quiz: buildQuizFromExpressions(expressions),
     status: row.status,
     generatedAt: row.generated_at,
     reviewedAt: row.reviewed_at,
+    contentOrigin: row.content_origin ?? undefined,
   };
 }
 
@@ -136,6 +147,12 @@ export async function getPublishedTrendsFromDb(): Promise<Trend[] | null> {
     .from("trends")
     .select(TREND_COLUMNS)
     .eq("status", "published")
+    // RSS → GPT 자체 생성 전환 기간 한정 조치: 실데이터 모드(MOCK_MODE=
+    // false)에서는 content_origin='gpt_editorial' 콘텐츠만 노출하고,
+    // 기존 91개 RSS 트렌드는 (삭제하지 않고) 노출만 숨긴다. RSS 쪽 cron이
+    // 중단된 뒤에도 이 테이블에는 과거 RSS 행이 그대로 남아있으므로, 이
+    // 필터가 없으면 둘이 섞여서 노출된다.
+    .eq("content_origin", "gpt_editorial")
     .order("generated_at", { ascending: false })
     .returns<TrendRow[]>();
 
@@ -174,6 +191,10 @@ export async function getTrendByIdFromDb(id: string): Promise<Trend | null> {
     .select(TREND_COLUMNS)
     .eq("id", id)
     .eq("status", "published")
+    // Same RSS-hiding filter as getPublishedTrendsFromDb() above — a
+    // direct /trend/<rss-id> visit shouldn't surface old RSS content
+    // either once MOCK_MODE=false.
+    .eq("content_origin", "gpt_editorial")
     .maybeSingle()
     .returns<TrendRow>();
 

@@ -106,6 +106,12 @@ export type Trend = {
   status: "draft" | "published";
   generatedAt: string;
   reviewedAt: string | null;
+  // 콘텐츠 출처 구분. 없거나 "rss"면 기존 RSS/GDELT 수집 파이프라인 산출물
+  // (isPublishableTrend의 출처 요건을 그대로 적용), "gpt_editorial"이면
+  // 외부 뉴스 그라운딩 없이 GPT가 자체 창작한 컬처 에디토리얼(출처 요건
+  // 면제 — src/lib/trend-validation.ts 참고). 기존 Mock 데이터와 RSS 행은
+  // 이 필드가 없어도 "rss"와 동일하게 취급된다.
+  contentOrigin?: "rss" | "gpt_editorial";
   // Neither is populated anywhere yet (no DB column, no mock value) —
   // when/if a real trending-ness score or editorial rank is added, the
   // home hero/feed ordering in trend-repository.ts picks it up

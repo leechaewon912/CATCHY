@@ -36,6 +36,62 @@ export async function fetchRecentPublishedClusterKeys(
   return (data ?? []).flatMap((row) => (row.cluster_key ? [row.cluster_key] : []));
 }
 
+export type RecentEditorialContext = {
+  existingTitles: { englishTitle: string; koreanTitle: string }[];
+  existingPhrases: string[];
+};
+
+// Recent GPT self-generated editorials' titles + expression phrases, used
+// by the autonomous topic-selection step (generate-culture-editorial-with-
+// llm.ts's generateDailyCultureEditorial) to steer new generations away
+// from subjects/expressions already covered. Fail-open like
+// fetchRecentPublishedClusterKeys above — a dedupe check that can't run
+// shouldn't block generation, it just means weaker dedup for that run.
+export async function fetchRecentEditorialContext(sinceDays = 90): Promise<RecentEditorialContext> {
+  const client = getSupabaseServerClient();
+  if (!client) return { existingTitles: [], existingPhrases: [] };
+
+  const sinceIso = new Date(Date.now() - sinceDays * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data: trendRows, error: trendsError } = await client
+    .from("trends")
+    .select("id, title, english_title")
+    .eq("content_origin", "gpt_editorial")
+    .gte("generated_at", sinceIso)
+    .returns<Array<{ id: string; title: string; english_title: string | null }>>();
+
+  if (trendsError) {
+    console.error("[supabase] failed to load recent editorial titles:", trendsError.message);
+    return { existingTitles: [], existingPhrases: [] };
+  }
+
+  const rows = trendRows ?? [];
+  const existingTitles = rows.map((row) => ({
+    englishTitle: row.english_title ?? row.title,
+    koreanTitle: row.title,
+  }));
+
+  if (rows.length === 0) {
+    return { existingTitles: [], existingPhrases: [] };
+  }
+
+  const { data: expressionRows, error: expressionsError } = await client
+    .from("expressions")
+    .select("phrase")
+    .in("trend_id", rows.map((row) => row.id))
+    .returns<Array<{ phrase: string }>>();
+
+  if (expressionsError) {
+    console.error("[supabase] failed to load recent editorial phrases:", expressionsError.message);
+    return { existingTitles, existingPhrases: [] };
+  }
+
+  return {
+    existingTitles,
+    existingPhrases: (expressionRows ?? []).map((row) => row.phrase),
+  };
+}
+
 export type UpsertTrendInput = {
   id: string;
   category: Category;
@@ -43,6 +99,12 @@ export type UpsertTrendInput = {
   status: "draft" | "published";
   content: GenerateTrendDraftOutput;
   sources: TrendSource[];
+  // 영어 원문 제목 — RSS 콘텐츠는 없음(undefined), GPT 자체 생성 에디토리얼은
+  // 항상 채움. 없으면 트렌드 카드/상세 페이지가 한국어 title을 메인
+  // 제목으로 쓴다(trend.englishTitle의 기존 optional 처리와 동일).
+  englishTitle?: string;
+  // 생략하면 기존 RSS 파이프라인과 동일하게 "rss"로 저장된다.
+  contentOrigin?: "rss" | "gpt_editorial";
 };
 
 // Upserts one trend + replaces its sources/expressions. The trend id is
@@ -66,6 +128,7 @@ export async function upsertTrend(input: UpsertTrendInput): Promise<void> {
     {
       id: input.id,
       title: input.content.title,
+      english_title: input.englishTitle ?? null,
       category: input.category,
       summary: input.content.summary,
       english_summary: input.content.englishSummary,
@@ -73,6 +136,7 @@ export async function upsertTrend(input: UpsertTrendInput): Promise<void> {
       why_trending: input.content.whyTrending,
       cluster_key: input.clusterKey,
       status: input.status,
+      content_origin: input.contentOrigin ?? "rss",
       generated_at: now,
       reviewed_at: input.status === "published" ? now : null,
     },
@@ -124,7 +188,13 @@ export async function upsertTrend(input: UpsertTrendInput): Promise<void> {
         phrase: expression.phrase,
         meaning_ko: expression.meaningKo,
         nuance: expression.nuance,
-        usage_situation: expression.usageSituation,
+        // usageSituation is optional on ExpressionSeed (GPT editorials
+        // never populate it, see mock-data.ts's comment on that field),
+        // but the DB column is NOT NULL with no default — fall back to
+        // "" same as why_trending below. It's never rendered in any UI
+        // (internal classification note only), so an empty string here
+        // has no visible effect.
+        usage_situation: expression.usageSituation ?? "",
         example_en: expression.exampleEn,
         example_ko: expression.exampleKo,
         comparison_phrase: expression.comparison?.phrase ?? null,

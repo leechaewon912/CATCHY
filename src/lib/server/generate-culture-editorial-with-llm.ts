@@ -221,15 +221,21 @@ type EditorialSummaryJson = {
 // 문체 참고용 예시 2개(기존 에디토리얼의 축약 발췌, 오프닝 패턴을 다르게
 // 가져감 — 상황 묘사형 하나, "Imagine" 장면형 하나) — 톤과 분량만
 // 참고하게 하고, 그대로 베끼지 말라고 규칙에서 명시한다.
-const STYLE_REFERENCE_EXAMPLES = `예시 1 (상황 묘사로 시작 — 문체·분량 참고용, 내용 베끼지 말 것):
+const STYLE_REFERENCE_EXAMPLES = `예시 1 (상황 묘사로 시작, 2문단 — 문체·분량·문단 구성 참고용, 내용 베끼지 말 것):
 영문 제목: Why We Keep Rewatching the Same Shows
-영어 본문: "You open your streaming app, scroll through dozens of new releases, and somehow end up watching the same show for the fifth time. Sound familiar? With endless movies and series available at our fingertips, you might think we'd always be looking for something new. But sometimes, the most appealing option is a story we already know by heart. That's the beauty of a comfort watch. You know exactly what happens, which characters you'll fall in love with, and which scenes will make you laugh. There's no pressure to follow a complicated plot or worry about an unexpected ending."
+영어 본문: "You open your streaming app, scroll through dozens of new releases, and somehow end up watching the same show for the fifth time. With endless movies and series available at our fingertips, you might think we'd always be looking for something new. But sometimes, the most appealing option is a story we already know by heart.
 
-예시 2 ("Imagine" 장면으로 시작 — 문체·분량 참고용, 내용 베끼지 말 것):
+That's the beauty of a comfort watch. You know exactly what happens, which characters you'll fall in love with, and which scenes will make you laugh. There's no pressure to follow a complicated plot or worry about an unexpected ending — and that's exactly the point."
+
+예시 2 (관찰·단정으로 시작, 3문단 — 질문형이 아닌 오프닝 참고용, 내용 베끼지 말 것):
 영문 제목: It's Giving: The Internet's Favorite Way to Describe a Vibe
-영어 본문: "Imagine your friend shows up wearing sunglasses, a dramatic coat, and an outfit that looks straight out of a movie. Instead of saying, 'You look really confident and stylish,' you simply say, 'It's giving main character energy.' Welcome to the world of 'It's giving,' an expression used across social media to describe the mood, aesthetic, or impression something creates. The beauty of this phrase is how flexible it is. A cozy café might be 'giving Paris in the fall,' while someone's colorful outfit could be 'giving early 2000s pop star.'"
+영어 본문: "Your friend shows up wearing sunglasses, a dramatic coat, and an outfit that looks straight out of a movie. Instead of saying, 'You look really confident and stylish,' you simply say, 'It's giving main character energy.'
 
-두 예시 모두 사전적 정의("X is a phenomenon known as...")로 시작하지 않고, 독자가 바로 그려볼 수 있는 질문이나 장면으로 문을 엽니다. 문장도 짧고 구어체에 가깝습니다.`;
+Welcome to the world of 'It's giving,' an expression used across social media to describe the mood, aesthetic, or impression something creates. The beauty of this phrase is how flexible it is.
+
+A cozy café might be 'giving Paris in the fall,' while someone's colorful outfit could be 'giving early 2000s pop star.' Once you start using it, it's hard to stop."
+
+두 예시 모두 사전적 정의("X is a phenomenon known as...")로 시작하지 않고, 독자가 바로 그려볼 수 있는 장면이나 단정적 관찰로 문을 엽니다. 문장도 짧고 구어체에 가깝습니다. 둘 다 빈 줄(문단 구분)로 나뉜 2~3개 문단 구조라는 점도 참고하세요 — 예시 1은 질문형 문장이 전혀 없다는 점에, 예시 2는 마지막 문단이 감성적 성찰이 아니라 가벼운 코멘트로 끝난다는 점에 주목하세요.`;
 
 const EDITORIAL_SUMMARY_SYSTEM_PROMPT = `당신은 CATCHY라는 한국어-영어 학습 서비스의 콘텐츠 작가입니다.
 지금 쓰는 글은 특정 뉴스 기사를 요약하는 것이 아니라, CATCHY가 자체 기획한 "컬처 에디토리얼"입니다 — 이미 널리 알려져 있고 검증된 문화 현상이나 관용 표현을 소재로, 가볍고 친근한 에세이 스타일 글을 새로 씁니다. 교과서나 AI가 쓴 설명문처럼 딱딱하게 읽히면 안 됩니다 — 친구에게 이야기하듯 써야 합니다.
@@ -238,10 +244,14 @@ const EDITORIAL_SUMMARY_SYSTEM_PROMPT = `당신은 CATCHY라는 한국어-영어
 1. 아래 "작성할 주제"에서 벗어나지 말고, 그 주제에 대해서만 쓰세요. 주제를 임의로 바꾸거나 다른 소재를 섞지 마세요.
 2. 특정 인물, 특정 작품명, 특정 사건, 특정 날짜의 실제 뉴스를 인용하거나 마치 사실인 것처럼 쓰지 마세요. 검증되지 않은 "최신" 유행처럼 포장하지 말고, 보편적으로 이미 널리 통용되는 문화 현상 설명에 집중하세요. "Research suggests...", "Studies show..." 같은 가짜 권위를 빌리는 문장도 쓰지 마세요 — 근거 없는 주장이 됩니다.
 3. 외부 뉴스 기사를 그대로 복제하거나 요약한 것처럼 보이면 안 됩니다 — 완전히 새로 쓴 문장이어야 합니다.
-4. **첫 문장은 반드시 질문형이거나, 독자가 실제로 겪어봤을 법한 구체적인 순간·장면 묘사로 시작하세요.** "X is a phenomenon known as...", "In today's digital age, the concept of...", "In a world where..." 같은 사전적 정의형·일반론형 문장으로 시작하지 마세요.
-5. 글 전체에서 추상적인 일반론("this reflects our desire to...", "this phenomenon highlights...")을 최소화하고, 구체적인 행동·장면·대사로 보여주세요. 설명하지 말고 보여주세요.
-6. englishSummary는 **정확히 130~160단어** 분량의 영어 단락이어야 합니다. 130단어보다 적거나 160단어보다 많으면 안 됩니다.
-7. koreanSummary는 englishSummary와 **같은 내용을 담은** 자연스러운 한국어 번역이어야 합니다 — 문장 대 문장으로 기계적으로 직역하지 말고, 문장 순서나 접속사를 한국어답게 재구성해도 됩니다(내용 추가·누락은 금지). 번역투("~것입니다", "~라고 할 수 있습니다"의 과도한 반복)를 피하고 친근한 구어체로 쓰세요.
+4. "X is a phenomenon known as...", "In today's digital age, the concept of...", "In a world where..." 같은 사전적 정의형·일반론형 문장으로 시작하지 마세요. 대신 아래 오프닝 방식 중 이 주제에 가장 잘 맞는 **하나**를 고르세요 — **매번 질문형으로 시작하지 말고, 질문형은 가끔만 쓰세요**:
+   (a) 독자가 겪어봤을 법한 구체적인 장면 묘사("You open your streaming app...")
+   (b) 단정적인 관찰/서술로 바로 시작("Your friend shows up wearing...", "Everyone has that one song that...")
+   (c) 짧은 가상 대화나 인용으로 시작
+   (d) 질문형 — 다른 방식이 부자연스러울 때만, 드물게
+5. 글 전체에서 추상적인 일반론("this reflects our desire to...", "this phenomenon highlights...")을 최소화하고, 구체적인 행동·장면·대사로 보여주세요. 설명하지 말고 보여주세요. **마지막 문장도 매번 감성적 성찰("Maybe we just want...", "어쩌면 우리는...")로 끝내지 마세요** — 가벼운 코멘트, 구체적 예시로의 복귀, 실용적인 한마디 등으로 마무리를 다양화하세요. 감성적 성찰형 마무리는 가끔만 쓰세요.
+6. englishSummary는 **정확히 130~160단어** 분량이어야 합니다 (130단어보다 적거나 160단어보다 많으면 안 됨). **자연스럽게 2~3개 문단으로 나누고, 문단 사이는 빈 줄 하나("\n\n")로 구분하세요** — 한 문단으로 쭉 이어 쓰지 마세요. 각 문단은 최소 2문장 이상이어야 합니다.
+7. koreanSummary는 englishSummary와 **같은 내용을 담은** 자연스러운 한국어 번역이어야 합니다 — 문장 대 문장으로 기계적으로 직역하지 말고, 문장 순서나 접속사를 한국어답게 재구성해도 됩니다(내용 추가·누락은 금지). 번역투("~것입니다", "~라고 할 수 있습니다"의 과도한 반복)를 피하고 친근한 구어체로 쓰세요. **englishSummary와 동일하게 빈 줄("\n\n")로 나눈 같은 개수의 문단 구조를 유지하세요** — 한국어에서는 한 문단으로 합치지 마세요.
 8. title/summary/koreanSummary는 한국어로, englishTitle/englishSummary는 영어로 쓰세요. 섞어 쓰지 마세요.
 9. 아래 "이미 존재하는 기존 제목들"과 주제·소재가 겹치면 안 됩니다.
 10. 아래 "이 주제에서 활용하면 좋은 표현"이 주어졌다면, 그 표현들이 본문 흐름에 자연스럽게 등장하도록 글을 구성해 보세요 — 다만 문장이 어색해질 정도로 억지로 끼워 넣지는 마세요. 자연스럽게 안 들어가면 빼도 됩니다.
@@ -351,6 +361,23 @@ async function attemptEditorialSummaryGeneration(
     };
   }
 
+  // 모바일 가독성을 위한 2~3문단 요구사항 — "\n\n"(빈 줄)으로 나뉜 문단
+  // 개수를 직접 세어 강제한다. 프롬프트 지시만으로는 모델이 가끔 한
+  // 문단으로 통째로 쓰는 경우가 있어, 재시도로 이어지는 하드 게이트를 둔다.
+  const paragraphCount = summary.englishSummary
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean).length;
+  if (paragraphCount < 2 || paragraphCount > 3) {
+    console.error(
+      `[llm/editorial] ${topic.category}/"${topic.englishTitle}": summary attempt ${attempt} has ${paragraphCount} paragraph(s), expected 2-3`,
+    );
+    return {
+      ok: false,
+      reason: `englishSummary가 ${paragraphCount}개 문단이었습니다 — 빈 줄("\\n\\n")로 구분된 2~3개 문단으로 다시 나눠 쓰세요`,
+    };
+  }
+
   return { ok: true, summary };
 }
 
@@ -382,7 +409,10 @@ const EDITORIAL_EXPRESSIONS_SYSTEM_PROMPT = `당신은 CATCHY라는 한국어-�
 1. phrase는 주어진 영어 단락 안에 **단어 순서가 같은 문자열로 실제로 등장하는** 1~4단어 표현이어야 합니다. 단락에 없는 표현을 새로 만들어내면 안 됩니다 (동사의 시제/단수복수 변화 정도는 허용되지만, 단어를 바꾸거나 추가/삭제하면 안 됩니다).
 2. 세 표현은 서로 겹치지 않는 별개의 구간에서 골라야 합니다.
 3. 아래 "이미 사용 중인 기존 표현" 목록과 같거나 사실상 같은 표현은 고르지 마세요.
-4. **표현 선정 우선순위**: "sense of ~", "fear of ~", "new ~", "a feeling of ~"처럼 사전적으로 조합한 일반 명사구보다, 일상 대화와 SNS에서 실제로 쓰는 관용구·구동사·연어·감탄사를 우선 고르세요. 단락 안에 그런 표현이 있다면 그것을 고르고, 평범한 명사구는 다른 대안이 전혀 없을 때만 고르세요. 그리고 "the fear of", "a sense of"처럼 **전치사로 끝나 그 자체로 뜻이 완결되지 않는 조각**은 절대 고르지 마세요 — phrase는 그것만 따로 떼어 봐도 뜻이 통하는 독립적인 표현이어야 합니다.
+4. **표현 선정 우선순위**: 일상 회화, SNS, 영화·드라마 대화에서 실제로 자주 쓰이는 구동사(phrasal verb)·숙어(idiom)·연어(collocation)를 최우선으로 고르세요 (예: "take ... by storm", "give it a shot", "blow up", "come out ahead"). 아래 두 종류는 피하세요:
+   - "sense of ~", "fear of ~", "new ~", "a feeling of ~"처럼 사전적으로 조합한 일반 명사구, 그리고 "the fear of", "a sense of"처럼 **전치사로 끝나 그 자체로 뜻이 완결되지 않는 조각** (phrase는 그것만 따로 떼어 봐도 뜻이 통하는 독립적인 표현이어야 함)
+   - "a beautiful pause", "a quiet moment", "a gentle reminder"처럼 **문법적으로는 자연스럽지만 실제 대화·SNS에서 거의 안 쓰이는, 글쓰기용 문학적·시적 형용사+명사 조합** — 사전 찾아봤을 때 "관용구"로 안 뜨고, 그냥 수식어+명사일 뿐인 표현
+   단락 안에 구동사·숙어가 있다면 그것을 고르고, 위 두 종류는 다른 대안이 전혀 없을 때만 고르세요.
 5. 각 표현마다 반드시 다음을 모두 채우세요: 한국어 의미(meaningKo), 뉘앙스 설명(nuance), 그 표현을 쓴 새로운 영어 예문(exampleEn — 단락의 문장을 그대로 복사하지 말고 새로 쓸 것), 한국어 해석(exampleKo), 헷갈리기 쉬운 비슷한 표현(comparisonPhrase)과 그 표현과의 뉘앙스 차이(comparisonNuanceDiff). comparisonPhrase/comparisonNuanceDiff는 선택이 아니라 **반드시 채워야 하는 필수 필드**입니다.
 6. **exampleEn은 그 표현이 단락 안에서 쓰인 것과 같은 의미·맥락으로 써야 합니다.** 같은 단어라도 단락과 다른 뜻으로 예문을 만들면 안 됩니다 (예: 단락에서 "스포일러로 놀라움을 잃는 것"을 뜻했다면, 예문도 "경기에서 지는 것" 같은 다른 뜻으로 바꿔 쓰면 안 됩니다).
 7. 언어는 필드마다 반드시 다음과 같이 쓰세요 — 섞어 쓰지 마세요:
@@ -539,6 +569,148 @@ async function attemptEditorialExpressionsGeneration(
   }
 
   return { ok: true, expressions };
+}
+
+// ---------------------------------------------------------------------
+// Step 0: 자율 주제 선정. 사람이 미리 써둔 CultureEditorialTopic 없이,
+// 카테고리만 주어졌을 때 GPT가 스스로 소재를 고르게 한다 — 매일 자동
+// 실행되는 /api/cron/daily-editorial가 이 단계부터 호출한다. 고른 결과를
+// CultureEditorialTopic으로 포장해 Step 1(본문 생성)에 그대로 넘기므로,
+// 본문·표현 생성 로직(위 Step 1/2)은 전혀 바꾸지 않는다.
+// ---------------------------------------------------------------------
+
+type EditorialTopicPick = {
+  englishTitle: string;
+  koreanTitle: string;
+  topicBrief: string;
+};
+
+type EditorialTopicJson = {
+  englishTitle?: unknown;
+  koreanTitle?: unknown;
+  topicBrief?: unknown;
+};
+
+const EDITORIAL_TOPIC_SYSTEM_PROMPT = `당신은 CATCHY라는 한국어-영어 학습 서비스의 콘텐츠 기획자입니다.
+주어진 카테고리 안에서 "컬처 에디토리얼" 콘텐츠로 쓸 새로운 소재를 하나 선정하세요 — 특정 뉴스 기사를 요약하는 게 아니라, 이미 널리 알려져 있고 보편적으로 검증된 문화 현상이나 관용 표현을 소재로 삼아야 합니다.
+
+반드시 지켜야 할 규칙:
+1. 검증되지 않은 "최신" 사건, 특정 인물, 특정 작품명, 특정 날짜의 실제 뉴스를 소재로 삼지 마세요 — 시점에 상관없이 보편적으로 통용되는 문화 현상이나 관용 표현만 선택하세요.
+2. 아래 "이미 다룬 주제들"과 소재·주제가 겹치면 안 됩니다. 같은 소재를 다른 제목으로 재탕하지 마세요.
+3. 학습자가 실생활에서 바로 쓸 수 있는 영어 표현(관용구, 구동사, 구어체 표현)이 본문에 자연스럽게 등장할 수 있는 소재를 고르세요.
+4. topicBrief는 한국어로 1~2문장, 이 소재가 정확히 무엇인지 설명하세요 — 이후 본문을 쓸 작가가 topicBrief만 보고 바로 글을 쓸 수 있을 만큼 구체적이어야 합니다.
+5. 다른 설명 없이, 아래 JSON 스키마와 정확히 일치하는 JSON 객체만 출력하세요.
+
+JSON 스키마:
+{
+  "englishTitle": "English title",
+  "koreanTitle": "한국어 제목",
+  "topicBrief": "한국어 1~2문장 소재 설명"
+}`;
+
+function buildEditorialTopicUserPrompt(
+  category: Category,
+  existingTitles: { englishTitle: string; koreanTitle: string }[],
+  priorFailureReason?: string,
+): string {
+  const existingTitleLines = existingTitles.map((t) => `- ${t.englishTitle} / ${t.koreanTitle}`).join("\n");
+
+  const retryNote = priorFailureReason
+    ? `\n\n[이전 시도 실패 — 다시 선정]\n바로 전 시도는 다음 이유로 거부되었습니다: ${priorFailureReason}\n같은 문제가 반복되지 않게 다른 소재를 다시 고르세요.`
+    : "";
+
+  return `카테고리: ${category}
+
+이미 다룬 주제들 (겹치면 안 됩니다):
+${existingTitleLines}
+
+위 규칙을 지켜 새로운 소재를 하나 선정하고 JSON 객체 하나만 출력하세요.${retryNote}`;
+}
+
+function parseEditorialTopic(raw: EditorialTopicJson): EditorialTopicPick | null {
+  if (!isNonEmptyString(raw.englishTitle) || !isNonEmptyString(raw.koreanTitle) || !isNonEmptyString(raw.topicBrief)) {
+    return null;
+  }
+  return { englishTitle: raw.englishTitle, koreanTitle: raw.koreanTitle, topicBrief: raw.topicBrief };
+}
+
+type EditorialTopicAttemptResult = { ok: true; topic: EditorialTopicPick } | { ok: false; reason: string };
+
+async function attemptTopicSelection(
+  category: Category,
+  existingTitles: { englishTitle: string; koreanTitle: string }[],
+  attempt: number,
+  priorFailureReason: string | undefined,
+): Promise<EditorialTopicAttemptResult> {
+  const content = await trackedCallOpenAi(
+    EDITORIAL_TOPIC_SYSTEM_PROMPT,
+    buildEditorialTopicUserPrompt(category, existingTitles, priorFailureReason),
+  );
+  if (!content) {
+    console.error(`[llm/editorial] ${category}: topic selection attempt ${attempt} got no completion`);
+    return { ok: false, reason: "응답을 받지 못했습니다" };
+  }
+
+  let raw: EditorialTopicJson;
+  try {
+    raw = JSON.parse(content) as EditorialTopicJson;
+  } catch {
+    console.error(`[llm/editorial] ${category}: topic selection attempt ${attempt} invalid JSON`);
+    return { ok: false, reason: "응답이 유효한 JSON이 아니었습니다" };
+  }
+
+  const topic = parseEditorialTopic(raw);
+  if (!topic) {
+    console.error(`[llm/editorial] ${category}: topic selection attempt ${attempt} didn't match the expected shape`);
+    return { ok: false, reason: "JSON 스키마와 맞지 않았습니다 (필드 누락 또는 빈 문자열)" };
+  }
+
+  const normalizedPickedTitle = normalizePhrase(topic.englishTitle);
+  const isDuplicate = existingTitles.some((existing) => normalizePhrase(existing.englishTitle) === normalizedPickedTitle);
+  if (isDuplicate) {
+    console.error(`[llm/editorial] ${category}: topic selection attempt ${attempt} picked a duplicate title "${topic.englishTitle}"`);
+    return { ok: false, reason: `"${topic.englishTitle}"는 이미 다룬 주제와 겹칩니다 — 다른 소재를 고르세요` };
+  }
+
+  return { ok: true, topic };
+}
+
+// 호출부(/api/cron/daily-editorial)가 카테고리만 넘기면 된다 — 주제 선정부터
+// 본문·표현 생성까지 이 함수 하나로 끝난다. existingTitles/existingPhrases는
+// Supabase에서 조회한 최근 게시 에디토리얼(fetchRecentEditorialContext)을
+// 그대로 넘기면 되고, 하드코딩된 EXISTING_EDITORIAL_TITLES/PHRASES(기존
+// 7개)는 이 함수와 generateCultureEditorialWithLlm 양쪽에서 항상 자동으로
+// 함께 고려된다. 재시도를 모두 소진하면 null을 반환한다(throw하지 않음) —
+// 호출부는 해당 카테고리만 건너뛰고 나머지를 계속 진행해야 한다.
+export async function generateDailyCultureEditorial(
+  category: Category,
+  context: {
+    existingTitles?: { englishTitle: string; koreanTitle: string }[];
+    existingPhrases?: string[];
+  } = {},
+): Promise<GenerateCultureEditorialOutput | null> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return null;
+
+  const existingTitlesForTopicPick = [...EXISTING_EDITORIAL_TITLES, ...(context.existingTitles ?? [])];
+
+  let topicPick: EditorialTopicPick | null = null;
+  let topicFailureReason: string | undefined;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const result = await attemptTopicSelection(category, existingTitlesForTopicPick, attempt, topicFailureReason);
+    if (result.ok) {
+      topicPick = result.topic;
+      break;
+    }
+    topicFailureReason = result.reason;
+  }
+  if (!topicPick) return null;
+
+  const topic: CultureEditorialTopic = { category, ...topicPick };
+  return generateCultureEditorialWithLlm(topic, {
+    existingTitles: context.existingTitles,
+    existingPhrases: context.existingPhrases,
+  });
 }
 
 // ---------------------------------------------------------------------

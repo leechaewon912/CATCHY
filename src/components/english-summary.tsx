@@ -30,8 +30,14 @@ export function EnglishSummary({
     });
   }
 
+  // whitespace-pre-line: englishSummary may contain literal "\n\n"
+  // paragraph breaks (culture editorials, hand-written or GPT-generated)
+  // — without this, consecutive newlines collapse under normal HTML
+  // whitespace handling and the text reads as one run-on block.
+  // Single-paragraph content (no newlines) renders identically either
+  // way, so this is safe for existing RSS-sourced summaries.
   return (
-    <p lang="en" className="text-[15px] leading-8 text-graphite sm:text-[18px]">
+    <p lang="en" className="whitespace-pre-line text-[15px] leading-8 text-graphite sm:text-[18px]">
       {highlightExpressionsInText(text, expressions, handlePhraseClick)}
     </p>
   );

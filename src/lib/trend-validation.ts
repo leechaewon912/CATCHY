@@ -26,10 +26,13 @@ export function hasOfficialOrPlatformSource(trend: Trend): boolean {
 // status가 published여도, 사람이 editorial 단계에서 실수로 기준을 충족하지
 // 못한 콘텐츠를 published로 표시했다면 여기서 다시 걸러낸다 — status 필드를
 // 그대로 신뢰하지 않는다.
+//
+// contentOrigin이 "gpt_editorial"인 콘텐츠(RSS 그라운딩 없이 GPT가 자체
+// 창작한 컬처 에디토리얼)는 출처 교차 확인 자체가 성립하지 않는 콘텐츠라
+// 아래 출처 요건을 면제한다 — RSS 기반 콘텐츠(contentOrigin이 "rss" 또는
+// 비어있음)는 기존 요건을 그대로 적용한다.
 export function isPublishableTrend(trend: Trend): boolean {
-  return (
-    trend.status === "published" &&
-    hasEnoughSources(trend) &&
-    hasOfficialOrPlatformSource(trend)
-  );
+  if (trend.status !== "published") return false;
+  if (trend.contentOrigin === "gpt_editorial") return true;
+  return hasEnoughSources(trend) && hasOfficialOrPlatformSource(trend);
 }

@@ -155,7 +155,11 @@ export default async function TrendDetailPage(
               <h3 className="mb-3 text-[13px] font-medium text-ember">
                 한국어로 읽기
               </h3>
-              <p lang="ko" className="text-kr-body text-kr-body-fluid">
+              {/* whitespace-pre-line: koreanSummary may contain literal
+                  "\n\n" paragraph breaks, same reasoning as
+                  english-summary.tsx's <p> — safe no-op for
+                  single-paragraph (no-newline) summaries. */}
+              <p lang="ko" className="whitespace-pre-line text-kr-body text-kr-body-fluid">
                 {trend.koreanSummary}
               </p>
               {/* story_read_completed — fires once this invisible marker

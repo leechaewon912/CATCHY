@@ -40,6 +40,24 @@ alter table public.trends add constraint trends_category_check check (
   category in ('음악', '영화·시리즈', '밈·인터넷', '라이프스타일', '테크·게임', '스포츠', '글로벌 이슈')
 );
 
+-- `content_origin` distinguishes RSS/GDELT-grounded trends ('rss', the
+-- default — existing rows all backfill to this) from GPT self-generated
+-- "culture editorial" content with no external sources ('gpt_editorial').
+-- src/lib/trend-validation.ts's isPublishableTrend() exempts
+-- 'gpt_editorial' rows from the source-count/official-or-platform checks,
+-- since that content has no sources to cross-check by design — RSS rows
+-- keep the existing checks unchanged.
+-- `english_title` is the English-language title GPT editorials are always
+-- written with (RSS content has none — nullable). See
+-- src/lib/mock-data.ts's Trend["englishTitle"]/Trend["contentOrigin"].
+alter table public.trends add column if not exists content_origin text not null default 'rss';
+alter table public.trends add column if not exists english_title text;
+
+alter table public.trends drop constraint if exists trends_content_origin_check;
+alter table public.trends add constraint trends_content_origin_check check (
+  content_origin in ('rss', 'gpt_editorial')
+);
+
 create table if not exists public.trend_sources (
   id uuid primary key default gen_random_uuid(),
   trend_id text not null references public.trends (id) on delete cascade,
