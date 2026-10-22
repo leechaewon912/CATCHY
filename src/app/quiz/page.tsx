@@ -169,7 +169,7 @@ function QuizTrendPicker({ trends }: { trends: Trend[] }) {
             퀴즈 풀 이야기를 선택해주세요
           </h1>
           <p className="text-kr-body mt-2 text-[14px] text-fog">
-            트렌드별로 배운 표현만 모아서 짧게 복습할 수 있어요.
+            이야기 속에서 만난 영어 표현을 퀴즈로 복습해 보세요.
           </p>
 
           <QuizEntryClient trends={quizzableTrends} />

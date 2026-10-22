@@ -928,7 +928,7 @@ const SEED_DAY_INDEX: number[] = [
 // 전부 월/화/수에만 배치하므로(요청된 5/5/4 합계가 정확히 14), 퀴즈
 // 피커(src/app/quiz/page.tsx의 isGeneratedToday, "오늘 생성"만 보여줌)는
 // 오늘이 월~수가 아닌 날(목~일)엔 고를 거리가 하나도 없다 — 그 경우
-// QuizEntryClient가 이미 가지고 있는 "오늘 생성된 트렌드가 아직 없어요"
+// QuizEntryClient가 이미 가지고 있는 "오늘 생성된 퀴즈가 없어요"
 // 빈 화면 문구가 그대로 뜬다(화면이 깨지지 않음, 별도 처리 불필요).
 function resolveDayAssignments(now: Date): number[] {
   const mondayStartMs = kstThisMondayStartRealUtcMs(now);

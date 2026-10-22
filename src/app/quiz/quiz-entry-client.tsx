@@ -38,7 +38,7 @@ export function QuizEntryClient({ trends }: { trends: QuizPickerTrend[] }) {
   if (trends.length === 0) {
     return (
       <p className="text-kr-body mt-10 text-[14px] text-fog">
-        오늘 생성된 트렌드가 아직 없어요. 잠시 후 다시 확인해주세요.
+        오늘 생성된 퀴즈가 없어요. 잠시 후 다시 확인해주세요.
       </p>
     );
   }
