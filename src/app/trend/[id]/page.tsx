@@ -14,6 +14,7 @@ import {
 import { RecordTrendView } from "@/components/record-trend-view";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { StoryReadTracker } from "@/components/story-read-tracker";
 import { CATEGORY_DISPLAY_LABELS } from "@/lib/category-display";
 import { getTrendDetail, getTrendExpressions } from "@/lib/server/trend-repository";
 import { resolveTrendImage } from "@/lib/trend-image";
@@ -157,6 +158,12 @@ export default async function TrendDetailPage(
               <p lang="ko" className="text-kr-body text-kr-body-fluid">
                 {trend.koreanSummary}
               </p>
+              {/* story_read_completed — fires once this invisible marker
+                  (right after the body's last text) scrolls into view.
+                  Deliberately placed before the "출처 보기" link/
+                  expressions section/footer, so it only measures the
+                  editorial body itself. */}
+              <StoryReadTracker storyId={trend.id} storyTitle={trend.title} category={trend.category} />
             </div>
           </div>
 

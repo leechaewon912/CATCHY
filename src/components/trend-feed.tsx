@@ -5,6 +5,7 @@ import type { RefObject } from "react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/icons";
 import { TrendCard } from "@/components/trend-card";
 import { CATEGORY_DISPLAY_LABELS } from "@/lib/category-display";
+import { trackCategorySelected, trackDayFilterSelected } from "@/lib/mixpanel-client";
 import type { Category, Trend } from "@/lib/mock-data";
 
 // Every filter combination (day × category) paginates the same way once
@@ -369,6 +370,13 @@ export function TrendFeed({
               aria-pressed={isSelected}
               aria-controls="trend-results"
               onClick={() => {
+                // Guards both "initial auto-selected state" (this only
+                // ever runs from a real click, never on mount) and
+                // "re-clicking the already-selected day" in one check —
+                // selectedDay here is still the pre-click value.
+                if (day !== selectedDay) {
+                  trackDayFilterSelected({ selected_day: day, previous_day: selectedDay });
+                }
                 setSelectedDay(day);
                 setCurrentPage(1);
               }}
@@ -389,6 +397,11 @@ export function TrendFeed({
       <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="트렌드 카테고리">
         {CATEGORY_FILTERS.map((category) => (
           <button key={category} type="button" aria-pressed={selectedCategory === category} aria-controls="trend-results" onClick={() => {
+              // Same "skip initial state + skip re-selecting the same
+              // value" guard as the day filter above.
+              if (category !== selectedCategory) {
+                trackCategorySelected({ category_name: category, previous_category: selectedCategory });
+              }
               setSelectedCategory(category);
               setCurrentPage(1);
             }}

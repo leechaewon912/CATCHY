@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 import { BookmarksList } from "@/app/bookmarks/bookmarks-list";
+import { BookmarkPageViewTracker } from "@/components/bookmark-page-view-tracker";
 import { ArrowLeftIcon } from "@/components/icons";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -14,6 +15,7 @@ export const metadata: Metadata = {
 export default function BookmarksPage() {
   return (
     <div className="flex min-h-full flex-col bg-paper">
+      <BookmarkPageViewTracker />
       <SiteHeader />
 
       <main className="flex-1">

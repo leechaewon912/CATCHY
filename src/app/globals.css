@@ -173,7 +173,7 @@ body {
      Same radius as .surface-card-subtle; fill and border color differ
      (cooler, brighter gray per design request). */
   .surface-info-box {
-    @apply rounded-2xl border border-[#E8ECF1] bg-[#F7F9FB];
+    @apply rounded-2xl bg-[#F7F9FB];
   }
 
   /*

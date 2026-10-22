@@ -28,6 +28,10 @@ export function markAmplitudeReady(): void {
   amplitudeReady = true;
 }
 
+export function areAnalyticsReady(): boolean {
+  return mixpanelReady && amplitudeReady;
+}
+
 function track(event: string, properties: Record<string, unknown>): void {
   if (mixpanelReady) {
     try {
@@ -92,18 +96,12 @@ export function trackExpressionSaved(props: {
   track("expression_saved", props);
 }
 
-// The three feedback events below are Amplitude-only, by design — the
-// feedback spec scopes analytics to Amplitude specifically (and the
-// free-text comment is never sent to any analytics vendor, only to
-// Supabase). They bypass the shared track() above on purpose so they
-// never fan out to Mixpanel.
-function trackAmplitudeOnly(event: string, properties: Record<string, unknown>): void {
-  if (!amplitudeReady) return;
-  try {
-    amplitude.track(event, properties);
-  } catch (error) {
-    console.error(`[amplitude] failed to track "${event}"`, error);
-  }
+// Fired once when the saved-expressions page is entered, whether the user
+// arrived through the bookmark navigation link or a direct/bookmarked URL.
+// There is intentionally no expression-level property here: this event is
+// about opening the page, not opening one saved expression.
+export function trackBookmarkPageViewed(): void {
+  track("bookmark_page_viewed", {});
 }
 
 // Fired when the feedback modal (src/components/feedback-modal.tsx) is
@@ -111,7 +109,7 @@ function trackAmplitudeOnly(event: string, properties: Record<string, unknown>):
 // distinct trends viewed + 50% scroll, or opened via the header
 // Feedback button.
 export function trackFeedbackModalViewed(props: { source: "auto" | "header" }): void {
-  trackAmplitudeOnly("Feedback Modal Viewed", props);
+  track("Feedback Modal Viewed", props);
 }
 
 // Fired once feedback has actually saved to Supabase (never before —
@@ -121,7 +119,7 @@ export function trackFeedbackSubmitted(props: {
   rating: number;
   source: "auto" | "header";
 }): void {
-  trackAmplitudeOnly("Feedback Submitted", props);
+  track("Feedback Submitted", props);
 }
 
 // Fired when the modal is closed without submitting — the X button,
@@ -130,7 +128,7 @@ export function trackFeedbackModalDismissed(props: {
   source: "auto" | "header";
   dismiss_method: "close" | "maybe_later" | "overlay" | "escape";
 }): void {
-  trackAmplitudeOnly("Feedback Modal Dismissed", props);
+  track("Feedback Modal Dismissed", props);
 }
 
 // Fired once when a quiz's question UI actually mounts (src/app/quiz/
@@ -152,4 +150,42 @@ export function trackQuizCompleted(props: {
   question_count: number;
 }): void {
   track("quiz_completed", props);
+}
+
+// The events below use the same shared track() path as the existing funnel
+// events, so Amplitude and Mixpanel receive identical names and properties.
+
+// Fired when the user actually clicks a category filter chip
+// (src/components/trend-feed.tsx) — never on the page's initial
+// "전체" default or on re-selecting the chip that's already active
+// (the call site checks `category !== selectedCategory` before
+// calling this, using the pre-update state as previous_category).
+export function trackCategorySelected(props: {
+  category_name: string;
+  previous_category: string;
+}): void {
+  track("category_selected", props);
+}
+
+// Fired when the user actually clicks a day filter tab
+// (src/components/trend-feed.tsx) — same "skip the initial value and
+// re-selecting the same day" guard as trackCategorySelected above.
+export function trackDayFilterSelected(props: {
+  selected_day: string;
+  previous_day: string;
+}): void {
+  track("day_filter_selected", props);
+}
+
+// Fired once per detail-page visit, when the end of the editorial body
+// (English + Korean summary — not the expressions section or sources
+// footer) scrolls into view (src/components/story-read-tracker.tsx).
+// This means "reached the end of the body," not "read every word."
+export function trackStoryReadCompleted(props: {
+  story_id: string;
+  story_title: string;
+  category_name: string;
+  reading_time_seconds: number;
+}): void {
+  track("story_read_completed", props);
 }
