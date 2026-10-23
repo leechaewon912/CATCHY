@@ -1,11 +1,25 @@
 import "server-only";
 
 import type { Category } from "@/lib/mock-data";
+import { getCultureEditorialTrends } from "@/lib/mock-data.culture-editorials";
 import { ALL_CATEGORIES, CATEGORY_SLUGS } from "@/lib/server/gdelt";
 import { isAuthorizedAdminRequest } from "@/lib/server/admin-auth";
 import { generateDailyCultureEditorial } from "@/lib/server/generate-culture-editorial-with-llm";
 import { fetchRecentEditorialContext, upsertTrend } from "@/lib/server/db/save-trends";
 import { getSupabaseServerClient } from "@/lib/server/supabase-client";
+
+// The 14 Mock culture editorials' titles/phrases, merged into every
+// generation's dedup context (alongside Supabase's recently-published
+// gpt_editorial titles/phrases) so autonomous topic/expression picks never
+// duplicate the hand-curated Mock set either — both sources render
+// together on the live site once MOCK_MODE is on (see trend-repository.ts).
+function mockEditorialDedupContext(): { titles: { englishTitle: string; koreanTitle: string }[]; phrases: string[] } {
+  const mockTrends = getCultureEditorialTrends();
+  return {
+    titles: mockTrends.map((trend) => ({ englishTitle: trend.englishTitle ?? trend.title, koreanTitle: trend.title })),
+    phrases: mockTrends.flatMap((trend) => trend.expressions.map((expression) => expression.phrase)),
+  };
+}
 
 // Vercel Cron hits this with GET (see vercel.json: "0 0 * * *" UTC =
 // 09:00 KST). Protected by the same ADMIN_CRON_SECRET bearer check as the
@@ -110,8 +124,26 @@ export async function GET(request: Request) {
   const coveredCategories = await fetchTodaysCoveredCategories(todayStartIso);
   const candidateCategories = ALL_CATEGORIES.filter((category) => !coveredCategories.has(category));
 
+  // Hard cap: at most MAX_DAILY_EDITORIALS total for the KST day, counted
+  // across however many times this cron has already run today — not just
+  // "don't repeat a category". Without this, a duplicate/manual trigger
+  // after the scheduled run already hit its target would keep adding more
+  // (confirmed happening once in production: a same-day re-run pushed one
+  // day to 7 published items instead of the intended 4-5).
+  const remainingBudget = MAX_DAILY_EDITORIALS - coveredCategories.size;
+  if (remainingBudget <= 0) {
+    return Response.json({
+      dateStamp,
+      excludedAlreadyCovered: [...coveredCategories],
+      generated: [],
+      failed: [],
+      skipped: `오늘 이미 ${coveredCategories.size}개 생성되어 하루 최대치(${MAX_DAILY_EDITORIALS}개)에 도달했습니다 — 더 생성하지 않았습니다.`,
+    });
+  }
+
   const targetCount = Math.min(
     candidateCategories.length,
+    remainingBudget,
     MIN_DAILY_EDITORIALS + Math.floor(Math.random() * (MAX_DAILY_EDITORIALS - MIN_DAILY_EDITORIALS + 1)),
   );
   const selectedCategories = pickRandomDistinct(candidateCategories, targetCount);
@@ -131,8 +163,16 @@ export async function GET(request: Request) {
       try {
         // Re-fetched each attempt (and naturally reflects any categories
         // already generated earlier in this same run) so dedup context
-        // stays fresh across the whole run, not just across days.
-        const context = await fetchRecentEditorialContext();
+        // stays fresh across the whole run, not just across days. Mock
+        // titles/phrases are static (recomputed cheaply, no I/O) and
+        // merged in every time so the autonomous picks avoid the 14
+        // hand-curated topics too.
+        const dbContext = await fetchRecentEditorialContext();
+        const mockContext = mockEditorialDedupContext();
+        const context = {
+          existingTitles: [...mockContext.titles, ...dbContext.existingTitles],
+          existingPhrases: [...mockContext.phrases, ...dbContext.existingPhrases],
+        };
         const output = await generateDailyCultureEditorial(category, context);
         if (!output) {
           lastReason = "생성 실패 (LLM 미설정 또는 모든 내부 재시도 소진)";

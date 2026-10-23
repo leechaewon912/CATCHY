@@ -42,22 +42,35 @@ function rankTrends(trends: Trend[]): Trend[] {
   });
 }
 
-// DB-first, mock-data fallback. Used by the home page and /trend/[id]
-// so published Supabase content (collected via GDELT, see
-// src/lib/server/collect-trends.ts) is used when present, and the
-// hand-written mock trends in src/lib/mock-data.ts keep working
-// untouched when it isn't (no Supabase configured, empty tables, or a
-// query error).
+// MOCK_MODE semantics: the 14 hand/GPT-written culture editorials PLUS
+// any real GPT self-generated content from Supabase (content_origin=
+// "gpt_editorial" — getPublishedTrendsFromDb/getTrendByIdFromDb already
+// filter to that origin, see read-trends.ts). RSS-origin rows are never
+// read here regardless of MOCK_MODE. This lets the daily-editorial cron's
+// output accumulate on the live site immediately, without ever flipping
+// MOCK_MODE off or touching the 91 stored-but-hidden RSS rows.
+//
+// Non-MOCK_MODE path is untouched: DB-first (any origin), falling back to
+// src/lib/mock-data.ts's hand-written demo trends when Supabase has
+// nothing published.
 export async function getHomeTrends(): Promise<Trend[]> {
-  if (MOCK_MODE) return rankTrends(getCultureEditorialTrends());
-  const dbTrends = await getPublishedTrendsFromDb();
-  return rankTrends(dbTrends ?? mockTrends);
+  if (!MOCK_MODE) {
+    const dbTrends = await getPublishedTrendsFromDb();
+    return rankTrends(dbTrends ?? mockTrends);
+  }
+  const gptTrends = await getPublishedTrendsFromDb();
+  return rankTrends([...getCultureEditorialTrends(), ...(gptTrends ?? [])]);
 }
 
 export async function getTrendDetail(id: string): Promise<Trend | undefined> {
-  if (MOCK_MODE) return getCultureEditorialTrends().find((trend) => trend.id === id);
+  if (!MOCK_MODE) {
+    const dbTrend = await getTrendByIdFromDb(id);
+    return dbTrend ?? getMockTrendById(id);
+  }
+  const mockMatch = getCultureEditorialTrends().find((trend) => trend.id === id);
+  if (mockMatch) return mockMatch;
   const dbTrend = await getTrendByIdFromDb(id);
-  return dbTrend ?? getMockTrendById(id);
+  return dbTrend ?? undefined;
 }
 
 export async function getTrendExpressions(trendId: string): Promise<Expression[]> {
