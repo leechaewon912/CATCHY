@@ -355,7 +355,7 @@ export function TrendFeed({
         <p className="mt-1 text-[13px] text-fog" role="status" aria-live="polite">
           {selectedDay} ·{" "}
           {selectedCategory === "전체" ? selectedCategory : CATEGORY_DISPLAY_LABELS[selectedCategory]} ·{" "}
-          {visibleItems.length}개 트렌드
+          {visibleItems.length}개 이야기
         </p>
       </div>
 
