@@ -14,7 +14,7 @@ export function QuizBanner() {
             방금 배운 표현, 기억하고 있나요?
           </h2>
           <p className="text-kr-body max-w-md break-keep text-[14px] text-fog">
-            트렌드별로 모은 표현을 짧은 퀴즈로 바로 복습해보세요.
+            이야기별로 모은 표현을 짧은 퀴즈로 바로 복습해보세요.
           </p>
         </div>
 

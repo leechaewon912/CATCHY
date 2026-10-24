@@ -32,7 +32,8 @@ export function TrendHero() {
         </h1>
 
         <p className="text-kr-body motion-safe:animate-hero-fade-up-delay mx-auto mt-6 max-w-[580px] break-keep text-[16px] text-[#6B7280] sm:mt-7 sm:text-[18px] md:text-[19px] lg:text-[20px]">
-          흥미로운 이야기 속에서 일상에 쓰이는 영어 표현을 발견해 보세요.
+          흥미로운 이야기 속에서
+          <br className="sm:hidden" /> 일상에 쓰이는 영어 표현을 발견해 보세요.
         </p>
       </div>
     </section>
