@@ -172,6 +172,7 @@ export async function GET(request: Request) {
         const context = {
           existingTitles: [...mockContext.titles, ...dbContext.existingTitles],
           existingPhrases: [...mockContext.phrases, ...dbContext.existingPhrases],
+          existingOpenings: dbContext.existingOpenings,
         };
         const output = await generateDailyCultureEditorial(category, context);
         if (!output) {

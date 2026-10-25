@@ -102,6 +102,73 @@ function normalizePhrase(phrase: string): string {
     .trim();
 }
 
+// 카테고리별 오프닝 전략 — "You...", "Have you ever...", "Picture this..."
+// 같은 패턴이 카테고리와 무관하게 반복되는 문제를 막기 위해, 카테고리마다
+// 다른 구체적 장면 유형을 지정한다. buildEditorialSummaryUserPrompt가 이걸
+// 해당 카테고리에 대한 지시로 프롬프트에 그대로 꽂아 넣는다.
+const CATEGORY_OPENING_GUIDANCE: Record<Category, string> = {
+  "음악": "특정 청취 상황·소리·리듬·기억에서 시작하세요 — 예: 특정 노래가 흘러나오는 순간, 이어폰 너머로 들리는 소리, 어떤 리듬에 몸이 반응하는 순간.",
+  "영화·시리즈": "시청 중인 구체적 장면, 등장인물의 대사, 또는 스포일러를 피하려는 상황에서 시작하세요.",
+  "밈·인터넷": "친구와 실제로 메시지(문자·DM·단톡방)를 주고받는 구체적 상황에서 시작하세요.",
+  "라이프스타일": "어떤 행동이나 습관이 달라지는 구체적 순간에서 시작하세요.",
+  "테크·게임": "기기·앱·게임을 실제로 사용하는 구체적 순간에서 시작하세요.",
+  "스포츠": "경기장 안 장면, 관중의 반응, 또는 팬의 구체적 행동에서 시작하세요.",
+  "글로벌 이슈": "사람들이 실제로 그 변화를 마주하는 구체적 순간(거리, 모임, 대화 등)에서 시작하세요.",
+};
+
+// 카테고리에 상관없이 반복되는 정형화된 오프닝 — 첫 문장이 이 패턴으로
+// 시작하면 attemptEditorialSummaryGeneration이 바로 재시도시킨다(프롬프트
+// 지시만으로는 모델이 가끔 다시 쓰는 걸 막기 위한 하드 게이트).
+const BANNED_OPENING_PATTERNS: RegExp[] = [
+  /^you'?re\b/i,
+  /^you\b/i,
+  /^have you ever\b/i,
+  /^picture this\b/i,
+  /^imagine\b/i,
+  /^in today'?s\b/i,
+  /^these days\b/i,
+  /^there'?s something\b/i,
+  /^when was the last time\b/i,
+];
+
+function extractFirstSentence(text: string): string {
+  return text.trim().split(/(?<=[.!?])\s+/)[0]?.trim() ?? "";
+}
+
+function matchedBannedOpeningPattern(firstSentence: string): string | null {
+  const match = BANNED_OPENING_PATTERNS.find((pattern) => pattern.test(firstSentence));
+  return match ? match.source : null;
+}
+
+// 임베딩 없이 "같은 패턴으로 시작했는가"를 근사하는 가벼운 휴리스틱 —
+// 첫 문장 앞쪽 몇 단어의 토큰 겹침 비율로 판단한다. 완벽한 의미 유사도
+// 판별기는 아니지만 "You + 동사" 같은 구조 반복, 같은 주어로 시작하는
+// 패턴을 효과적으로 잡아낸다.
+function openingTokens(sentence: string): string[] {
+  return sentence
+    .toLowerCase()
+    .replace(/[^a-z\s']/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 8);
+}
+
+function openingSimilarityScore(a: string, b: string): number {
+  const tokensA = openingTokens(a);
+  const tokensB = openingTokens(b);
+  if (tokensA.length === 0 || tokensB.length === 0) return 0;
+  const setB = new Set(tokensB);
+  const overlap = tokensA.filter((token) => setB.has(token)).length;
+  return overlap / Math.min(tokensA.length, tokensB.length);
+}
+
+const OPENING_SIMILARITY_THRESHOLD = 0.5;
+
+function findTooSimilarOpening(firstSentence: string, existingOpenings: string[]): string | null {
+  return existingOpenings.find((existing) => openingSimilarityScore(firstSentence, existing) >= OPENING_SIMILARITY_THRESHOLD) ?? null;
+}
+
 // 기존 7개 컬처 에디토리얼의 제목 — mock-data.culture-editorials.ts를
 // import하지 않고 여기 직접 적어둔다. 그 파일은 손으로 쓴 7개 콘텐츠를
 // "보존"해야 하는 대상이라, 이 생성기 쪽에서 실수로 건드리거나 의존성을
@@ -244,15 +311,13 @@ const EDITORIAL_SUMMARY_SYSTEM_PROMPT = `당신은 CATCHY라는 한국어-영어
 1. 아래 "작성할 주제"에서 벗어나지 말고, 그 주제에 대해서만 쓰세요. 주제를 임의로 바꾸거나 다른 소재를 섞지 마세요.
 2. 특정 인물, 특정 작품명, 특정 사건, 특정 날짜의 실제 뉴스를 인용하거나 마치 사실인 것처럼 쓰지 마세요. 검증되지 않은 "최신" 유행처럼 포장하지 말고, 보편적으로 이미 널리 통용되는 문화 현상 설명에 집중하세요. "Research suggests...", "Studies show..." 같은 가짜 권위를 빌리는 문장도 쓰지 마세요 — 근거 없는 주장이 됩니다.
 3. 외부 뉴스 기사를 그대로 복제하거나 요약한 것처럼 보이면 안 됩니다 — 완전히 새로 쓴 문장이어야 합니다.
-4. "X is a phenomenon known as...", "In today's digital age, the concept of...", "In a world where..." 같은 사전적 정의형·일반론형 문장으로 시작하지 마세요. 대신 아래 오프닝 방식 중 이 주제에 가장 잘 맞는 **하나**를 고르세요 — **매번 질문형으로 시작하지 말고, 질문형은 가끔만 쓰세요**:
-   (a) 독자가 겪어봤을 법한 구체적인 장면 묘사("You open your streaming app...")
-   (b) 단정적인 관찰/서술로 바로 시작("Your friend shows up wearing...", "Everyone has that one song that...")
-   (c) 짧은 가상 대화나 인용으로 시작
-   (d) 질문형 — 다른 방식이 부자연스러울 때만, 드물게
+4. "X is a phenomenon known as...", "In today's digital age, the concept of...", "In a world where..." 같은 사전적 정의형·일반론형 문장으로 시작하지 마세요. **아래 "이 카테고리의 오프닝 전략" 지시를 따라 이 주제에 맞는 구체적 장면으로 시작하세요** — 질문형으로 시작하지 말고(질문형은 다른 방식이 전혀 안 어울릴 때만 아주 가끔), 짧은 가상 대화·인용으로 여는 것도 가능합니다.
+   **절대 다음 단어/구문으로 문장을 시작하지 마세요 (카테고리와 무관하게 금지)**: "You", "You're", "Have you ever", "Picture this", "Imagine", "In today's", "These days", "There's something", "When was the last time". 이 표현들은 이미 너무 많이 반복됐습니다 — 주어부터 다르게 쓰세요(예: 소리·장면·사물·행동을 주어로 시작).
+   **아래 "최근 사용된 오프닝 문장들"과 첫 문장의 구조(주어, 문장 패턴, 장면 묘사 방식)가 비슷해서도 안 됩니다** — 겹치면 다른 방식으로 다시 쓰세요.
 5. 글 전체에서 추상적인 일반론("this reflects our desire to...", "this phenomenon highlights...")을 최소화하고, 구체적인 행동·장면·대사로 보여주세요. 설명하지 말고 보여주세요. **마지막 문장도 매번 감성적 성찰("Maybe we just want...", "어쩌면 우리는...")로 끝내지 마세요** — 가벼운 코멘트, 구체적 예시로의 복귀, 실용적인 한마디 등으로 마무리를 다양화하세요. 감성적 성찰형 마무리는 가끔만 쓰세요.
 6. englishSummary는 **정확히 130~160단어** 분량이어야 합니다 (130단어보다 적거나 160단어보다 많으면 안 됨). **자연스럽게 2~3개 문단으로 나누고, 문단 사이는 빈 줄 하나("\n\n")로 구분하세요** — 한 문단으로 쭉 이어 쓰지 마세요. 각 문단은 최소 2문장 이상이어야 합니다.
-7. koreanSummary는 englishSummary와 **같은 내용을 담은** 자연스러운 한국어 번역이어야 합니다 — 문장 대 문장으로 기계적으로 직역하지 말고, 문장 순서나 접속사를 한국어답게 재구성해도 됩니다(내용 추가·누락은 금지). 번역투("~것입니다", "~라고 할 수 있습니다"의 과도한 반복)를 피하고 친근한 구어체로 쓰세요. **englishSummary와 동일하게 빈 줄("\n\n")로 나눈 같은 개수의 문단 구조를 유지하세요** — 한국어에서는 한 문단으로 합치지 마세요.
-8. title/summary/koreanSummary는 한국어로, englishTitle/englishSummary는 영어로 쓰세요. 섞어 쓰지 마세요.
+7. koreanSummary는 englishSummary와 **같은 내용을 담은** 자연스러운 한국어 번역이어야 합니다 — 문장 대 문장으로 기계적으로 직역하지 말고, 문장 순서나 접속사를 한국어답게 재구성해도 됩니다(내용 추가·누락은 금지). 번역투("~것입니다", "~라고 할 수 있습니다"의 과도한 반복)를 피하고 친근한 구어체로 쓰세요. **englishSummary와 동일하게 빈 줄("\n\n")로 나눈 같은 개수의 문단 구조를 유지하세요** — 한국어에서는 한 문단으로 합치지 마세요. **koreanSummary는 반드시 해요체로만 쓰세요(문장이 "~해요", "~예요", "~이에요", "~네요" 등으로 끝나야 합니다) — "~한다", "~이다", "~합니다", "~입니다", "~하십시오" 같은 문어체·격식체 종결어미는 절대 쓰지 마세요.**
+8. title/summary/koreanSummary는 한국어로, englishTitle/englishSummary는 영어로 쓰세요. 섞어 쓰지 마세요. **summary(한 줄 요약)가 완전한 문장으로 끝난다면 koreanSummary와 같은 기준으로 해요체를 쓰세요. title은 "느림의 미학"처럼 명사구로 끝내도 되지만, 문장형 제목을 쓸 경우 해요체로 끝내고("~하는 이유예요" 등) "~한다/~이다"체로 끝내지 마세요 — 제목들끼리 종결 방식이 들쭉날쭉하지 않게 하세요.**
 9. 아래 "이미 존재하는 기존 제목들"과 주제·소재가 겹치면 안 됩니다.
 10. 아래 "이 주제에서 활용하면 좋은 표현"이 주어졌다면, 그 표현들이 본문 흐름에 자연스럽게 등장하도록 글을 구성해 보세요 — 다만 문장이 어색해질 정도로 억지로 끼워 넣지는 마세요. 자연스럽게 안 들어가면 빼도 됩니다.
 11. ${STYLE_REFERENCE_EXAMPLES}
@@ -270,11 +335,16 @@ JSON 스키마:
 function buildEditorialSummaryUserPrompt(
   topic: CultureEditorialTopic,
   existingTitles: { englishTitle: string; koreanTitle: string }[],
+  existingOpenings: string[],
   priorFailureReason?: string,
 ): string {
   const existingTitleLines = existingTitles
     .map((t) => `- ${t.englishTitle} / ${t.koreanTitle}`)
     .join("\n");
+
+  const existingOpeningLines = existingOpenings.length
+    ? existingOpenings.map((o) => `- ${o}`).join("\n")
+    : "(아직 없음)";
 
   const preferredExpressionsLine = topic.preferredExpressions?.length
     ? `\n이 주제에서 활용하면 좋은 표현 (자연스러울 때만 — 억지로 끼워 넣지 마세요): ${topic.preferredExpressions.join(", ")}`
@@ -288,6 +358,8 @@ function buildEditorialSummaryUserPrompt(
 
   return `카테고리: ${topic.category}
 
+이 카테고리의 오프닝 전략 (첫 문장은 반드시 이 방향을 따르세요): ${CATEGORY_OPENING_GUIDANCE[topic.category]}
+
 작성할 주제:
 - 영문 제목(참고용 — 그대로 쓰거나 자연스럽게 다듬어도 됨): ${topic.englishTitle}
 - 한글 제목(참고용 — 그대로 쓰거나 자연스럽게 다듬어도 됨): ${topic.koreanTitle}
@@ -295,6 +367,9 @@ function buildEditorialSummaryUserPrompt(
 
 이미 존재하는 기존 제목들 (주제가 겹치면 안 됩니다):
 ${existingTitleLines}
+
+최근 사용된 오프닝 문장들 (첫 문장의 구조·주어·장면 묘사 방식이 이것들과 겹치면 안 됩니다):
+${existingOpeningLines}
 
 위 규칙을 지켜 JSON 객체 하나만 출력하세요.${retryNote}`;
 }
@@ -326,12 +401,13 @@ type EditorialSummaryAttemptResult =
 async function attemptEditorialSummaryGeneration(
   topic: CultureEditorialTopic,
   existingTitles: { englishTitle: string; koreanTitle: string }[],
+  existingOpenings: string[],
   attempt: number,
   priorFailureReason: string | undefined,
 ): Promise<EditorialSummaryAttemptResult> {
   const content = await trackedCallOpenAi(
     EDITORIAL_SUMMARY_SYSTEM_PROMPT,
-    buildEditorialSummaryUserPrompt(topic, existingTitles, priorFailureReason),
+    buildEditorialSummaryUserPrompt(topic, existingTitles, existingOpenings, priorFailureReason),
   );
   if (!content) {
     console.error(`[llm/editorial] ${topic.category}/"${topic.englishTitle}": summary attempt ${attempt} got no completion`);
@@ -378,6 +454,32 @@ async function attemptEditorialSummaryGeneration(
     };
   }
 
+  // 오프닝 반복 방지 — 카테고리와 무관하게 쓰이는 정형화된 시작 패턴
+  // ("You...", "Have you ever..." 등)을 먼저 하드 차단하고, 통과했더라도
+  // 최근 생성분과 첫 문장 구조가 너무 비슷하면 재시도시킨다.
+  const firstSentence = extractFirstSentence(summary.englishSummary);
+  const bannedPattern = matchedBannedOpeningPattern(firstSentence);
+  if (bannedPattern) {
+    console.error(
+      `[llm/editorial] ${topic.category}/"${topic.englishTitle}": summary attempt ${attempt} opening matched banned pattern ${bannedPattern} ("${firstSentence}")`,
+    );
+    return {
+      ok: false,
+      reason: `첫 문장("${firstSentence}")이 금지된 시작 패턴을 썼습니다 — "${CATEGORY_OPENING_GUIDANCE[topic.category]}" 방향으로, 전혀 다른 주어와 구조로 다시 시작하세요`,
+    };
+  }
+
+  const similarOpening = findTooSimilarOpening(firstSentence, existingOpenings);
+  if (similarOpening) {
+    console.error(
+      `[llm/editorial] ${topic.category}/"${topic.englishTitle}": summary attempt ${attempt} opening too similar to "${similarOpening}"`,
+    );
+    return {
+      ok: false,
+      reason: `첫 문장("${firstSentence}")이 최근 오프닝("${similarOpening}")과 구조가 너무 비슷합니다 — 다른 장면·주어·문장 구조로 다시 쓰세요`,
+    };
+  }
+
   return { ok: true, summary };
 }
 
@@ -418,6 +520,7 @@ const EDITORIAL_EXPRESSIONS_SYSTEM_PROMPT = `당신은 CATCHY라는 한국어-�
 7. 언어는 필드마다 반드시 다음과 같이 쓰세요 — 섞어 쓰지 마세요:
    - 한국어로 쓸 것: meaningKo, nuance, exampleKo, comparisonNuanceDiff
    - 영어로 쓸 것: phrase, exampleEn, comparisonPhrase
+   **meaningKo를 포함해 모든 한국어 필드를 예외 없이 친절한 해요체(존댓말)로 쓰세요** — "~해요", "~예요", "~이에요", "~네요" 등으로 끝내고, "~한다", "~이다", "~합니다", "~입니다" 같은 격식체·사전형(기본형)으로 끝내지 마세요. meaningKo도 "참여하다"가 아니라 "참여한다는 뜻이에요"처럼 친근한 존댓말 문장으로 쓰세요.
 8. 다른 설명 없이, 아래 JSON 스키마와 정확히 일치하는 JSON 객체만 출력하세요.
 
 JSON 스키마:
@@ -687,6 +790,7 @@ export async function generateDailyCultureEditorial(
   context: {
     existingTitles?: { englishTitle: string; koreanTitle: string }[];
     existingPhrases?: string[];
+    existingOpenings?: string[];
   } = {},
 ): Promise<GenerateCultureEditorialOutput | null> {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -710,6 +814,7 @@ export async function generateDailyCultureEditorial(
   return generateCultureEditorialWithLlm(topic, {
     existingTitles: context.existingTitles,
     existingPhrases: context.existingPhrases,
+    existingOpenings: context.existingOpenings,
   });
 }
 
@@ -725,6 +830,7 @@ export async function generateCultureEditorialWithLlm(
   options: {
     existingTitles?: { englishTitle: string; koreanTitle: string }[];
     existingPhrases?: string[];
+    existingOpenings?: string[];
   } = {},
 ): Promise<GenerateCultureEditorialOutput | null> {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -734,11 +840,12 @@ export async function generateCultureEditorialWithLlm(
 
   const existingTitles = [...EXISTING_EDITORIAL_TITLES, ...(options.existingTitles ?? [])];
   const existingPhrases = [...EXISTING_EDITORIAL_PHRASES, ...(options.existingPhrases ?? [])];
+  const existingOpenings = options.existingOpenings ?? [];
 
   let summary: EditorialSummaryOutput | null = null;
   let summaryFailureReason: string | undefined;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    const result = await attemptEditorialSummaryGeneration(topic, existingTitles, attempt, summaryFailureReason);
+    const result = await attemptEditorialSummaryGeneration(topic, existingTitles, existingOpenings, attempt, summaryFailureReason);
     if (result.ok) {
       summary = result.summary;
       break;
@@ -766,4 +873,231 @@ export async function generateCultureEditorialWithLlm(
   if (!expressions) return null;
 
   return { ...summary, expressions };
+}
+
+// ---------------------------------------------------------------------
+// 백필: 이미 저장된 gpt_editorial 행의 오프닝 반복/한국어 문체 문제를
+// 고치는 재작성 진입점. generateCultureEditorialWithLlm과 달리 새 주제를
+// 고르지 않는다 — 기존 title/카테고리/영어 표현(phrase)은 그대로 두고
+// (1) 영어 본문 오프닝만 다시 쓰고 (2) 한국어 필드 전부를 해요체로
+// 통일한다. scripts/ 아래 일회성 백필 스크립트 전용 — 자동 cron에서는
+// 호출하지 않는다.
+// ---------------------------------------------------------------------
+
+export type EditorialRewriteInput = {
+  category: Category;
+  title: string;
+  englishTitle: string;
+  summary: string;
+  englishSummary: string;
+  expressions: { phrase: string; exampleEn: string; comparisonPhrase: string }[];
+};
+
+export type EditorialRewriteOutput = {
+  title: string;
+  summary: string;
+  englishSummary: string;
+  koreanSummary: string;
+  expressions: { phrase: string; meaningKo: string; nuance: string; exampleKo: string; comparisonNuanceDiff: string }[];
+};
+
+type EditorialRewriteJson = {
+  title?: unknown;
+  summary?: unknown;
+  englishSummary?: unknown;
+  koreanSummary?: unknown;
+  expressions?: unknown;
+};
+
+type EditorialRewriteExpressionJson = {
+  phrase?: unknown;
+  meaningKo?: unknown;
+  nuance?: unknown;
+  exampleKo?: unknown;
+  comparisonNuanceDiff?: unknown;
+};
+
+const EDITORIAL_REWRITE_SYSTEM_PROMPT = `당신은 CATCHY라는 한국어-영어 학습 서비스의 콘텐츠 편집자입니다.
+이미 게시된 "컬처 에디토리얼" 글 하나를 받아서, 아래 두 가지만 고칩니다 — 그 외 내용·주제·사실관계는 바꾸지 않습니다:
+
+1. 영어 본문(englishSummary)의 **오프닝(첫 문장~첫 문단)만** 자연스럽게 다시 씁니다. 나머지 문장/문단은 가능한 한 그대로 유지하되, 오프닝이 바뀌면서 앞뒤가 어색해지지 않도록 필요한 최소한의 연결만 다듬으세요.
+2. 한국어 쪽(title/summary/koreanSummary/표현 카드의 한국어 필드)을 전부 해요체로 통일합니다.
+
+반드시 지켜야 할 규칙:
+1. 주제, 핵심 메시지, 카테고리는 절대 바꾸지 마세요 — 완전히 다른 글이 되면 안 됩니다.
+2. **아래 "반드시 본문에 남아있어야 하는 표현"에 적힌 영어 표현은 전부 새 englishSummary 안에 단어 순서 그대로 다시 등장해야 합니다.** 이 표현들은 절대 삭제·변형하지 마세요(시제/단수복수 정도의 변화는 허용).
+3. "이 카테고리의 오프닝 전략"을 따라 새 오프닝을 쓰고, "You", "You're", "Have you ever", "Picture this", "Imagine", "In today's", "These days", "There's something", "When was the last time"로 시작하지 마세요. "최근/다른 글의 오프닝들"과도 구조가 겹치면 안 됩니다.
+4. englishSummary는 기존과 비슷한 분량(130~160단어)과 문단 구성(빈 줄로 구분된 2~3문단)을 유지하세요.
+5. koreanSummary는 새 englishSummary 전체와 같은 내용을 담은 자연스러운 번역이어야 하고, **반드시 해요체로 쓰세요**("~해요", "~예요", "~이에요", "~네요" 등) — "~한다", "~이다", "~합니다", "~입니다"체는 쓰지 마세요. englishSummary와 같은 문단 수로 나누세요.
+6. title은 기존 제목의 핵심 의미를 유지하면서 자연스럽게 다듬어도 됩니다 — 완전히 다른 제목으로 바꾸지 마세요. 문장형이면 해요체로 끝내세요(명사구는 그대로 둬도 됩니다). summary(한 줄 요약)도 완전한 문장이면 해요체로 쓰세요.
+7. expressions 배열은 입력받은 순서·개수를 그대로 유지하고, 각 항목의 phrase는 입력받은 영어 표현을 **토씨 하나 바꾸지 말고 그대로** 돌려주세요. meaningKo/nuance/exampleKo/comparisonNuanceDiff만 다시 쓰되, 의미는 바꾸지 말고 **meaningKo를 포함해 예외 없이 전부 친절한 해요체(존댓말)로** 쓰세요 — "참여하다"가 아니라 "참여한다는 뜻이에요"처럼 문장으로 풀어서 존댓말로 쓰세요. 사전형(기본형)으로 끝내지 마세요.
+8. 다른 설명 없이, 아래 JSON 스키마와 정확히 일치하는 JSON 객체만 출력하세요.
+
+JSON 스키마:
+{
+  "title": "한국어 제목",
+  "summary": "한국어 한 줄 요약",
+  "englishSummary": "English paragraph, 130-160 words, 2-3 paragraphs separated by a blank line",
+  "koreanSummary": "englishSummary의 해요체 한국어 번역",
+  "expressions": [
+    { "phrase": "입력받은 영어 표현 그대로", "meaningKo": "해요체 한국어", "nuance": "해요체 한국어", "exampleKo": "해요체 한국어", "comparisonNuanceDiff": "해요체 한국어" }
+  ]
+}`;
+
+function buildEditorialRewriteUserPrompt(
+  input: EditorialRewriteInput,
+  existingOpenings: string[],
+  priorFailureReason?: string,
+): string {
+  const requiredPhrasesLines = input.expressions.map((e) => `- ${e.phrase} (예문: ${e.exampleEn})`).join("\n");
+  const existingOpeningLines = existingOpenings.length ? existingOpenings.map((o) => `- ${o}`).join("\n") : "(없음)";
+  const retryNote = priorFailureReason
+    ? `\n\n[이전 시도 실패 — 다시 작성]\n바로 전 시도는 다음 이유로 거부되었습니다: ${priorFailureReason}\n같은 문제가 반복되지 않게 다시 쓰세요.`
+    : "";
+
+  return `카테고리: ${input.category}
+
+이 카테고리의 오프닝 전략: ${CATEGORY_OPENING_GUIDANCE[input.category]}
+
+기존 제목: ${input.title} / ${input.englishTitle}
+기존 한 줄 요약: ${input.summary}
+기존 영어 본문:
+"${input.englishSummary}"
+
+반드시 본문에 그대로 남아있어야 하는 표현:
+${requiredPhrasesLines}
+
+최근/다른 글의 오프닝들 (구조가 겹치면 안 됨):
+${existingOpeningLines}
+
+위 규칙을 지켜 JSON 객체 하나만 출력하세요.${retryNote}`;
+}
+
+function parseEditorialRewrite(raw: EditorialRewriteJson, expectedCount: number): EditorialRewriteOutput | null {
+  if (
+    !isNonEmptyString(raw.title) ||
+    !isNonEmptyString(raw.summary) ||
+    !isNonEmptyString(raw.englishSummary) ||
+    !isNonEmptyString(raw.koreanSummary) ||
+    !Array.isArray(raw.expressions) ||
+    raw.expressions.length !== expectedCount
+  ) {
+    return null;
+  }
+
+  const expressions: EditorialRewriteOutput["expressions"] = [];
+  for (const rawExpression of raw.expressions) {
+    const e = rawExpression as EditorialRewriteExpressionJson;
+    if (
+      !isNonEmptyString(e.phrase) ||
+      !isNonEmptyString(e.meaningKo) ||
+      !isNonEmptyString(e.nuance) ||
+      !isNonEmptyString(e.exampleKo) ||
+      !isNonEmptyString(e.comparisonNuanceDiff)
+    ) {
+      return null;
+    }
+    expressions.push({
+      phrase: e.phrase,
+      meaningKo: e.meaningKo,
+      nuance: e.nuance,
+      exampleKo: e.exampleKo,
+      comparisonNuanceDiff: e.comparisonNuanceDiff,
+    });
+  }
+
+  return {
+    title: raw.title,
+    summary: raw.summary,
+    englishSummary: raw.englishSummary,
+    koreanSummary: raw.koreanSummary,
+    expressions,
+  };
+}
+
+// 재시도를 모두 소진하면 null을 반환한다(throw하지 않음) — 호출부(백필
+// 스크립트)는 null을 받으면 해당 행을 건너뛰고 기존 데이터를 그대로 둬야
+// 한다. 영어 표현(phrase)이 결과에서 바뀌었거나 본문에서 사라졌으면 그
+// 자체로 재시도 사유가 되므로, 반환된 결과는 항상 검증을 통과한 것이다.
+export async function rewriteEditorialForVariety(
+  input: EditorialRewriteInput,
+  existingOpenings: string[] = [],
+): Promise<EditorialRewriteOutput | null> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return null;
+
+  const expectedPhrases = input.expressions.map((e) => e.phrase);
+  let failureReason: string | undefined;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const content = await trackedCallOpenAi(
+      EDITORIAL_REWRITE_SYSTEM_PROMPT,
+      buildEditorialRewriteUserPrompt(input, existingOpenings, failureReason),
+    );
+    if (!content) {
+      console.error(`[llm/editorial-rewrite] ${input.title}: attempt ${attempt} got no completion`);
+      failureReason = "응답을 받지 못했습니다";
+      continue;
+    }
+
+    let raw: EditorialRewriteJson;
+    try {
+      raw = JSON.parse(content) as EditorialRewriteJson;
+    } catch {
+      console.error(`[llm/editorial-rewrite] ${input.title}: attempt ${attempt} invalid JSON`);
+      failureReason = "응답이 유효한 JSON이 아니었습니다";
+      continue;
+    }
+
+    const parsed = parseEditorialRewrite(raw, expectedPhrases.length);
+    if (!parsed) {
+      console.error(`[llm/editorial-rewrite] ${input.title}: attempt ${attempt} didn't match the expected shape`);
+      failureReason = "JSON 스키마와 맞지 않았습니다 (필드 누락, expressions 개수 불일치 등)";
+      continue;
+    }
+
+    const phraseMismatchIndex = parsed.expressions.findIndex(
+      (e, i) => normalizePhrase(e.phrase) !== normalizePhrase(expectedPhrases[i]),
+    );
+    if (phraseMismatchIndex !== -1) {
+      console.error(
+        `[llm/editorial-rewrite] ${input.title}: attempt ${attempt} phrase[${phraseMismatchIndex}] changed from "${expectedPhrases[phraseMismatchIndex]}" to "${parsed.expressions[phraseMismatchIndex].phrase}"`,
+      );
+      failureReason = "expressions의 phrase가 입력받은 것과 달라졌습니다 — phrase는 절대 바꾸지 말고 그대로 돌려주세요";
+      continue;
+    }
+
+    const wordCount = countWords(parsed.englishSummary);
+    if (wordCount < MIN_ENGLISH_SUMMARY_WORDS || wordCount > MAX_ENGLISH_SUMMARY_WORDS) {
+      console.error(`[llm/editorial-rewrite] ${input.title}: attempt ${attempt} word count ${wordCount} out of range`);
+      failureReason = `englishSummary가 ${wordCount}단어였습니다 — ${MIN_ENGLISH_SUMMARY_WORDS}~${MAX_ENGLISH_SUMMARY_WORDS}단어로 다시 쓰세요`;
+      continue;
+    }
+
+    const missingPhrase = expectedPhrases.find((phrase) => !textContainsPhrase(parsed.englishSummary, phrase));
+    if (missingPhrase) {
+      console.error(`[llm/editorial-rewrite] ${input.title}: attempt ${attempt} phrase "${missingPhrase}" missing from new englishSummary`);
+      failureReason = `표현 "${missingPhrase}"가 새 영어 본문에서 사라졌습니다 — 반드시 그대로 다시 포함시켜 쓰세요`;
+      continue;
+    }
+
+    const firstSentence = extractFirstSentence(parsed.englishSummary);
+    const bannedPattern = matchedBannedOpeningPattern(firstSentence);
+    if (bannedPattern) {
+      console.error(`[llm/editorial-rewrite] ${input.title}: attempt ${attempt} still matched banned pattern ${bannedPattern}`);
+      failureReason = `첫 문장("${firstSentence}")이 여전히 금지된 시작 패턴을 썼습니다 — 완전히 다른 방식으로 다시 쓰세요`;
+      continue;
+    }
+
+    const similarOpening = findTooSimilarOpening(firstSentence, existingOpenings);
+    if (similarOpening) {
+      console.error(`[llm/editorial-rewrite] ${input.title}: attempt ${attempt} still too similar to "${similarOpening}"`);
+      failureReason = `첫 문장("${firstSentence}")이 다른 글의 오프닝("${similarOpening}")과 여전히 비슷합니다 — 다시 쓰세요`;
+      continue;
+    }
+
+    return parsed;
+  }
+
+  return null;
 }

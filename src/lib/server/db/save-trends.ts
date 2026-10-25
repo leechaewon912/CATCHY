@@ -39,7 +39,12 @@ export async function fetchRecentPublishedClusterKeys(
 export type RecentEditorialContext = {
   existingTitles: { englishTitle: string; koreanTitle: string }[];
   existingPhrases: string[];
+  existingOpenings: string[];
 };
+
+function firstSentenceOf(text: string): string {
+  return text.trim().split(/(?<=[.!?])\s+/)[0]?.trim() ?? "";
+}
 
 // Recent GPT self-generated editorials' titles + expression phrases, used
 // by the autonomous topic-selection step (generate-culture-editorial-with-
@@ -49,20 +54,20 @@ export type RecentEditorialContext = {
 // shouldn't block generation, it just means weaker dedup for that run.
 export async function fetchRecentEditorialContext(sinceDays = 90): Promise<RecentEditorialContext> {
   const client = getSupabaseServerClient();
-  if (!client) return { existingTitles: [], existingPhrases: [] };
+  if (!client) return { existingTitles: [], existingPhrases: [], existingOpenings: [] };
 
   const sinceIso = new Date(Date.now() - sinceDays * 24 * 60 * 60 * 1000).toISOString();
 
   const { data: trendRows, error: trendsError } = await client
     .from("trends")
-    .select("id, title, english_title")
+    .select("id, title, english_title, english_summary")
     .eq("content_origin", "gpt_editorial")
     .gte("generated_at", sinceIso)
-    .returns<Array<{ id: string; title: string; english_title: string | null }>>();
+    .returns<Array<{ id: string; title: string; english_title: string | null; english_summary: string }>>();
 
   if (trendsError) {
     console.error("[supabase] failed to load recent editorial titles:", trendsError.message);
-    return { existingTitles: [], existingPhrases: [] };
+    return { existingTitles: [], existingPhrases: [], existingOpenings: [] };
   }
 
   const rows = trendRows ?? [];
@@ -70,9 +75,10 @@ export async function fetchRecentEditorialContext(sinceDays = 90): Promise<Recen
     englishTitle: row.english_title ?? row.title,
     koreanTitle: row.title,
   }));
+  const existingOpenings = rows.map((row) => firstSentenceOf(row.english_summary)).filter(Boolean);
 
   if (rows.length === 0) {
-    return { existingTitles: [], existingPhrases: [] };
+    return { existingTitles: [], existingPhrases: [], existingOpenings: [] };
   }
 
   const { data: expressionRows, error: expressionsError } = await client
@@ -83,12 +89,13 @@ export async function fetchRecentEditorialContext(sinceDays = 90): Promise<Recen
 
   if (expressionsError) {
     console.error("[supabase] failed to load recent editorial phrases:", expressionsError.message);
-    return { existingTitles, existingPhrases: [] };
+    return { existingTitles, existingPhrases: [], existingOpenings };
   }
 
   return {
     existingTitles,
     existingPhrases: (expressionRows ?? []).map((row) => row.phrase),
+    existingOpenings,
   };
 }
 
