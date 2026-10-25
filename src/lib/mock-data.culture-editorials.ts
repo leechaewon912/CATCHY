@@ -884,18 +884,16 @@ Sometimes, taking small steps is a meaningful place to start.`,
 const DAY_MS = 24 * 60 * 60 * 1000;
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
 
-// "이번 주 월요일 0시(KST)"의 실제(true) UTC ms. 같은 "+9h 보정 후 UTC
-// getter로 읽기" 트릭을 src/app/page.tsx(toKstWallClock/startOfKstDayMs)
-// 와 동일하게 쓰되, 그 결과(보정된 "가짜 UTC" ms)를 다시 -9h 해서 진짜
-// UTC ms로 되돌린다 — 이 함수가 만드는 타임스탬프는 실제로 저장되는
-// generatedAt(ISO, true UTC)이어야 하기 때문.
-function kstThisMondayStartRealUtcMs(now: Date): number {
-  const kst = new Date(now.getTime() + KST_OFFSET_MS);
-  const kstMidnightFakeUtcMs = Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate());
-  const todayStartRealUtcMs = kstMidnightFakeUtcMs - KST_OFFSET_MS;
-  const daysSinceMonday = (kst.getUTCDay() + 6) % 7; // 0=월 .. 6=일
-  return todayStartRealUtcMs - daysSinceMonday * DAY_MS;
-}
+// 이 14개 시드가 배치되는 "월요일 0시(KST)"는 고정된 과거 앵커다 —
+// 2026-10-19(월), 이 Mon3/Tue3/Wed4/Thu4 배치가 처음 요청됐던 그 주.
+// 이전에는 매 요청마다 `now` 기준 "이번 주 월요일"을 새로 계산해서 날짜를
+// 다시 썼다 — 그 결과 몇 주가 지나도 이 14개가 계속 "이번 주" 콘텐츠로
+// 재노출되며 "지난주 월요일 콘텐츠가 그대로 표시된다"는 버그로 이어졌다
+// (2026-10-26 리포트). 날짜를 고정하면 이 주가 지난 뒤에는 실제 콘텐츠와
+// 동일한 week-boundary 필터(src/app/page.tsx의 weekdayLabelIfThisWeek)에
+// 의해 자연스럽게 day-tab/전체에서 빠진다 — 별도 처리 없이, 그리고 이
+// 과거 콘텐츠의 날짜를 임의로 "오늘"로 바꾸지 않고도.
+const SEED_WEEK_MONDAY_START_REAL_UTC_MS = Date.UTC(2026, 9, 19) - KST_OFFSET_MS;
 
 // CULTURE_EDITORIAL_SEEDS의 인덱스별 요일(0=월, 1=화, 2=수, 3=목) — 14개를
 // 월3·화3·수4·목4로 고정 배치한다(2026-10-22, 목요일 기준 요청 반영 —
@@ -917,34 +915,24 @@ const SEED_DAY_INDEX: number[] = [
   3, 3, 3, 3, // 라이프스타일-신규, 테크·게임-신규, 스포츠-신규, 글로벌 이슈-신규 → 목
 ];
 
-// 고정 날짜가 아니라 매 요청마다 `now` 기준 "이번 주 월요일"을 새로
-// 계산하므로, 몇 주가 지나도 요일 배치가 과거로 밀려나 사라지지 않는다.
-//
-// 전부 월/화/수/목에만 배치하므로(요청된 3/3/4/4 합계가 정확히 14), 퀴즈
-// 피커(src/app/quiz/page.tsx의 isGeneratedToday, "오늘 생성"만 보여줌)는
-// 오늘이 월~목이 아닌 날(금~일)엔 고를 거리가 하나도 없다 — 그 경우
-// QuizEntryClient가 이미 가지고 있는 "오늘 생성된 퀴즈가 없어요"
-// 빈 화면 문구가 그대로 뜬다(화면이 깨지지 않음, 별도 처리 불필요).
-function resolveDayAssignments(now: Date): number[] {
-  const mondayStartMs = kstThisMondayStartRealUtcMs(now);
-  const dayStartMsByIndex = [
-    mondayStartMs,
-    mondayStartMs + DAY_MS,
-    mondayStartMs + 2 * DAY_MS,
-    mondayStartMs + 3 * DAY_MS,
-  ];
-  return SEED_DAY_INDEX.map((dayIndex) => dayStartMsByIndex[dayIndex]);
+const SEED_WEEK_DAY_START_MS: number[] = [
+  SEED_WEEK_MONDAY_START_REAL_UTC_MS,
+  SEED_WEEK_MONDAY_START_REAL_UTC_MS + DAY_MS,
+  SEED_WEEK_MONDAY_START_REAL_UTC_MS + 2 * DAY_MS,
+  SEED_WEEK_MONDAY_START_REAL_UTC_MS + 3 * DAY_MS,
+];
+
+function resolveDayAssignments(): number[] {
+  return SEED_DAY_INDEX.map((dayIndex) => SEED_WEEK_DAY_START_MS[dayIndex]);
 }
 
-// MOCK_MODE 하에서 getHomeTrends()/getTrendDetail()가 매 요청마다 호출한다.
-// generatedAt/reviewedAt을 고정 날짜로 박아두지 않고 호출 시점의 `now`
-// 기준으로 매번 새로 계산하므로, 시간이 지나도 월/화/수 배치 자체는
-// 계속 유지된다 (콘텐츠가 과거로 밀려나 사라지지 않음). 다만 이 날짜는
-// 실제 발행 시각이 아니라 샘플 타임스탬프다 — 실제 발행 날짜로 오인하지
-// 않도록 홈/상세 페이지의 샘플 모드 안내 배너(MOCK_MODE일 때만 노출)가
-// 이 점을 명시한다.
-export function getCultureEditorialTrends(now: Date = new Date()): Trend[] {
-  const dayMsPerSeed = resolveDayAssignments(now);
+// MOCK_MODE 하에서 getHomeTrends()/getTrendDetail()가 호출한다.
+// generatedAt/reviewedAt은 위 고정 앵커(SEED_WEEK_MONDAY_START_REAL_UTC_MS)
+// 기준으로 계산되는 샘플 타임스탬프다 — 실제 발행 시각이 아니므로, 실제
+// 발행 날짜로 오인하지 않도록 홈/상세 페이지의 샘플 모드 안내 배너
+// (MOCK_MODE일 때만 노출)가 이 점을 명시한다.
+export function getCultureEditorialTrends(): Trend[] {
+  const dayMsPerSeed = resolveDayAssignments();
   return CULTURE_EDITORIAL_SEEDS.map((seed, index) => {
     // 09:00 KST(+ 인덱스별 1분씩) — 실제 데이터 쪽의 "오전 9시 공개"
     // 감각과 맞추고, 같은 날 항목끼리 생성 시각이 겹치지 않게 한다.

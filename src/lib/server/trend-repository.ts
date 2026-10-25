@@ -42,6 +42,30 @@ function rankTrends(trends: Trend[]): Trend[] {
   });
 }
 
+const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+// "YYYYMMDD" in Asia/Seoul wall-clock time — same "+9h shift, read back
+// with UTC getters" trick used throughout this codebase (src/app/
+// page.tsx, src/app/api/cron/daily-editorial/route.ts). Used below only
+// to compare a Mock seed's and a GPT row's calendar day, not stored.
+function kstDateStamp(isoString: string): string {
+  const kst = new Date(new Date(isoString).getTime() + KST_OFFSET_MS);
+  return `${kst.getUTCFullYear()}${String(kst.getUTCMonth() + 1).padStart(2, "0")}${String(kst.getUTCDate()).padStart(2, "0")}`;
+}
+
+// Mock seeds whose (category, KST calendar day) matches a real GPT row
+// are dropped — "실제 GPT 콘텐츠가 있는 날짜는 GPT 콘텐츠가 우선 노출".
+// Only suppresses that seed's appearance in the merged listing; it's
+// never deleted and its own /trend/<id> page still renders normally.
+function withoutMockEntriesSupersededByGpt(mockTrends: Trend[], gptTrends: Trend[]): Trend[] {
+  const gptCategoryDates = new Set(
+    gptTrends.map((trend) => `${trend.category}|${kstDateStamp(trend.generatedAt)}`),
+  );
+  return mockTrends.filter(
+    (trend) => !gptCategoryDates.has(`${trend.category}|${kstDateStamp(trend.generatedAt)}`),
+  );
+}
+
 // MOCK_MODE semantics: the 14 hand/GPT-written culture editorials PLUS
 // any real GPT self-generated content from Supabase (content_origin=
 // "gpt_editorial" — getPublishedTrendsFromDb/getTrendByIdFromDb already
@@ -49,6 +73,10 @@ function rankTrends(trends: Trend[]): Trend[] {
 // read here regardless of MOCK_MODE. This lets the daily-editorial cron's
 // output accumulate on the live site immediately, without ever flipping
 // MOCK_MODE off or touching the 91 stored-but-hidden RSS rows.
+//
+// A Mock seed is dropped from the merged list whenever a GPT row already
+// covers the same category on the same KST calendar day — see
+// withoutMockEntriesSupersededByGpt above.
 //
 // Non-MOCK_MODE path is untouched: DB-first (any origin), falling back to
 // src/lib/mock-data.ts's hand-written demo trends when Supabase has
@@ -59,7 +87,8 @@ export async function getHomeTrends(): Promise<Trend[]> {
     return rankTrends(dbTrends ?? mockTrends);
   }
   const gptTrends = await getPublishedTrendsFromDb();
-  return rankTrends([...getCultureEditorialTrends(), ...(gptTrends ?? [])]);
+  const mockEntries = withoutMockEntriesSupersededByGpt(getCultureEditorialTrends(), gptTrends ?? []);
+  return rankTrends([...mockEntries, ...(gptTrends ?? [])]);
 }
 
 export async function getTrendDetail(id: string): Promise<Trend | undefined> {
