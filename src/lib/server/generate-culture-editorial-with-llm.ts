@@ -521,6 +521,7 @@ const EDITORIAL_EXPRESSIONS_SYSTEM_PROMPT = `당신은 CATCHY라는 한국어-�
    - 한국어로 쓸 것: meaningKo, nuance, exampleKo, comparisonNuanceDiff
    - 영어로 쓸 것: phrase, exampleEn, comparisonPhrase
    **meaningKo를 포함해 모든 한국어 필드를 예외 없이 친절한 해요체(존댓말)로 쓰세요** — "~해요", "~예요", "~이에요", "~네요" 등으로 끝내고, "~한다", "~이다", "~합니다", "~입니다" 같은 격식체·사전형(기본형)으로 끝내지 마세요. meaningKo도 "참여하다"가 아니라 "참여한다는 뜻이에요"처럼 친근한 존댓말 문장으로 쓰세요.
+   **nuance와 comparisonNuanceDiff는 그중에서도 특히 다음을 절대 쓰지 마세요**: "~한다/~이다"(문어체), "~합니다/~입니다/~니다"(격식체), "~것./~함./~임./~음."처럼 명사형으로 문장을 끝맺는 방식 — 전부 독자에게 직접 설명하듯 "~표현이에요/~느낌이에요/~때 써요"로 끝내세요.
 8. 다른 설명 없이, 아래 JSON 스키마와 정확히 일치하는 JSON 객체만 출력하세요.
 
 JSON 스키마:
@@ -528,12 +529,12 @@ JSON 스키마:
   "expressions": [
     {
       "phrase": "주어진 단락에 그대로 등장하는 English word/phrase",
-      "meaningKo": "한국어 (영어 아님)",
-      "nuance": "한국어 (영어 아님)",
+      "meaningKo": "한국어, 해요체 문장 (영어 아님)",
+      "nuance": "한국어, 해요체 문장 (영어 아님)",
       "exampleEn": "English sentence",
       "exampleKo": "한국어 (영어 아님)",
       "comparisonPhrase": "English word/phrase",
-      "comparisonNuanceDiff": "한국어 (영어 아님)"
+      "comparisonNuanceDiff": "한국어, 해요체 문장 (영어 아님)"
     }
   ]
 }`;
@@ -671,7 +672,43 @@ async function attemptEditorialExpressionsGeneration(
     seenInThisBatch.add(normalized);
   }
 
+  // 3) 한국어 문체 검증 — nuance·comparisonNuanceDiff는 해요체여야 한다.
+  //    프롬프트 지시만으로는 가끔 새어나가는 걸 실제로 관찰했으므로
+  //    (문어체/격식체/명사형 종결), 저장 전에 정규식으로 한 번 더 걸러
+  //    재시도를 유도한다.
+  for (const expression of expressions) {
+    const violation = findKoreanStyleViolation(expression);
+    if (violation) {
+      console.error(
+        `[llm/editorial] ${topic.category}/"${topic.englishTitle}": expressions attempt ${attempt} style violation — ${violation}`,
+      );
+      return { ok: false, reason: violation };
+    }
+  }
+
   return { ok: true, expressions };
+}
+
+// nuance·comparisonNuanceDiff는 문어체("~한다/~이다"), 격식체("~합니다/
+// ~입니다/~니다"), 또는 명사형으로 끝맺는 문장("~것./~함./~임./~음.")이면
+// 안 된다(해요체여야 함).
+const WRITTEN_OR_FORMAL_ENDING = /(한다|이다|합니다|입니다|니다|것|함|임|음)\.?['"]?$/;
+
+function findKoreanStyleViolation(expression: ExpressionSeed): string | null {
+  // parseEditorialExpression already requires nuance/comparison to be
+  // non-empty strings before constructing this object (see
+  // isNonEmptyString checks above) — the `?? ""` here is only to satisfy
+  // ExpressionSeed's generally-optional typing, not a real fallback path.
+  const nuance = expression.nuance ?? "";
+  const comparisonNuanceDiff = expression.comparison?.nuanceDiff ?? "";
+
+  if (WRITTEN_OR_FORMAL_ENDING.test(nuance.trim())) {
+    return `표현 "${expression.phrase}"의 nuance("${nuance}")가 문어체·격식체·명사형으로 끝났습니다 — 해요체로 다시 쓰세요`;
+  }
+  if (WRITTEN_OR_FORMAL_ENDING.test(comparisonNuanceDiff.trim())) {
+    return `표현 "${expression.phrase}"의 comparisonNuanceDiff("${comparisonNuanceDiff}")가 문어체·격식체·명사형으로 끝났습니다 — 해요체로 다시 쓰세요`;
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------
@@ -930,7 +967,7 @@ const EDITORIAL_REWRITE_SYSTEM_PROMPT = `당신은 CATCHY라는 한국어-영어
 4. englishSummary는 기존과 비슷한 분량(130~160단어)과 문단 구성(빈 줄로 구분된 2~3문단)을 유지하세요.
 5. koreanSummary는 새 englishSummary 전체와 같은 내용을 담은 자연스러운 번역이어야 하고, **반드시 해요체로 쓰세요**("~해요", "~예요", "~이에요", "~네요" 등) — "~한다", "~이다", "~합니다", "~입니다"체는 쓰지 마세요. englishSummary와 같은 문단 수로 나누세요.
 6. title은 기존 제목의 핵심 의미를 유지하면서 자연스럽게 다듬어도 됩니다 — 완전히 다른 제목으로 바꾸지 마세요. 문장형이면 해요체로 끝내세요(명사구는 그대로 둬도 됩니다). summary(한 줄 요약)도 완전한 문장이면 해요체로 쓰세요.
-7. expressions 배열은 입력받은 순서·개수를 그대로 유지하고, 각 항목의 phrase는 입력받은 영어 표현을 **토씨 하나 바꾸지 말고 그대로** 돌려주세요. meaningKo/nuance/exampleKo/comparisonNuanceDiff만 다시 쓰되, 의미는 바꾸지 말고 **meaningKo를 포함해 예외 없이 전부 친절한 해요체(존댓말)로** 쓰세요 — "참여하다"가 아니라 "참여한다는 뜻이에요"처럼 문장으로 풀어서 존댓말로 쓰세요. 사전형(기본형)으로 끝내지 마세요.
+7. expressions 배열은 입력받은 순서·개수를 그대로 유지하고, 각 항목의 phrase는 입력받은 영어 표현을 **토씨 하나 바꾸지 말고 그대로** 돌려주세요. meaningKo/nuance/exampleKo/comparisonNuanceDiff만 다시 쓰되, 의미는 바꾸지 말고 **meaningKo를 포함해 예외 없이 전부 친절한 해요체(존댓말)로** 쓰세요 — "참여하다"가 아니라 "참여한다는 뜻이에요"처럼 문장으로 풀어서 존댓말로 쓰세요. 사전형(기본형)으로 끝내지 마세요. **nuance와 comparisonNuanceDiff는 그중에서도 특히** "~한다/~이다/~합니다/~입니다"(문어체·격식체)나 "~것./~함./~임./~음."(명사형 종결)으로 끝내지 마세요.
 8. 다른 설명 없이, 아래 JSON 스키마와 정확히 일치하는 JSON 객체만 출력하세요.
 
 JSON 스키마:
