@@ -520,8 +520,8 @@ const EDITORIAL_EXPRESSIONS_SYSTEM_PROMPT = `당신은 CATCHY라는 한국어-�
 7. 언어는 필드마다 반드시 다음과 같이 쓰세요 — 섞어 쓰지 마세요:
    - 한국어로 쓸 것: meaningKo, nuance, exampleKo, comparisonNuanceDiff
    - 영어로 쓸 것: phrase, exampleEn, comparisonPhrase
-   **meaningKo를 포함해 모든 한국어 필드를 예외 없이 친절한 해요체(존댓말)로 쓰세요** — "~해요", "~예요", "~이에요", "~네요" 등으로 끝내고, "~한다", "~이다", "~합니다", "~입니다" 같은 격식체·사전형(기본형)으로 끝내지 마세요. meaningKo도 "참여하다"가 아니라 "참여한다는 뜻이에요"처럼 친근한 존댓말 문장으로 쓰세요.
-   **nuance와 comparisonNuanceDiff는 그중에서도 특히 다음을 절대 쓰지 마세요**: "~한다/~이다"(문어체), "~합니다/~입니다/~니다"(격식체), "~것./~함./~임./~음."처럼 명사형으로 문장을 끝맺는 방식 — 전부 독자에게 직접 설명하듯 "~표현이에요/~느낌이에요/~때 써요"로 끝내세요.
+   **meaningKo는 완결된 문장이 아니라 "아침 일과"처럼 뜻만 담은 간결한 구로 쓰세요** — 명사형(예: "공동체 의식")이나 동사 기본형(예: "참여하다")으로 끝내고, "~라는 뜻이에요", "~을 의미해요"처럼 풀어서 문장으로 만들지 마세요.
+   **nuance와 comparisonNuanceDiff는 예외 없이 친절한 해요체(존댓말)로 쓰세요** — "~해요", "~예요", "~이에요", "~네요"처럼 독자에게 직접 설명하듯 끝내고, 다음은 절대 쓰지 마세요: "~한다/~이다"(문어체), "~합니다/~입니다/~니다"(격식체), "~것./~함./~임./~음."처럼 명사형으로 문장을 끝맺는 방식.
 8. 다른 설명 없이, 아래 JSON 스키마와 정확히 일치하는 JSON 객체만 출력하세요.
 
 JSON 스키마:
@@ -529,7 +529,7 @@ JSON 스키마:
   "expressions": [
     {
       "phrase": "주어진 단락에 그대로 등장하는 English word/phrase",
-      "meaningKo": "한국어, 해요체 문장 (영어 아님)",
+      "meaningKo": "한국어, 간결한 명사형/동사 기본형 구 (영어 아님)",
       "nuance": "한국어, 해요체 문장 (영어 아님)",
       "exampleEn": "English sentence",
       "exampleKo": "한국어 (영어 아님)",
@@ -672,10 +672,11 @@ async function attemptEditorialExpressionsGeneration(
     seenInThisBatch.add(normalized);
   }
 
-  // 3) 한국어 문체 검증 — nuance·comparisonNuanceDiff는 해요체여야 한다.
-  //    프롬프트 지시만으로는 가끔 새어나가는 걸 실제로 관찰했으므로
-  //    (문어체/격식체/명사형 종결), 저장 전에 정규식으로 한 번 더 걸러
-  //    재시도를 유도한다.
+  // 3) 한국어 문체 검증 — meaningKo는 간결한 명사형/동사 기본형 구,
+  //    nuance·comparisonNuanceDiff는 해요체여야 한다. 프롬프트 지시만으로는
+  //    가끔 새어나가는 걸 실제로 관찰했으므로(문어체/격식체/명사형 종결,
+  //    또는 meaningKo가 완결된 문장이 되는 경우), 저장 전에 정규식으로
+  //    한 번 더 걸러 재시도를 유도한다.
   for (const expression of expressions) {
     const violation = findKoreanStyleViolation(expression);
     if (violation) {
@@ -689,9 +690,12 @@ async function attemptEditorialExpressionsGeneration(
   return { ok: true, expressions };
 }
 
-// nuance·comparisonNuanceDiff는 문어체("~한다/~이다"), 격식체("~합니다/
+// meaningKo는 "~이에요/~해요/~예요/~네요"로 끝나는 완결된 해요체 문장이면
+// 안 된다(간결한 명사형/동사 기본형 구여야 함, 예: "아침 일과"). nuance·
+// comparisonNuanceDiff는 반대로 문어체("~한다/~이다"), 격식체("~합니다/
 // ~입니다/~니다"), 또는 명사형으로 끝맺는 문장("~것./~함./~임./~음.")이면
 // 안 된다(해요체여야 함).
+const MEANING_SENTENCE_ENDING = /(이에요|해요|예요|네요)\.?['"]?$/;
 const WRITTEN_OR_FORMAL_ENDING = /(한다|이다|합니다|입니다|니다|것|함|임|음)\.?['"]?$/;
 
 function findKoreanStyleViolation(expression: ExpressionSeed): string | null {
@@ -702,6 +706,9 @@ function findKoreanStyleViolation(expression: ExpressionSeed): string | null {
   const nuance = expression.nuance ?? "";
   const comparisonNuanceDiff = expression.comparison?.nuanceDiff ?? "";
 
+  if (MEANING_SENTENCE_ENDING.test(expression.meaningKo.trim())) {
+    return `표현 "${expression.phrase}"의 meaningKo("${expression.meaningKo}")가 완결된 해요체 문장입니다 — 명사형/동사 기본형의 간결한 구로 다시 쓰세요`;
+  }
   if (WRITTEN_OR_FORMAL_ENDING.test(nuance.trim())) {
     return `표현 "${expression.phrase}"의 nuance("${nuance}")가 문어체·격식체·명사형으로 끝났습니다 — 해요체로 다시 쓰세요`;
   }
@@ -916,9 +923,9 @@ export async function generateCultureEditorialWithLlm(
 // 백필: 이미 저장된 gpt_editorial 행의 오프닝 반복/한국어 문체 문제를
 // 고치는 재작성 진입점. generateCultureEditorialWithLlm과 달리 새 주제를
 // 고르지 않는다 — 기존 title/카테고리/영어 표현(phrase)은 그대로 두고
-// (1) 영어 본문 오프닝만 다시 쓰고 (2) 한국어 필드 전부를 해요체로
-// 통일한다. scripts/ 아래 일회성 백필 스크립트 전용 — 자동 cron에서는
-// 호출하지 않는다.
+// (1) 영어 본문 오프닝만 다시 쓰고 (2) 한국어 필드의 종결 어미를 통일한다
+// (meaningKo는 간결한 명사형/동사 기본형, 나머지는 해요체). scripts/ 아래
+// 일회성 백필 스크립트 전용 — 자동 cron에서는 호출하지 않는다.
 // ---------------------------------------------------------------------
 
 export type EditorialRewriteInput = {
@@ -958,7 +965,7 @@ const EDITORIAL_REWRITE_SYSTEM_PROMPT = `당신은 CATCHY라는 한국어-영어
 이미 게시된 "컬처 에디토리얼" 글 하나를 받아서, 아래 두 가지만 고칩니다 — 그 외 내용·주제·사실관계는 바꾸지 않습니다:
 
 1. 영어 본문(englishSummary)의 **오프닝(첫 문장~첫 문단)만** 자연스럽게 다시 씁니다. 나머지 문장/문단은 가능한 한 그대로 유지하되, 오프닝이 바뀌면서 앞뒤가 어색해지지 않도록 필요한 최소한의 연결만 다듬으세요.
-2. 한국어 쪽(title/summary/koreanSummary/표현 카드의 한국어 필드)을 전부 해요체로 통일합니다.
+2. 한국어 쪽(title/summary/koreanSummary/표현 카드의 한국어 필드)의 종결 어미를 통일합니다 — meaningKo는 간결한 명사형/동사 기본형 구로, 나머지는 해요체로.
 
 반드시 지켜야 할 규칙:
 1. 주제, 핵심 메시지, 카테고리는 절대 바꾸지 마세요 — 완전히 다른 글이 되면 안 됩니다.
@@ -967,7 +974,7 @@ const EDITORIAL_REWRITE_SYSTEM_PROMPT = `당신은 CATCHY라는 한국어-영어
 4. englishSummary는 기존과 비슷한 분량(130~160단어)과 문단 구성(빈 줄로 구분된 2~3문단)을 유지하세요.
 5. koreanSummary는 새 englishSummary 전체와 같은 내용을 담은 자연스러운 번역이어야 하고, **반드시 해요체로 쓰세요**("~해요", "~예요", "~이에요", "~네요" 등) — "~한다", "~이다", "~합니다", "~입니다"체는 쓰지 마세요. englishSummary와 같은 문단 수로 나누세요.
 6. title은 기존 제목의 핵심 의미를 유지하면서 자연스럽게 다듬어도 됩니다 — 완전히 다른 제목으로 바꾸지 마세요. 문장형이면 해요체로 끝내세요(명사구는 그대로 둬도 됩니다). summary(한 줄 요약)도 완전한 문장이면 해요체로 쓰세요.
-7. expressions 배열은 입력받은 순서·개수를 그대로 유지하고, 각 항목의 phrase는 입력받은 영어 표현을 **토씨 하나 바꾸지 말고 그대로** 돌려주세요. meaningKo/nuance/exampleKo/comparisonNuanceDiff만 다시 쓰되, 의미는 바꾸지 말고 **meaningKo를 포함해 예외 없이 전부 친절한 해요체(존댓말)로** 쓰세요 — "참여하다"가 아니라 "참여한다는 뜻이에요"처럼 문장으로 풀어서 존댓말로 쓰세요. 사전형(기본형)으로 끝내지 마세요. **nuance와 comparisonNuanceDiff는 그중에서도 특히** "~한다/~이다/~합니다/~입니다"(문어체·격식체)나 "~것./~함./~임./~음."(명사형 종결)으로 끝내지 마세요.
+7. expressions 배열은 입력받은 순서·개수를 그대로 유지하고, 각 항목의 phrase는 입력받은 영어 표현을 **토씨 하나 바꾸지 말고 그대로** 돌려주세요. meaningKo/nuance/exampleKo/comparisonNuanceDiff만 다시 쓰되, 의미는 바꾸지 마세요. **meaningKo는 "아침 일과"처럼 간결한 명사형/동사 기본형 구로 쓰세요** — "~라는 뜻이에요"처럼 문장으로 풀어 쓰지 마세요. **nuance와 comparisonNuanceDiff는 예외 없이 친절한 해요체(존댓말)로** 쓰세요 — "~한다/~이다/~합니다/~입니다"(문어체·격식체)나 "~것./~함./~임./~음."(명사형 종결)으로 끝내지 마세요.
 8. 다른 설명 없이, 아래 JSON 스키마와 정확히 일치하는 JSON 객체만 출력하세요.
 
 JSON 스키마:
@@ -977,7 +984,7 @@ JSON 스키마:
   "englishSummary": "English paragraph, 130-160 words, 2-3 paragraphs separated by a blank line",
   "koreanSummary": "englishSummary의 해요체 한국어 번역",
   "expressions": [
-    { "phrase": "입력받은 영어 표현 그대로", "meaningKo": "해요체 한국어", "nuance": "해요체 한국어", "exampleKo": "해요체 한국어", "comparisonNuanceDiff": "해요체 한국어" }
+    { "phrase": "입력받은 영어 표현 그대로", "meaningKo": "간결한 명사형/동사 기본형 한국어", "nuance": "해요체 한국어", "exampleKo": "해요체 한국어", "comparisonNuanceDiff": "해요체 한국어" }
   ]
 }`;
 
