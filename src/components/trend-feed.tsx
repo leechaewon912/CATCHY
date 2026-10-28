@@ -351,8 +351,8 @@ export function TrendFeed({
   return (
     <section className="mx-auto max-w-6xl px-5 pt-10 sm:px-8" aria-labelledby="trend-feed-heading">
       <div className="mb-6">
-        <h2 id="trend-feed-heading" className="text-[32px] font-semibold leading-[1.5] text-obsidian">일상에 영감을 주는 이야기</h2>
-        <p className="mt-1 text-[13px] text-fog" role="status" aria-live="polite">
+        <h2 id="trend-feed-heading" className="text-[24px] font-semibold leading-[1.5] text-obsidian sm:text-[32px]">일상에 영감을 주는 이야기</h2>
+        <p className="mt-2 text-[14px] text-fog sm:mt-1 sm:text-[13px]" role="status" aria-live="polite">
           {selectedDay} ·{" "}
           {selectedCategory === "전체" ? selectedCategory : CATEGORY_DISPLAY_LABELS[selectedCategory]} ·{" "}
           {visibleItems.length}개

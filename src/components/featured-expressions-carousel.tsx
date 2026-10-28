@@ -101,10 +101,10 @@ export function FeaturedExpressionsCarousel({
     <div>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="text-[32px] font-semibold leading-[1.5] text-obsidian">
+          <h2 className="text-[24px] font-semibold leading-[1.5] text-obsidian sm:text-[32px]">
             {title}
           </h2>
-          <p className="text-kr-body mt-1 text-[14px] text-fog">{description}</p>
+          <p className="text-kr-body mt-2 text-[15px] text-fog sm:mt-1 sm:text-[14px]">{description}</p>
         </div>
 
         <div className="flex items-center gap-2">

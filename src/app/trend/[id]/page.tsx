@@ -93,17 +93,22 @@ export default async function TrendDetailPage(
               </span>
 
               {/* English title + Korean subtitle read as one title group
-                  (20px gap); the Korean summary sentence below is set off
-                  from that group by a much larger gap (36px) so it reads as
-                  a separate line of description, not part of the title. */}
+                  (12px gap on mobile, 20px from sm: up); the Korean summary
+                  sentence below is set off from that group by a much larger
+                  gap (36px) so it reads as a separate line of description,
+                  not part of the title.
+                  Mobile-only: the Korean subtitle wraps (break-keep) instead
+                  of truncating, since a one-line ellipsis cut off the title
+                  too often on narrow screens — sm:truncate restores the
+                  original single-line behavior on tablet/desktop. */}
               <div className="flex flex-col">
-                <div className="flex flex-col gap-5">
-                  <h1 className="text-[32px] font-semibold leading-[1.28] text-snow sm:text-[40px]">
+                <div className="flex flex-col gap-3 sm:gap-5">
+                  <h1 className="text-[24px] font-semibold leading-[1.28] text-snow sm:text-[40px]">
                     {trend.englishTitle ?? trend.title}
                   </h1>
 
                   {trend.englishTitle && (
-                    <p className="text-kr-subtitle truncate text-[20px] text-mist sm:text-[24px]">
+                    <p className="text-kr-subtitle break-keep text-[18px] text-mist sm:truncate sm:text-[24px]">
                       {trend.title}
                     </p>
                   )}
