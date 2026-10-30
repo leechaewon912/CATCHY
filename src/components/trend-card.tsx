@@ -4,16 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { ArrowUpRightIcon } from "@/components/icons";
-import { CATEGORY_DISPLAY_LABELS } from "@/lib/category-display";
+import { CATEGORY_BADGE_CLASS, CATEGORY_DISPLAY_LABELS } from "@/lib/category-display";
 import { trackTrendClicked } from "@/lib/mixpanel-client";
 import type { Trend } from "@/lib/mock-data";
 import { resolveTrendImage } from "@/lib/trend-image";
-
-// mock-data.ts is "server-only", so this client component can't import
-// its CATEGORY_BADGE_CLASS value — it's just this one static utility
-// class name (see .badge-outline in globals.css), safe to inline here
-// (same workaround already used by src/app/quiz/quiz-entry-client.tsx).
-const CATEGORY_BADGE_CLASS = "badge-outline";
 
 // `position` is this card's 1-based rank among what's *currently
 // displayed* in src/components/trend-feed.tsx — after the category/day
@@ -54,15 +48,15 @@ export function TrendCard({ trend, position }: { trend: Trend; position: number 
 
       <div className="flex flex-1 flex-col gap-3 p-5">
         <div>
-          <h3 className="text-[18px] font-semibold leading-snug text-obsidian transition-colors group-hover:text-graphite">
+          <h3 className="text-body-lg font-semibold leading-snug text-obsidian transition-colors group-hover:text-graphite">
             {trend.englishTitle ?? trend.title}
           </h3>
-          <p className="mt-1 line-clamp-1 text-[13px] text-fog">{trend.englishSummary}</p>
+          <p className="mt-1 line-clamp-1 text-label text-fog">{trend.englishSummary}</p>
         </div>
 
-        <p className="text-kr-body line-clamp-2 text-[14px] text-fog">{trend.summary}</p>
+        <p className="line-clamp-2 type-body-kr text-fog">{trend.summary}</p>
 
-        <span className="mt-auto inline-flex items-center gap-1 text-[13px] font-medium text-obsidian">
+        <span className="mt-auto inline-flex items-center gap-1 text-label font-medium text-obsidian">
           이야기 읽기
           <ArrowUpRightIcon className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
         </span>

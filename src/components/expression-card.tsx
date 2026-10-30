@@ -3,16 +3,10 @@
 import Link from "next/link";
 
 import { SaveExpressionButton } from "@/components/save-expression-button";
-import { CATEGORY_DISPLAY_LABELS } from "@/lib/category-display";
+import { CATEGORY_BADGE_CLASS, CATEGORY_DISPLAY_LABELS } from "@/lib/category-display";
 import { highlightPhraseInText } from "@/lib/highlight-expressions";
 import { trackExpressionClicked } from "@/lib/mixpanel-client";
 import type { Expression } from "@/lib/mock-data";
-
-// mock-data.ts is "server-only", so this client component can't import
-// its CATEGORY_BADGE_CLASS value — it's just this one static utility
-// class name (see .badge-outline in globals.css), safe to inline here
-// (same workaround already used by src/components/trend-card.tsx).
-const CATEGORY_BADGE_CLASS = "badge-outline";
 
 export function ExpressionCard({
   expression,
@@ -41,32 +35,32 @@ export function ExpressionCard({
         <SaveExpressionButton expression={expression} trendTitle={trendTitle} variant="icon" />
       </div>
 
-      <p className="line-clamp-2 min-h-[50px] text-[20px] font-semibold leading-tight text-obsidian transition-colors group-hover:text-graphite">
+      <p className="line-clamp-2 min-h-[50px] text-subheading font-semibold leading-tight text-obsidian transition-colors group-hover:text-graphite">
         {expression.phrase}
       </p>
 
-      <p className="text-kr-body line-clamp-2 min-h-10 text-[14px] text-graphite">
+      <p className="line-clamp-2 min-h-10 type-body-kr text-graphite">
         {expression.meaningKo}
       </p>
 
       <div className="h-px bg-cloud" />
 
       {expression.nuance && (
-        <div className="text-kr-body flex flex-col gap-2 text-[13px] text-steel">
+        <div className="text-kr-body flex flex-col gap-2 text-label text-steel">
           <p className="line-clamp-2 min-h-[43px]">{expression.nuance}</p>
         </div>
       )}
 
       <div className="flex flex-col gap-1">
-        <span className="text-[12px] text-fog">예문</span>
-        <p className="line-clamp-2 min-h-[43px] text-[13px] font-medium leading-relaxed text-graphite">
+        <span className="type-caption text-fog">예문</span>
+        <p className="line-clamp-2 min-h-[43px] text-label font-medium leading-relaxed text-graphite">
           {highlightPhraseInText(
             expression.exampleEn,
             expression.phrase,
             "bg-transparent font-semibold text-ember",
           )}
         </p>
-        <p className="text-kr-body line-clamp-2 min-h-10 text-[12px] text-fog">
+        <p className="text-kr-body line-clamp-2 min-h-10 text-caption text-fog">
           {expression.exampleKo}
         </p>
       </div>

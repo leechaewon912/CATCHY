@@ -24,10 +24,10 @@ export function BookmarksList() {
   if (bookmarks.length === 0) {
     return (
       <div className="surface-card flex flex-col items-center gap-4 p-10 text-center sm:p-14">
-        <p className="text-[18px] font-semibold text-obsidian">
+        <p className="text-body-lg font-semibold text-obsidian">
           아직 저장한 표현이 없어요
         </p>
-        <p className="text-kr-body max-w-sm text-[14px] text-fog">
+        <p className="max-w-sm type-body-kr text-fog">
           기억하고 싶은 영어 표현들을 이곳에 모아보세요.
         </p>
         <Link href="/" className="btn-solid-black mt-2">
@@ -46,17 +46,17 @@ export function BookmarksList() {
         >
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-[32px] font-semibold leading-tight text-obsidian">
+              <p className="text-heading-sm font-semibold leading-tight text-obsidian">
                 {bookmark.phrase}
               </p>
-              <p className="text-kr-body mt-2 text-[16px] text-graphite">
+              <p className="text-kr-body mt-2 text-body-md text-graphite">
                 {bookmark.meaning}
               </p>
             </div>
             <button
               type="button"
               onClick={() => removeBookmark(bookmark.id)}
-              className="shrink-0 cursor-pointer rounded-pills border border-cloud px-3.5 py-2 text-[12px] font-medium text-fog transition-colors hover:border-iron hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
+              className="shrink-0 cursor-pointer rounded-pills border border-cloud px-3.5 py-2 type-caption-strong text-fog transition-colors hover:border-iron hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
             >
               삭제
             </button>
@@ -65,7 +65,7 @@ export function BookmarksList() {
           <div className="my-5 h-px bg-cloud" />
 
           <div className="surface-info-box p-4">
-            <span className="mb-2 block text-[12px] text-fog">
+            <span className="mb-2 block type-caption text-fog">
               예문
             </span>
             <p className="font-medium text-graphite">
@@ -74,7 +74,7 @@ export function BookmarksList() {
             <p className="text-kr-body mt-1 text-fog">{bookmark.exampleTranslation}</p>
           </div>
 
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-[12px] text-fog">
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 type-caption text-fog">
             <Link
               href={`/trend/${bookmark.trendId}`}
               className="group inline-flex cursor-pointer items-center gap-1 text-steel transition-colors hover:text-obsidian focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"

@@ -103,6 +103,32 @@
   --radius-badges: 12px;
   --radius-inputs: 14px;
   --radius-buttons: 14px;
+
+  /* Typography scale — font-size only (no paired --text-*--line-height),
+     deliberately, so adopting these never changes an existing element's
+     line-height, wrapping, or responsive breakpoint behavior: every
+     call site keeps whatever leading- / sm: / md: / lg: classes it
+     already had, and only the bare text-[Npx] literal is replaced by the
+     matching named utility below. caption/body/body-lg/subheading/
+     heading-sm/heading names and px values come straight from
+     DESIGN.md's "Tokens — Typography" table; label/body-sm/body-md/
+     heading-xs are additions for sizes DESIGN.md didn't document but
+     that were already repeated consistently across the app (13px/14px/
+     16px/24px) — added here so DESIGN.md and the real codebase agree,
+     rather than forcing those into the nearest documented neighbor and
+     silently changing rendered size. heading-lg (56px) / display (64px)
+     are in DESIGN.md but unused in the app today, so left undefined
+     here — add them if/when something actually needs that size. */
+  --text-caption: 12px;
+  --text-label: 13px;
+  --text-body-sm: 14px;
+  --text-body: 15px;
+  --text-body-md: 16px;
+  --text-body-lg: 18px;
+  --text-subheading: 20px;
+  --text-heading-xs: 24px;
+  --text-heading-sm: 32px;
+  --text-heading: 40px;
 }
 
 body {
@@ -189,7 +215,19 @@ body {
    * .text-kr-body's #374151 only applies where nothing else claimed the
    * color already.
    */
-  .text-kr-body {
+  /* Shared with .type-body-kr below via a grouped selector (not
+     duplicated) — both classes need the exact same family/weight/
+     line-height/letter-spacing/color; .type-body-kr's own rule then adds
+     only the one declaration that actually differs (font-size). A
+     grouped selector was chosen over CSS custom properties because it
+     removes the duplication without adding new tokens or indirection:
+     the five shared declarations live in exactly one place, in plain
+     CSS, and every existing .text-kr-body / .type-body-kr call site
+     (20 and 10 respectively, verified — none of them apply both classes
+     to the same element) keeps working unchanged, since the computed
+     output is byte-for-byte identical to before this consolidation. */
+  .text-kr-body,
+  .type-body-kr {
     font-family: var(--font-kr);
     font-weight: 400;
     line-height: 1.75;
@@ -223,6 +261,72 @@ body {
     line-height: 1.7;
   }
 
+  /* Typography presets ("Catchy 타이포그래피 프리셋 구현") — role-based
+     bundles of the ten text-* size tokens above with whatever weight/
+     line-height/letter-spacing/family already accompanied them at every
+     repeat occurrence. Each preset below reuses values already in use —
+     no new size/weight/leading/tracking value is introduced here. Color
+     is deliberately NOT part of any preset: every call site's color
+     varies (fog/ash/white/ember/graphite/etc), so all four stay
+     color-agnostic and get paired with their own text-* color class,
+     same as before. The "type-" prefix keeps these visually distinct
+     from the bare text-caption/text-heading-sm size-only utilities
+     above, and avoids any collision with Tailwind's own namespace. */
+
+  /* "Heading" — the screen's own title text. 32px→40px, semibold, tight
+     leading. Covers exactly the 4 call sites that already shared this
+     literal combination: bookmarks page title, the two quiz page
+     titles, and the quiz question-phrase display. Deliberately does
+     NOT cover the identically-sized-but-non-scaling "phrase display"
+     text in trend/[id]/page.tsx / expression-detail-card.tsx (no sm:
+     step, a different role) or the trend detail page's two 32px
+     section headings (leading-[1.5], not leading-tight, and no sm:
+     step either) — see DESIGN.md for why those stay separate. */
+  .type-heading {
+    @apply text-heading-sm font-semibold leading-tight sm:text-heading;
+  }
+
+  /* "Caption" — small metadata/helper text with no explicit weight,
+     inheriting whatever ambient weight its container already had
+     (always 400 in practice, since no bold-weight ancestor exists
+     anywhere this is used) — exactly how each of these 18 sites
+     rendered before this preset existed. Excludes the one 12px span
+     that also carries .text-kr-body (expression-card.tsx's "예문"
+     label — a distinct, single-occurrence combo, not a repeat) and the
+     one 12px hero-photo category badge that's explicitly font-normal
+     text-white (a different visual context, not metadata text). */
+  .type-caption {
+    @apply text-caption;
+  }
+
+  /* "Caption Strong" — the medium-weight sibling of Caption above
+     (category tags, the "원문 보기" link, quiz correct/incorrect
+     indicators, the bookmark list's "삭제" button). Same size as
+     .type-caption; weight is the only difference, so kept as its own
+     tiny preset rather than a modifier flag. */
+  .type-caption-strong {
+    @apply text-caption font-medium;
+  }
+
+  /* "Body KR" — Korean body text at the app's most common text size
+     (14px). The family/weight/line-height/letter-spacing/color here
+     come from the grouped `.text-kr-body, .type-body-kr` selector above
+     (not restated here — see that rule's comment for why a grouped
+     selector, not @apply or CSS variables, is how the two classes share
+     those five declarations without duplicating them); this rule only
+     adds the one thing that's genuinely different about this preset:
+     the font-size. Replaces the "text-kr-body text-body-sm" two-class
+     pairing at all 10 call sites below with one class; .text-kr-body
+     itself is untouched and still works standalone wherever it's paired
+     with a *different* size (text-body / text-body-md / text-body-lg /
+     text-kr-body-fluid — trend-hero.tsx, expression-detail-card.tsx,
+     trend/[id]/page.tsx, bookmarks-list.tsx,
+     featured-expressions-carousel.tsx — none of those are touched by
+     this preset). */
+  .type-body-kr {
+    @apply text-body-sm;
+  }
+
   .surface-dark {
     @apply bg-graphite text-snow;
     border-radius: var(--radius-cards);
@@ -237,7 +341,7 @@ body {
 
   /* "Primary Action Button (Dark Filled)" */
   .btn-primary {
-    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-buttons bg-obsidian px-4 py-3 text-[14px] font-normal text-snow transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-paper focus-visible:ring-obsidian disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-buttons bg-obsidian px-4 py-3 text-body-sm font-normal text-snow transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-paper focus-visible:ring-obsidian disabled:cursor-not-allowed disabled:opacity-50;
     box-shadow:
       inset 0 0.5px 0 0 rgba(255, 255, 255, 0.5),
       inset 0 9px 14px -5px rgba(117, 123, 133, 0.4),
@@ -249,7 +353,7 @@ body {
      퀴즈 진행 중 "다음 문제"/"결과 보기", 퀴즈 완료 화면의 "트렌드로
      돌아가기", 북마크 빈 상태의 "이야기 둘러보기" 전용. */
   .btn-solid-black {
-    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-buttons bg-[#111111] px-4 py-3 text-[14px] font-normal text-white transition-colors hover:bg-[#2a2a2a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-paper focus-visible:ring-obsidian disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-buttons bg-[#111111] px-4 py-3 text-body-sm font-normal text-white transition-colors hover:bg-[#2a2a2a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-paper focus-visible:ring-obsidian disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   /* "Outline Black Button" — 퀴즈 완료 화면의 "다시 풀기" 전용 짝 버튼.
@@ -257,36 +361,41 @@ body {
      만큼 세로·가로 패딩을 1px씩 줄여 보정했다(테두리 제외 버튼은 py-3/
      px-4, 이 버튼은 border 1px + py-[11px]/px-[15px]로 합산 결과 동일). */
   .btn-outline-black {
-    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-buttons border border-[#111111] bg-white px-[15px] py-[11px] text-[14px] font-normal text-[#111111] transition-colors hover:bg-[#f5f5f5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-paper focus-visible:ring-obsidian disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-buttons border border-[#111111] bg-white px-[15px] py-[11px] text-body-sm font-normal text-[#111111] transition-colors hover:bg-[#f5f5f5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-paper focus-visible:ring-obsidian disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   /* "Ghost Action Button (White)" */
   .btn-ghost {
-    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-pills border border-iron bg-snow px-5 py-3 text-[14px] font-normal text-iron transition-colors hover:border-graphite hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-paper focus-visible:ring-obsidian;
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-pills border border-iron bg-snow px-5 py-3 text-body-sm font-normal text-iron transition-colors hover:border-graphite hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-paper focus-visible:ring-obsidian;
   }
 
   /* "Neutral Pill Button (Light)" */
   .btn-neutral {
-    @apply inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-buttons bg-[#fafafa] px-4 py-3 text-[14px] font-normal text-graphite transition-colors hover:bg-cloud focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-paper focus-visible:ring-obsidian;
+    @apply inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-buttons bg-[#fafafa] px-4 py-3 text-body-sm font-normal text-graphite transition-colors hover:bg-cloud focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-paper focus-visible:ring-obsidian;
   }
 
   /* "Tag Pill Badge" */
   .badge-outline {
-    @apply inline-flex items-center gap-1 rounded-badges border border-cloud px-2 py-1 text-[12px] font-normal text-graphite;
+    @apply inline-flex items-center gap-1 rounded-badges border border-cloud px-2 py-1 text-caption font-normal text-graphite;
   }
 
   /* "Filled Tag Badge" */
   .badge-filled {
-    @apply inline-flex items-center gap-1 rounded-badges bg-iron px-2 py-1 text-[12px] font-normal text-[#fafafa];
+    @apply inline-flex items-center gap-1 rounded-badges bg-iron px-2 py-1 text-caption font-normal text-[#fafafa];
   }
 
-  /* "Orange Accent Badge" — reserved for sparse highlight/count chips only. */
+  /* "Orange Accent Badge" — reserved for sparse highlight/count chips only.
+     text-obsidian (not text-snow): white-on-ember measured 3.13:1, below
+     WCAG AA's 4.5:1 for normal text (caught by `design.md lint`, see
+     DESIGN.md). obsidian-on-ember measures 6.36:1 — reuses the existing
+     primary-ink token instead of adding a new one; bg-ember (the one
+     reserved accent color) is unchanged. */
   .badge-accent {
-    @apply inline-flex items-center gap-1 rounded-badges bg-ember px-2 py-1 text-[12px] font-medium text-snow;
+    @apply inline-flex items-center gap-1 rounded-badges bg-ember px-2 py-1 text-caption font-medium text-obsidian;
   }
 
   /* "Email Input Field" (reused for the quiz answer options' resting state) */
   .field-input {
-    @apply rounded-inputs border border-cloud bg-snow px-4 py-3 text-[14px] text-graphite;
+    @apply rounded-inputs border border-cloud bg-snow px-4 py-3 text-body-sm text-graphite;
   }
 }

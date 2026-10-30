@@ -30,3 +30,15 @@ export const CATEGORY_DISPLAY_LABELS: Record<Category, string> = {
   "스포츠": "스포츠",
   "글로벌 이슈": "라이프스타일",
 };
+
+// DESIGN.md's palette is 99% achromatic with a single reserved accent
+// (never for general UI), so category badges no longer get a distinct
+// color per category — every category renders with the same neutral
+// "Tag Pill Badge" styling (see .badge-outline in globals.css).
+//
+// Lives here rather than mock-data.ts (where it used to be) because
+// mock-data.ts is "server-only" — client components that render a
+// category badge (TrendCard, ExpressionCard, QuizEntryClient) need this
+// value too, and this module carries no such restriction (same reason
+// CATEGORY_DISPLAY_LABELS already lives here instead of mock-data.ts).
+export const CATEGORY_BADGE_CLASS = "badge-outline";

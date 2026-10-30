@@ -121,12 +121,6 @@ export type Trend = {
   rank?: number;
 };
 
-// DESIGN.md's palette is 99% achromatic with a single reserved accent
-// (never for general UI), so category badges no longer get a distinct
-// color per category — every category renders with the same neutral
-// "Tag Pill Badge" styling (see .badge-outline in globals.css).
-export const CATEGORY_BADGE_CLASS = "badge-outline";
-
 const GENERATED_AT = "2026-10-06T00:00:00.000Z";
 const REVIEWED_AT = "2026-10-06T00:00:00.000Z";
 

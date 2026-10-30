@@ -37,7 +37,7 @@ export function EnglishSummary({
   // Single-paragraph content (no newlines) renders identically either
   // way, so this is safe for existing RSS-sourced summaries.
   return (
-    <p lang="en" className="whitespace-pre-line text-[15px] leading-8 text-graphite sm:text-[18px]">
+    <p lang="en" className="whitespace-pre-line text-body leading-8 text-graphite sm:text-body-lg">
       {highlightExpressionsInText(text, expressions, handlePhraseClick)}
     </p>
   );

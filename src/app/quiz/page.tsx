@@ -92,7 +92,7 @@ export default async function QuizPage({
         <section className="mx-auto max-w-2xl px-5 pt-8 pb-20 sm:px-8 sm:pt-12">
           <Link
             href={backHref}
-            className="mb-6 inline-flex cursor-pointer items-center gap-1.5 rounded text-[14px] font-normal text-fog transition-colors hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
+            className="mb-6 inline-flex cursor-pointer items-center gap-1.5 rounded text-body-sm font-normal text-fog transition-colors hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
           >
             <ArrowLeftIcon className="h-4 w-4" />
             홈으로 돌아가기
@@ -101,7 +101,7 @@ export default async function QuizPage({
           {/* Category chip intentionally omitted here — the quiz-solving
               screen only needs the trend title and the question UI below
               it, not the category it came from. */}
-          <h1 className="text-[32px] font-semibold leading-tight text-obsidian sm:text-[40px]">
+          <h1 className="type-heading text-obsidian">
             {trend.title}
           </h1>
 
@@ -115,7 +115,7 @@ export default async function QuizPage({
                 entryPoint={entryPoint}
               />
             ) : (
-              <div className="surface-card flex flex-col items-start gap-4 p-8 text-[14px] text-fog">
+              <div className="surface-card flex flex-col items-start gap-4 p-8 text-body-sm text-fog">
                 <p className="text-kr-body">이 트렌드는 아직 표현이 부족해서 퀴즈를 만들 수 없어요.</p>
                 <Link href="/quiz" className="btn-ghost">
                   다른 트렌드 선택하기
@@ -158,17 +158,17 @@ function QuizTrendPicker({ trends }: { trends: Trend[] }) {
         <section className="mx-auto max-w-6xl px-5 pt-8 pb-20 sm:px-8 sm:pt-12">
           <Link
             href="/"
-            className="mb-6 inline-flex cursor-pointer items-center gap-1.5 rounded text-[14px] font-normal text-fog transition-colors hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
+            className="mb-6 inline-flex cursor-pointer items-center gap-1.5 rounded text-body-sm font-normal text-fog transition-colors hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
           >
             <ArrowLeftIcon className="h-4 w-4" />
             홈으로 돌아가기
           </Link>
 
-          <p className="text-[12px] font-medium text-ember">오늘의 퀵 퀴즈</p>
-          <h1 className="mt-2 text-[32px] font-semibold leading-tight text-obsidian sm:text-[40px]">
+          <p className="type-caption-strong text-ember">오늘의 퀵 퀴즈</p>
+          <h1 className="mt-2 type-heading text-obsidian">
             퀴즈 풀 이야기를 선택해주세요
           </h1>
-          <p className="text-kr-body mt-2 text-[14px] text-fog">
+          <p className="mt-2 type-body-kr text-fog">
             이야기 속에서 만난 영어 표현을 퀴즈로 복습해 보세요.
           </p>
 

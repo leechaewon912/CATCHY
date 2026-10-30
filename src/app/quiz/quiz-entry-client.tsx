@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { ArrowUpRightIcon } from "@/components/icons";
-import { CATEGORY_DISPLAY_LABELS } from "@/lib/category-display";
+import { CATEGORY_BADGE_CLASS, CATEGORY_DISPLAY_LABELS } from "@/lib/category-display";
 import type { Category } from "@/lib/mock-data";
 import { readRecentTrendIds } from "@/lib/recent-trends";
 
@@ -15,11 +15,6 @@ export type QuizPickerTrend = {
   summary: string;
   expressionCount: number;
 };
-
-// mock-data.ts is "server-only", so this client component can't import
-// its CATEGORY_BADGE_CLASS value — it's just this one static utility
-// class name (see .badge-outline in globals.css), safe to inline here.
-const CATEGORY_BADGE_CLASS = "badge-outline";
 
 export function QuizEntryClient({ trends }: { trends: QuizPickerTrend[] }) {
   const [recentTrendId, setRecentTrendId] = useState<string | null>(null);
@@ -37,7 +32,7 @@ export function QuizEntryClient({ trends }: { trends: QuizPickerTrend[] }) {
 
   if (trends.length === 0) {
     return (
-      <p className="text-kr-body mt-10 text-[14px] text-fog">
+      <p className="mt-10 type-body-kr text-fog">
         오늘 생성된 퀴즈가 없어요. 잠시 후 다시 확인해주세요.
       </p>
     );
@@ -59,13 +54,13 @@ export function QuizEntryClient({ trends }: { trends: QuizPickerTrend[] }) {
           btn-solid-black CTA. 이전엔 surface-dark(어두운 배경) 카드였다. */}
       <div className="surface-card flex flex-col items-start justify-between gap-6 p-6 sm:flex-row sm:items-center sm:p-10">
         <div className="flex flex-col gap-3">
-          <span className="text-[12px] font-medium text-ember">
+          <span className="type-caption-strong text-ember">
             {featuredIsRecent ? "최근 본 이야기로 퀴즈 풀기" : "오늘의 주요 트렌드로 퀴즈 풀기"}
           </span>
-          <h2 className="max-w-md break-keep text-[24px] font-semibold leading-snug text-obsidian sm:text-[32px] sm:leading-tight">
+          <h2 className="max-w-md break-keep text-heading-xs font-semibold leading-snug text-obsidian sm:text-heading-sm sm:leading-tight">
             {featuredTrend.title}
           </h2>
-          <p className="text-kr-body max-w-md break-keep text-[14px] text-fog">{featuredTrend.summary}</p>
+          <p className="max-w-md break-keep type-body-kr text-fog">{featuredTrend.summary}</p>
         </div>
 
         <Link
@@ -90,13 +85,13 @@ export function QuizEntryClient({ trends }: { trends: QuizPickerTrend[] }) {
               </div>
 
               <div className="flex flex-1 flex-col gap-3 p-5">
-                <h3 className="text-[18px] font-semibold leading-snug text-obsidian transition-colors group-hover:text-graphite">
+                <h3 className="text-body-lg font-semibold leading-snug text-obsidian transition-colors group-hover:text-graphite">
                   {trend.title}
                 </h3>
-                <p className="text-kr-body line-clamp-2 text-[14px] text-fog">
+                <p className="line-clamp-2 type-body-kr text-fog">
                   {trend.summary}
                 </p>
-                <p className="mt-auto text-[12px] text-fog">
+                <p className="mt-auto type-caption text-fog">
                   표현 {trend.expressionCount}개
                 </p>
               </div>

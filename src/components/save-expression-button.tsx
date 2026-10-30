@@ -75,7 +75,7 @@ export function SaveExpressionButton({
       aria-label={saved ? `${expression.phrase} 저장 취소` : `${expression.phrase} 표현 저장`}
       onClick={handleClick}
       className={[
-        "flex shrink-0 cursor-pointer items-center gap-1.5 rounded-pills border px-3.5 py-2 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian",
+        "flex shrink-0 cursor-pointer items-center gap-1.5 rounded-pills border px-3.5 py-2 type-caption-strong transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian",
         saved
           ? "border-obsidian bg-obsidian text-snow"
           : "border-cloud text-fog hover:border-ash hover:text-graphite",

@@ -121,8 +121,8 @@ export function resolveTrendFeedEmptyState({
 function TrendFeedEmptyStateBlock({ title, description }: TrendFeedEmptyState) {
   return (
     <div className="col-span-full flex flex-col items-center gap-1 py-12 text-center">
-      <p className="text-[16px] font-semibold text-obsidian">{title}</p>
-      <p className="text-[14px] text-fog">{description}</p>
+      <p className="text-body-md font-semibold text-obsidian">{title}</p>
+      <p className="text-body-sm text-fog">{description}</p>
     </div>
   );
 }
@@ -176,7 +176,7 @@ function TrendFeedPagination({
   navRef: RefObject<HTMLElement | null>;
 }) {
   const pageButtonClass =
-    "flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-pills text-[14px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian sm:h-9 sm:w-9";
+    "flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-pills text-body-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian sm:h-9 sm:w-9";
 
   return (
     <nav
@@ -209,7 +209,7 @@ function TrendFeedPagination({
           <span
             key={`${item}-${index}`}
             aria-hidden
-            className="flex h-8 w-8 shrink-0 items-center justify-center text-[14px] text-ash sm:h-9 sm:w-9"
+            className="flex h-8 w-8 shrink-0 items-center justify-center text-body-sm text-ash sm:h-9 sm:w-9"
           >
             …
           </span>
@@ -351,8 +351,8 @@ export function TrendFeed({
   return (
     <section className="mx-auto max-w-6xl px-5 pt-10 sm:px-8" aria-labelledby="trend-feed-heading">
       <div className="mb-6">
-        <h2 id="trend-feed-heading" className="text-[24px] font-semibold leading-[1.5] text-obsidian sm:text-[32px]">일상에 영감을 주는 이야기</h2>
-        <p className="mt-2 text-[14px] text-fog sm:mt-1 sm:text-[13px]" role="status" aria-live="polite">
+        <h2 id="trend-feed-heading" className="text-heading-xs font-semibold leading-[1.5] text-obsidian sm:text-heading-sm">일상에 영감을 주는 이야기</h2>
+        <p className="mt-2 text-body-sm text-fog sm:mt-1 sm:text-label" role="status" aria-live="polite">
           {selectedDay} ·{" "}
           {selectedCategory === "전체" ? selectedCategory : CATEGORY_DISPLAY_LABELS[selectedCategory]} ·{" "}
           {visibleItems.length}개
@@ -381,7 +381,7 @@ export function TrendFeed({
                 setCurrentPage(1);
               }}
               className={[
-                "shrink-0 cursor-pointer border-b-2 pb-2 text-[14px] transition-colors focus-visible:outline-none",
+                "shrink-0 cursor-pointer border-b-2 pb-2 text-body-sm transition-colors focus-visible:outline-none",
                 isSelected
                   ? "border-obsidian font-semibold text-obsidian"
                   : "border-transparent font-normal text-ash hover:text-graphite",
@@ -405,7 +405,7 @@ export function TrendFeed({
               setSelectedCategory(category);
               setCurrentPage(1);
             }}
-            className={`shrink-0 cursor-pointer rounded-pills border px-4 py-2.5 text-[14px] font-normal transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian focus-visible:ring-offset-2 focus-visible:ring-offset-paper ${selectedCategory === category ? "border-obsidian bg-obsidian text-snow" : "border-cloud bg-snow text-iron hover:border-ash hover:text-graphite"}`}>
+            className={`shrink-0 cursor-pointer rounded-pills border px-4 py-2.5 text-body-sm font-normal transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian focus-visible:ring-offset-2 focus-visible:ring-offset-paper ${selectedCategory === category ? "border-obsidian bg-obsidian text-snow" : "border-cloud bg-snow text-iron hover:border-ash hover:text-graphite"}`}>
             {category === "전체" ? category : CATEGORY_DISPLAY_LABELS[category]}
           </button>
         ))}

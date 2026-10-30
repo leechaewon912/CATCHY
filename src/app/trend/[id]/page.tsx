@@ -47,7 +47,7 @@ export default async function TrendDetailPage(
         <section className="mx-auto max-w-4xl px-5 pt-8 sm:px-8 sm:pt-12">
           <Link
             href="/"
-            className="mb-6 inline-flex cursor-pointer items-center gap-1.5 rounded text-[14px] font-normal text-fog transition-colors hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
+            className="mb-6 inline-flex cursor-pointer items-center gap-1.5 rounded text-body-sm font-normal text-fog transition-colors hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
           >
             <ArrowLeftIcon className="h-4 w-4" />
             홈으로 돌아가기
@@ -88,7 +88,7 @@ export default async function TrendDetailPage(
                   just swapped to translucent white so the hero photo shows
                   through instead of a solid fill. No blur — a faint white
                   border carries the legibility work on brighter photos. */}
-              <span className="inline-flex items-center gap-1 self-start rounded-badges border border-white/25 bg-white/[0.18] px-2 py-1 text-[12px] font-normal text-white">
+              <span className="inline-flex items-center gap-1 self-start rounded-badges border border-white/25 bg-white/[0.18] px-2 py-1 text-caption font-normal text-white">
                 {CATEGORY_DISPLAY_LABELS[trend.category]}
               </span>
 
@@ -103,12 +103,12 @@ export default async function TrendDetailPage(
                   original single-line behavior on tablet/desktop. */}
               <div className="flex flex-col">
                 <div className="flex flex-col gap-3 sm:gap-5">
-                  <h1 className="text-[24px] font-semibold leading-[1.28] text-snow sm:text-[40px]">
+                  <h1 className="text-heading-xs font-semibold leading-[1.28] text-snow sm:text-heading">
                     {trend.englishTitle ?? trend.title}
                   </h1>
 
                   {trend.englishTitle && (
-                    <p className="text-kr-subtitle break-keep text-[18px] text-mist sm:truncate sm:text-[24px]">
+                    <p className="text-kr-subtitle break-keep text-body-lg text-mist sm:truncate sm:text-heading-xs">
                       {trend.title}
                     </p>
                   )}
@@ -137,16 +137,16 @@ export default async function TrendDetailPage(
           className="mx-auto max-w-4xl px-5 pt-10 sm:px-8"
           aria-labelledby="event-summary-heading"
         >
-          <h2 id="event-summary-heading" className="text-[32px] font-semibold leading-[1.5] text-obsidian">
+          <h2 id="event-summary-heading" className="text-heading-sm font-semibold leading-[1.5] text-obsidian">
             어떤 이야기인가요?
           </h2>
-          <p className="text-kr-body mt-2 mb-5 text-[14px] text-fog">
+          <p className="mt-2 mb-5 type-body-kr text-fog">
             영어로 먼저 읽고, 한국어로 내용을 확인해 보세요. <span className="text-ember">주황색 밑줄</span>로
             표시된 부분을 누르면 아래에서 배우는 표현으로 바로 이동해요.
           </p>
           <div className="surface-card overflow-hidden">
             <div className="p-6 sm:p-8">
-              <h3 className="mb-3 text-[13px] font-medium text-ember">
+              <h3 className="mb-3 text-label font-medium text-ember">
                 Read in English
               </h3>
               <EnglishSummary
@@ -157,7 +157,7 @@ export default async function TrendDetailPage(
               />
             </div>
             <div className="border-t border-cloud p-6 sm:p-8">
-              <h3 className="mb-3 text-[13px] font-medium text-ember">
+              <h3 className="mb-3 text-label font-medium text-ember">
                 한국어로 읽기
               </h3>
               {/* whitespace-pre-line: koreanSummary may contain literal
@@ -179,7 +179,7 @@ export default async function TrendDetailPage(
           {trend.sources.length > 0 && (
             <a
               href="#sources"
-              className="mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded text-[14px] font-medium text-graphite transition-colors hover:text-obsidian focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
+              className="mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded text-body-sm font-medium text-graphite transition-colors hover:text-obsidian focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
             >
               출처 {trend.sources.length}개 보기
               <ArrowDownIcon className="h-3.5 w-3.5" />
@@ -193,7 +193,7 @@ export default async function TrendDetailPage(
         {trend.whyTrending && (
           <section className="mx-auto max-w-4xl px-5 pt-10 sm:px-8">
             <div className="surface-card p-6 sm:p-8">
-              <h2 className="mb-3 text-[13px] font-medium text-fog">
+              <h2 className="mb-3 text-label font-medium text-fog">
                 왜 지금 화제일까요?
               </h2>
               <p className="text-kr-body text-kr-body-fluid text-steel">
@@ -218,10 +218,10 @@ export default async function TrendDetailPage(
               own height on a normal viewport, since the section is
               taller than most viewports once 3 cards are stacked. */}
           <ExpressionSectionTracker trendId={trend.id} category={trend.category}>
-            <h2 className="mb-2 text-[32px] font-semibold leading-[1.5] text-obsidian">
+            <h2 className="mb-2 text-heading-sm font-semibold leading-[1.5] text-obsidian">
               이 이야기에서 배우는 표현
             </h2>
-            <p className="text-kr-body mb-8 text-[14px] text-fog">
+            <p className="mb-8 type-body-kr text-fog">
               표현의 의미와 쓰임을 예문과 함께 알아보세요.
             </p>
           </ExpressionSectionTracker>
@@ -260,14 +260,14 @@ export default async function TrendDetailPage(
             className="mx-auto max-w-4xl scroll-mt-24 px-5 pt-14 pb-20 sm:px-8"
           >
           <div className="mb-1 flex items-center gap-2">
-            <h2 className="text-[20px] font-semibold text-obsidian">
+            <h2 className="text-subheading font-semibold text-obsidian">
               참고 출처
             </h2>
             {isSingleSource && (
               <span className="badge-filled">단일 출처</span>
             )}
           </div>
-          <p className="mb-5 text-[14px] text-fog">
+          <p className="mb-5 text-body-sm text-fog">
             {isSingleSource
               ? "이 콘텐츠는 라이선스가 확인된 공식 출처 1개를 참고해 CATCHY가 영어 학습용으로 새로 작성한 콘텐츠입니다. 원문 전문은 출처 링크에서 확인해 주세요."
               : "이 콘텐츠는 여러 공개 출처를 참고해 CATCHY가 영어 학습용으로 새로 작성한 콘텐츠입니다. 원문 전문은 각 출처 링크에서 확인해 주세요."}
@@ -280,10 +280,10 @@ export default async function TrendDetailPage(
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
-                    <span className="text-[12px] text-fog">
+                    <span className="type-caption text-fog">
                       {source.sourceName}
                     </span>
-                    <p className="mt-1 text-[14px] font-medium text-graphite">
+                    <p className="mt-1 text-body-sm font-medium text-graphite">
                       {source.originalTitle}
                     </p>
                   </div>
@@ -291,13 +291,13 @@ export default async function TrendDetailPage(
                     href={source.originalUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group flex shrink-0 cursor-pointer items-center gap-1 rounded-pills border border-iron px-3.5 py-2 text-[12px] font-medium text-iron transition-colors hover:border-graphite hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
+                    className="group flex shrink-0 cursor-pointer items-center gap-1 rounded-pills border border-iron px-3.5 py-2 type-caption-strong text-iron transition-colors hover:border-graphite hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
                   >
                     원문 보기
                     <ArrowUpRightIcon className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                   </a>
                 </div>
-                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-cloud pt-3 text-[12px] text-fog">
+                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-cloud pt-3 type-caption text-fog">
                   <span>{source.publishedAt}</span>
                 </div>
               </li>
@@ -305,7 +305,7 @@ export default async function TrendDetailPage(
           </ul>
 
           {trend.sources.some((source) => source.sourceType === "reference") && (
-            <p className="mt-4 text-[12px] text-fog">
+            <p className="mt-4 type-caption text-fog">
               데이터 제공:{" "}
               {trend.sources
                 .filter((source) => source.sourceType === "reference")

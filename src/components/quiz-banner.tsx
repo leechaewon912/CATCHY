@@ -7,13 +7,13 @@ export function QuizBanner() {
     <section className="mx-auto max-w-6xl px-5 pb-20 sm:px-8">
       <div className="surface-card flex flex-col items-start justify-between gap-6 p-6 sm:flex-row sm:items-center sm:p-10">
         <div className="flex flex-col gap-3">
-          <span className="text-[12px] font-medium text-ember">
+          <span className="type-caption-strong text-ember">
             오늘의 퀵 퀴즈
           </span>
-          <h2 className="max-w-md break-keep text-[24px] font-semibold leading-snug text-obsidian sm:text-[32px] sm:leading-tight">
+          <h2 className="max-w-md break-keep text-heading-xs font-semibold leading-snug text-obsidian sm:text-heading-sm sm:leading-tight">
             방금 배운 표현, 기억하고 있나요?
           </h2>
-          <p className="text-kr-body max-w-md break-keep text-[14px] text-fog">
+          <p className="max-w-md break-keep type-body-kr text-fog">
             이야기별로 모은 표현을 짧은 퀴즈로 바로 복습해보세요.
           </p>
         </div>

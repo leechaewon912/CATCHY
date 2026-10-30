@@ -33,6 +33,7 @@ export function FeedbackModal({
   onConfirmThanks: () => void;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const previouslyFocusedElementRef = useRef<HTMLElement | null>(null);
   const [hoverRating, setHoverRating] = useState(0);
 
   // Background-scroll lock while the modal is open — restores whatever
@@ -48,16 +49,67 @@ export function FeedbackModal({
     };
   }, [open]);
 
+  // Remembers whatever had focus right before the modal opened (almost
+  // always the element the user clicked/tapped to trigger it) and
+  // restores focus there once the modal closes — without this, closing
+  // the modal silently drops focus to <body> and a keyboard/screen-
+  // reader user loses their place on the page behind it. Declared before
+  // the "focus the panel" effect below so it runs first within the same
+  // commit when `open` flips true→it captures the pre-open element
+  // before focus moves into the panel.
+  useEffect(() => {
+    if (open) {
+      previouslyFocusedElementRef.current =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    } else if (previouslyFocusedElementRef.current) {
+      previouslyFocusedElementRef.current.focus();
+      previouslyFocusedElementRef.current = null;
+    }
+  }, [open]);
+
   useEffect(() => {
     if (!open) return;
     panelRef.current?.focus();
   }, [open]);
 
+  // Escape (unchanged) + Tab/Shift+Tab focus trap — keeps keyboard focus
+  // cycling inside the modal instead of leaking out to the page behind
+  // it. Re-queries the focusable elements on every Tab press rather than
+  // caching them once, since `view` swaps the whole form (star rating +
+  // textarea + two buttons) for a single "확인" button, changing what's
+  // focusable while the modal stays open.
   useEffect(() => {
     if (!open) return;
+
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         onClose("escape");
+        return;
+      }
+      if (event.key !== "Tab") return;
+
+      const panel = panelRef.current;
+      if (!panel) return;
+
+      const focusable = Array.from(
+        panel.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((element) => !element.hasAttribute("disabled"));
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+
+      if (event.shiftKey) {
+        if (active === first || active === panel) {
+          event.preventDefault();
+          last.focus();
+        }
+      } else if (active === last) {
+        event.preventDefault();
+        first.focus();
       }
     }
     window.addEventListener("keydown", handleKeyDown);
@@ -85,11 +137,11 @@ export function FeedbackModal({
           <div className="flex flex-col gap-1">
             <h2
               id="feedback-modal-title"
-              className="text-[20px] font-semibold leading-snug text-obsidian"
+              className="text-subheading font-semibold leading-snug text-obsidian"
             >
               Catchy에 대한 의견을 들려주세요
             </h2>
-            <p className="text-[13px] font-normal leading-snug text-fog">
+            <p className="text-label font-normal leading-snug text-fog">
               여러분의 솔직한 의견이 궁금해요.
             </p>
           </div>
@@ -133,7 +185,7 @@ export function FeedbackModal({
             <div>
               <label
                 htmlFor="feedback-comment"
-                className="mb-2 block text-[13px] font-medium text-graphite"
+                className="mb-2 block text-label font-medium text-graphite"
               >
                 자세한 의견을 들려주세요 (선택)
               </label>
@@ -144,15 +196,21 @@ export function FeedbackModal({
                 onChange={(event) => onCommentChange(event.target.value)}
                 placeholder="좋았던 점이나 아쉬웠던 점을 자유롭게 알려주세요."
                 rows={4}
-                className="field-input w-full resize-none text-[14px] placeholder:text-ash focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
+                className="field-input w-full resize-none text-body-sm placeholder:text-ash focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
               />
-              <p className="mt-1.5 text-right text-[12px] text-ash">
+              <p className="mt-1.5 text-right type-caption text-ash">
                 {comment.length}/{MAX_COMMENT_LENGTH}
               </p>
             </div>
 
             {error && (
-              <p role="alert" className="text-[13px] text-terracotta">
+              // text-terracotta was never a defined color (not a Catchy
+              // token, not a Tailwind default) — this error text rendered
+              // with no color at all. text-rose-700 reuses the same
+              // Tailwind color already used for "wrong answer" state in
+              // quiz-client.tsx, Catchy's one other error/incorrect
+              // indicator — 6.29:1 on white, passes WCAG AA.
+              <p role="alert" className="text-label text-rose-700">
                 {error}
               </p>
             )}
@@ -161,7 +219,7 @@ export function FeedbackModal({
               <button
                 type="button"
                 onClick={() => onClose("maybe_later")}
-                className="inline-flex w-full items-center justify-center rounded-[12px] border border-cloud bg-snow px-5 py-3 text-[14px] font-medium text-graphite transition-colors hover:border-ash focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-snow focus-visible:ring-obsidian sm:flex-1"
+                className="inline-flex w-full items-center justify-center rounded-[12px] border border-cloud bg-snow px-5 py-3 text-body-sm font-medium text-graphite transition-colors hover:border-ash focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-snow focus-visible:ring-obsidian sm:flex-1"
               >
                 나중에 하기
               </button>
@@ -169,7 +227,7 @@ export function FeedbackModal({
                 type="button"
                 onClick={onSubmit}
                 disabled={rating < 1 || submitting}
-                className="inline-flex w-full items-center justify-center rounded-[12px] bg-[#111111] px-5 py-3 text-[14px] font-medium text-white transition-colors hover:bg-[#2a2a2a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-snow focus-visible:ring-obsidian disabled:cursor-not-allowed disabled:bg-cloud disabled:text-ash sm:flex-1"
+                className="inline-flex w-full items-center justify-center rounded-[12px] bg-[#111111] px-5 py-3 text-body-sm font-medium text-white transition-colors hover:bg-[#2a2a2a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-snow focus-visible:ring-obsidian disabled:cursor-not-allowed disabled:bg-cloud disabled:text-ash sm:flex-1"
               >
                 {submitting ? "제출 중..." : "피드백 보내기"}
               </button>
@@ -177,10 +235,10 @@ export function FeedbackModal({
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2 px-6 pb-5 pt-4 text-center sm:px-8 sm:pb-6">
-            <h3 className="text-[18px] font-semibold text-obsidian">
+            <h3 className="text-body-lg font-semibold text-obsidian">
               소중한 의견 감사합니다!
             </h3>
-            <p className="text-[14px] leading-relaxed text-fog">
+            <p className="text-body-sm leading-relaxed text-fog">
               보내주신 의견을 바탕으로
               <br />
               더 나은 Catchy를 만들어 갈게요.

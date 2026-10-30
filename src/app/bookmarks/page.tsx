@@ -22,16 +22,16 @@ export default function BookmarksPage() {
         <section className="mx-auto max-w-4xl px-5 pt-8 pb-20 sm:px-8 sm:pt-12">
           <Link
             href="/"
-            className="mb-6 inline-flex cursor-pointer items-center gap-1.5 rounded text-[14px] font-normal text-fog transition-colors hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
+            className="mb-6 inline-flex cursor-pointer items-center gap-1.5 rounded text-body-sm font-normal text-fog transition-colors hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
           >
             <ArrowLeftIcon className="h-4 w-4" />
             홈으로 돌아가기
           </Link>
 
-          <p className="text-[12px] font-medium text-ember">
+          <p className="type-caption-strong text-ember">
             내 학습 노트
           </p>
-          <h1 className="mt-2 text-[32px] font-semibold leading-tight text-obsidian sm:text-[40px]">
+          <h1 className="mt-2 type-heading text-obsidian">
             저장한 표현
           </h1>
 

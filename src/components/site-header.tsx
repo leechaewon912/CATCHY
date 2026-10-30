@@ -22,7 +22,7 @@ export function SiteHeader() {
         <div className="flex min-w-0 items-center gap-4 sm:gap-8">
           <Link
             href="/"
-            className="shrink-0 rounded text-[20px] font-semibold tracking-tight text-obsidian transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
+            className="shrink-0 rounded text-subheading font-semibold tracking-tight text-obsidian transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian"
           >
             CATCHY<span className="text-ember">.</span>
           </Link>
@@ -31,7 +31,7 @@ export function SiteHeader() {
               <Link
                 key={item.label}
                 href={item.href}
-                className="shrink-0 cursor-pointer rounded text-[13px] font-normal text-fog transition-colors hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian sm:text-[14px]"
+                className="shrink-0 cursor-pointer rounded text-label font-normal text-fog transition-colors hover:text-graphite focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian sm:text-body-sm"
               >
                 {item.label}
               </Link>
@@ -43,7 +43,7 @@ export function SiteHeader() {
           <button
             type="button"
             onClick={openFeedback}
-            className="inline-flex h-9 shrink-0 cursor-pointer items-center justify-center rounded-[12px] border border-cloud px-4 text-[13px] font-normal text-[#111111] transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-paper focus-visible:ring-obsidian sm:text-[14px] [@media(hover:hover)]:hover:border-[#111111] [@media(hover:hover)]:hover:bg-[#111111] [@media(hover:hover)]:hover:text-white"
+            className="inline-flex h-9 shrink-0 cursor-pointer items-center justify-center rounded-[12px] border border-cloud px-4 text-label font-normal text-[#111111] transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-paper focus-visible:ring-obsidian sm:text-body-sm [@media(hover:hover)]:hover:border-[#111111] [@media(hover:hover)]:hover:bg-[#111111] [@media(hover:hover)]:hover:text-white"
           >
             Feedback
           </button>
